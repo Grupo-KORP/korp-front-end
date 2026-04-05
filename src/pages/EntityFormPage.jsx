@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { EntityForm } from '../components/crud/EntityForm'
 import { PedidoForm } from '../components/crud/PedidoForm'
 import { StatusBanner } from '../components/crud/StatusBanner'
@@ -10,13 +10,21 @@ import { produtoService } from '../services/produtoService'
 
 export function EntityFormPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { entityKey, id } = useParams()
   const { entity, service } = useCrudEntity(entityKey)
 
-  const isEditMode = useMemo(() => Boolean(id), [id])
+  const isViewMode = useMemo(() => location.pathname.includes('/view/'), [location.pathname])
+  const isEditMode = useMemo(() => Boolean(id) && !isViewMode, [id, isViewMode])
+  const shouldLoadById = useMemo(() => Boolean(id) && (isEditMode || isViewMode), [id, isEditMode, isViewMode])
+
   const canUseForm = useMemo(() => {
     if (!entity) {
       return false
+    }
+
+    if (isViewMode) {
+      return entity.key === 'pedidos'
     }
 
     if (isEditMode) {
@@ -24,16 +32,16 @@ export function EntityFormPage() {
     }
 
     return entity.allowCreate !== false
-  }, [entity, isEditMode])
+  }, [entity, isEditMode, isViewMode])
 
   const [initialData, setInitialData] = useState(null)
-  const [isLoading, setIsLoading] = useState(isEditMode)
+  const [isLoading, setIsLoading] = useState(shouldLoadById)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [status, setStatus] = useState({ type: '', message: '' })
   const [fieldOptions, setFieldOptions] = useState({})
 
   useEffect(() => {
-    if (!entity || !service || !isEditMode || !canUseForm) {
+    if (!entity || !service || !shouldLoadById || !canUseForm) {
       return
     }
 
@@ -50,7 +58,7 @@ export function EntityFormPage() {
     }
 
     loadById()
-  }, [canUseForm, entity, id, isEditMode, service])
+  }, [canUseForm, entity, id, service, shouldLoadById])
 
   useEffect(() => {
     if (!entity || !canUseForm) {
@@ -137,7 +145,7 @@ export function EntityFormPage() {
   }, [canUseForm, entity, entityKey])
 
   async function handleSubmit(payload) {
-    if (!entity || !service || !canUseForm) {
+    if (!entity || !service || !canUseForm || isViewMode) {
       return
     }
 
@@ -167,14 +175,14 @@ export function EntityFormPage() {
         <header className="page-header split">
           <div>
             <h2>{entity.label}</h2>
-            <p>Essa entidade nao possui operacao de formulario para esta rota.</p>
+            <p>Essa entidade não possui operacao de formulario para esta rota.</p>
           </div>
           <Link className="btn btn-light" to={entity.routeBase}>
             Voltar
           </Link>
         </header>
         <StatusBanner
-          message="A API nao disponibiliza criacao/edicao para esta entidade."
+          message="A API nao disponibiliza essa operacao para esta entidade."
           type="error"
         />
       </section>
@@ -185,8 +193,18 @@ export function EntityFormPage() {
     <section className="page-panel">
       <header className="page-header split">
         <div>
-          <h2>{isEditMode ? `Editar ${entity.singularLabel}` : `Novo ${entity.singularLabel}`}</h2>
-          <p>Preencha os campos para salvar no backend Spring Boot.</p>
+          <h2>
+            {isViewMode
+              ? `Visualizar ${entity.singularLabel}`
+              : isEditMode
+                ? `Editar ${entity.singularLabel}`
+                : `Novo ${entity.singularLabel}`}
+          </h2>
+          <p>
+            {isViewMode
+              ? 'Visualizacao completa do pedido em modo somente leitura.'
+              : 'Preencha os campos para salvar no backend Spring Boot.'}
+          </p>
         </div>
         <Link className="btn btn-light" to={entity.routeBase}>
           Voltar
@@ -202,6 +220,7 @@ export function EntityFormPage() {
           fieldOptions={fieldOptions}
           initialData={initialData}
           isEditMode={isEditMode}
+          isReadOnly={isViewMode}
           isSubmitting={isSubmitting}
           onSubmit={handleSubmit}
         />

@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom'
 
-export function EntityTable({ entity, rows, isLoading, onDelete, renderCell }) {
-  const showActions = entity.allowEdit !== false || entity.allowDelete
+export function EntityTable({ entity, rows, isLoading, onDelete, renderCell, fields }) {
+  const visibleFields = fields || entity.fields
+  const canView = entity.key === 'pedidos'
+  const showActions = canView || entity.allowEdit !== false || entity.allowDelete
 
   if (isLoading) {
     return <p className="info-text">Carregando dados...</p>
@@ -16,7 +18,7 @@ export function EntityTable({ entity, rows, isLoading, onDelete, renderCell }) {
       <table className="entity-table">
         <thead>
           <tr>
-            {entity.fields.map((field) => (
+            {visibleFields.map((field) => (
               <th key={field.name}>{field.label}</th>
             ))}
             {showActions && <th>Acoes</th>}
@@ -29,7 +31,7 @@ export function EntityTable({ entity, rows, isLoading, onDelete, renderCell }) {
 
             return (
             <tr key={rowKey}>
-              {entity.fields.map((field, fieldIndex) => (
+              {visibleFields.map((field, fieldIndex) => (
                 <td key={`${rowKey}-${field.name}-${fieldIndex}`}>
                   {renderCell ? renderCell(field, row) : String(row[field.name] ?? '-')}
                 </td>
@@ -37,6 +39,11 @@ export function EntityTable({ entity, rows, isLoading, onDelete, renderCell }) {
               {showActions && (
                 <td>
                   <div className="actions-inline">
+                    {canView && (
+                      <Link className="btn btn-light" to={`${entity.routeBase}/view/${rowId}`}>
+                        Visualizar
+                      </Link>
+                    )}
                     {entity.allowEdit !== false && (
                       <Link className="btn btn-light" to={`${entity.routeBase}/edit/${rowId}`}>
                         Editar

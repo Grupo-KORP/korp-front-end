@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 function mapInitialItems(initialItems) {
   if (!Array.isArray(initialItems)) {
@@ -48,16 +48,26 @@ function normalizeInitialData(initialData) {
         : initialData?.frete || '',
     transportadora: initialData?.transportadora || '',
     observacoes: initialData?.observacoes || '',
-    fkCliente: initialData?.fkCliente ?? '',
-    fkDistribuidor: initialData?.fkDistribuidor ?? '',
+    fkCliente: initialData?.fkCliente ?? initialData?.cliente?.idCliente ?? '',
+    fkDistribuidor:
+      initialData?.fkDistribuidor ?? initialData?.distribuidor?.idDistribuidor ?? '',
     itens: mapInitialItems(initialData?.itens),
   }
+}
+
+function formatMoney(value) {
+  if (!Number.isFinite(value)) {
+    return '0.00'
+  }
+
+  return value.toFixed(2)
 }
 
 export function PedidoForm({
   initialData,
   isSubmitting,
   isEditMode,
+  isReadOnly = false,
   onSubmit,
   fieldOptions = {},
 }) {
@@ -65,6 +75,7 @@ export function PedidoForm({
 
   const [form, setForm] = useState(parsedInitial)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isSingleItemWarningOpen, setIsSingleItemWarningOpen] = useState(false)
   const [newItem, setNewItem] = useState({
     fkProduto: '',
     quantidade: 1,
@@ -72,9 +83,26 @@ export function PedidoForm({
   })
   const [localError, setLocalError] = useState('')
 
+  const valorTotalVenda = useMemo(() => {
+    return form.itens.reduce((acc, item) => {
+      const quantidade = Number(item?.quantidade)
+      const valorUnitario = Number(item?.valorUnitario)
+
+      if (!Number.isFinite(quantidade) || !Number.isFinite(valorUnitario)) {
+        return acc
+      }
+
+      return acc + quantidade * valorUnitario
+    }, 0)
+  }, [form.itens])
+
   const produtoOptions = fieldOptions.fkProduto || []
   const statusOptions = fieldOptions.statusPedido || []
-  const itemsRequired = !isEditMode
+  const itemsRequired = true
+
+  useEffect(() => {
+    setForm(parsedInitial)
+  }, [parsedInitial])
 
   function labelRequired(text, requiredInCreate = false) {
     return (
@@ -98,6 +126,15 @@ export function PedidoForm({
   function closeModal() {
     setLocalError('')
     setIsModalOpen(false)
+  }
+
+  function closeSingleItemWarningModal() {
+    setIsSingleItemWarningOpen(false)
+  }
+
+  function handleAddItemFromWarning() {
+    setIsSingleItemWarningOpen(false)
+    openModal()
   }
 
   function handleAddItem(event) {
@@ -131,25 +168,48 @@ export function PedidoForm({
   }
 
   function removeItem(itemIndex) {
+    if (isReadOnly) {
+      return
+    }
+
+    if (form.itens.length <= 1) {
+      setIsSingleItemWarningOpen(true)
+      return
+    }
+
+    setLocalError('')
     setForm((prev) => ({
       ...prev,
       itens: prev.itens.filter((_, index) => index !== itemIndex),
     }))
   }
 
+  function applyTotalVendaToRevenda() {
+    updateField('valorTotalRevenda', formatMoney(valorTotalVenda))
+  }
+
   async function handleSubmit(event) {
     event.preventDefault()
 
-    if (itemsRequired && !form.itens.length) {
+    if (isReadOnly) {
+      return
+    }
+
+    if (!form.itens.length) {
       setLocalError('Adicione ao menos um item ao pedido.')
       return
     }
 
     setLocalError('')
 
+    const numeroNotaDistribuidor =
+      form.numeroNotaDistribuidor === '' || form.numeroNotaDistribuidor === null
+        ? null
+        : Number(form.numeroNotaDistribuidor)
+
     await onSubmit({
       dataPedido: form.dataPedido,
-      numeroNotaDistribuidor: Number(form.numeroNotaDistribuidor),
+      numeroNotaDistribuidor,
       valorTotalRevenda: Number(form.valorTotalRevenda),
       valorTotalFaturamento: Number(form.valorTotalFaturamento),
       statusPedido: form.statusPedido,
@@ -158,7 +218,7 @@ export function PedidoForm({
       observacoes: form.observacoes,
       fkCliente: Number(form.fkCliente),
       fkDistribuidor: Number(form.fkDistribuidor),
-      ...(form.itens.length ? { itens: form.itens } : {}),
+      itens: form.itens,
     })
   }
 
@@ -168,6 +228,7 @@ export function PedidoForm({
         <label className="field">
           <span>{labelRequired('Data do Pedido', !isEditMode)}</span>
           <input
+            disabled={isReadOnly}
             name="dataPedido"
             onChange={(event) => updateField('dataPedido', event.target.value)}
             required
@@ -177,11 +238,11 @@ export function PedidoForm({
         </label>
 
         <label className="field">
-          <span>{labelRequired('Nota Distribuidor', !isEditMode)}</span>
+          <span>Nota Distribuidor</span>
           <input
+            disabled={isReadOnly}
             name="numeroNotaDistribuidor"
             onChange={(event) => updateField('numeroNotaDistribuidor', event.target.value)}
-            required
             type="number"
             value={form.numeroNotaDistribuidor}
           />
@@ -190,6 +251,7 @@ export function PedidoForm({
         <label className="field">
           <span>{labelRequired('Valor Revenda', !isEditMode)}</span>
           <input
+            disabled={isReadOnly}
             name="valorTotalRevenda"
             onChange={(event) => updateField('valorTotalRevenda', event.target.value)}
             required
@@ -202,6 +264,7 @@ export function PedidoForm({
         <label className="field">
           <span>{labelRequired('Valor Faturamento', !isEditMode)}</span>
           <input
+            disabled={isReadOnly}
             name="valorTotalFaturamento"
             onChange={(event) => updateField('valorTotalFaturamento', event.target.value)}
             required
@@ -214,6 +277,7 @@ export function PedidoForm({
         <label className="field">
           <span>{labelRequired('Status', !isEditMode)}</span>
           <select
+            disabled={isReadOnly}
             name="statusPedido"
             onChange={(event) => updateField('statusPedido', event.target.value)}
             required
@@ -231,6 +295,7 @@ export function PedidoForm({
         <label className="field">
           <span>{labelRequired('Frete', !isEditMode)}</span>
           <select
+            disabled={isReadOnly}
             name="frete"
             onChange={(event) => updateField('frete', event.target.value)}
             required
@@ -248,6 +313,7 @@ export function PedidoForm({
         <label className="field">
           <span>Transportadora</span>
           <input
+            disabled={isReadOnly}
             name="transportadora"
             onChange={(event) => updateField('transportadora', event.target.value)}
             type="text"
@@ -258,6 +324,7 @@ export function PedidoForm({
         <label className="field">
           <span>Observacoes</span>
           <input
+            disabled={isReadOnly}
             name="observacoes"
             onChange={(event) => updateField('observacoes', event.target.value)}
             type="text"
@@ -268,6 +335,7 @@ export function PedidoForm({
         <label className="field">
           <span>{labelRequired('Cliente', !isEditMode)}</span>
           <select
+            disabled={isReadOnly}
             name="fkCliente"
             onChange={(event) => updateField('fkCliente', event.target.value)}
             required
@@ -285,6 +353,7 @@ export function PedidoForm({
         <label className="field">
           <span>{labelRequired('Distribuidor', !isEditMode)}</span>
           <select
+            disabled={isReadOnly}
             name="fkDistribuidor"
             onChange={(event) => updateField('fkDistribuidor', event.target.value)}
             required
@@ -310,9 +379,11 @@ export function PedidoForm({
                 {itemsRequired ? 'Obrigatorio' : 'Opcional'}
               </span>
             </div>
-            <button className="btn btn-light" onClick={openModal} type="button">
-              Adicionar Item
-            </button>
+            {!isReadOnly && (
+              <button className="btn btn-light" onClick={openModal} type="button">
+                Adicionar Item
+              </button>
+            )}
           </header>
 
           <div className="table-wrap">
@@ -339,14 +410,42 @@ export function PedidoForm({
                       <td>{item.quantidade}</td>
                       <td>{item.valorUnitario}</td>
                       <td>
-                        <button className="btn btn-danger" onClick={() => removeItem(index)} type="button">
-                          Remover
-                        </button>
+                        {!isReadOnly ? (
+                          <button
+                            className="btn btn-danger"
+                            onClick={() => removeItem(index)}
+                            type="button"
+                          >
+                            Remover
+                          </button>
+                        ) : (
+                          '-'
+                        )}
                       </td>
                     </tr>
                   )
                 })}
               </tbody>
+              <tfoot>
+                <tr>
+                  <td colSpan={4}>
+                    <div className="pedido-items-summary">
+                      <div className="pedido-total-venda">
+                        <span>Valor Total Venda:</span>
+                        <strong>{formatMoney(valorTotalVenda)}</strong>
+                      </div>
+                      <button
+                        className="btn btn-light"
+                        disabled={isReadOnly || !form.itens.length}
+                        onClick={applyTotalVendaToRevenda}
+                        type="button"
+                      >
+                        Usar no Valor Revenda
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         </section>
@@ -357,12 +456,14 @@ export function PedidoForm({
           </p>
         )}
 
-        <button className="btn btn-primary" disabled={isSubmitting} type="submit">
-          {isSubmitting ? 'Salvando...' : 'Salvar'}
-        </button>
+        {!isReadOnly && (
+          <button className="btn btn-primary" disabled={isSubmitting} type="submit">
+            {isSubmitting ? 'Salvando...' : 'Salvar'}
+          </button>
+        )}
       </form>
 
-      {isModalOpen && (
+      {isModalOpen && !isReadOnly && (
         <div className="modal-backdrop" role="presentation">
           <div aria-modal="true" className="modal-panel" role="dialog">
             <header className="modal-header">
@@ -420,6 +521,35 @@ export function PedidoForm({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {isSingleItemWarningOpen && !isReadOnly && (
+        <div className="modal-backdrop" role="presentation">
+          <div aria-modal="true" className="modal-panel" role="dialog">
+            <header className="modal-header">
+              <h3>Não é possível remover o último item</h3>
+            </header>
+
+            <div className="modal-body">
+              <p>
+                Todo pedido precisa manter pelo menos um item para continuar valido no sistema.
+              </p>
+              <p>
+                Se este produto não deve mais fazer parte do pedido, primeiro adicione um novo
+                item e depois remova o item atual.
+              </p>
+
+              <div className="actions-inline modal-actions">
+                <button className="btn btn-light" onClick={closeSingleItemWarningModal} type="button">
+                  Entendi
+                </button>
+                <button className="btn btn-primary" onClick={handleAddItemFromWarning} type="button">
+                  Adicionar outro item
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

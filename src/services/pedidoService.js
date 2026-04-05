@@ -39,6 +39,10 @@ function normalizePedidoItems(itens) {
   })
 }
 
+function hasOwn(obj, key) {
+  return Object.prototype.hasOwnProperty.call(obj || {}, key)
+}
+
 function normalizePayload(payload, isEditMode = false) {
   const normalized = {
     ...payload,
@@ -46,9 +50,7 @@ function normalizePayload(payload, isEditMode = false) {
     fkDistribuidor: Number(payload?.fkDistribuidor),
   }
 
-  const hasItens = Array.isArray(payload?.itens)
-    ? payload.itens.length > 0
-    : Boolean(payload?.itens)
+  const itensProvided = hasOwn(payload, 'itens')
 
   if (!Number.isFinite(normalized.fkCliente) || normalized.fkCliente <= 0) {
     throw new Error('Selecione um cliente valido para o pedido.')
@@ -58,9 +60,15 @@ function normalizePayload(payload, isEditMode = false) {
     throw new Error('Selecione um distribuidor valido para o pedido.')
   }
 
-  if (!isEditMode || hasItens) {
+  if (!isEditMode) {
     normalized.itens = normalizePedidoItems(payload?.itens)
-  } else if (isEditMode) {
+  } else if (itensProvided) {
+    if (Array.isArray(payload?.itens) && payload.itens.length === 0) {
+      normalized.itens = []
+    } else {
+      normalized.itens = normalizePedidoItems(payload?.itens)
+    }
+  } else {
     delete normalized.itens
   }
 

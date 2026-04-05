@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { EntityTable } from '../components/crud/EntityTable'
 import { StatusBanner } from '../components/crud/StatusBanner'
@@ -25,6 +25,28 @@ export function EntityListPage() {
   const [status, setStatus] = useState({ type: '', message: '' })
   const [lookup, setLookup] = useState({ clientes: {}, distribuidores: {} })
   const [pedidoFilter, setPedidoFilter] = useState(idPedidoParam)
+
+  const tableFields = useMemo(() => {
+    if (!entity) {
+      return []
+    }
+
+    if (entityKey !== 'pedidos') {
+      return entity.fields
+    }
+
+    const hiddenPedidoFields = new Set([
+      'numeroNotaDistribuidor',
+      'frete',
+      'transportadora',
+      'observacoes',
+    ])
+
+    return [
+      { name: entity.idField, label: 'ID', type: 'number', required: false },
+      ...entity.fields.filter((field) => !hiddenPedidoFields.has(field.name)),
+    ]
+  }, [entity, entityKey])
 
   useEffect(() => {
     setPedidoFilter(idPedidoParam)
@@ -55,14 +77,14 @@ export function EntityListPage() {
         }
 
         const requests = [service.list()]
-        if (entityKey === 'contatos') {
+        if (entityKey === 'contatos' || entityKey === 'pedidos') {
           requests.push(clienteService.list(), distribuidorService.list())
         }
 
         const [data, clientes = [], distribuidores = []] = await Promise.all(requests)
         setRows(Array.isArray(data) ? data : [])
 
-        if (entityKey === 'contatos') {
+        if (entityKey === 'contatos' || entityKey === 'pedidos') {
           setLookup({
             clientes: clientes.reduce((acc, item) => {
               acc[item.idCliente] = item.nomeFantasia || item.razaoSocial || `Cliente #${item.idCliente}`
@@ -74,6 +96,8 @@ export function EntityListPage() {
               return acc
             }, {}),
           })
+        } else {
+          setLookup({ clientes: {}, distribuidores: {} })
         }
       } catch (error) {
         setRows([])
@@ -105,13 +129,27 @@ export function EntityListPage() {
       return Array.isArray(row.itens) ? `${row.itens.length} item(ns)` : '0 item(ns)'
     }
 
+    if (entityKey === 'pedidos' && field.name === 'fkCliente') {
+      const idCliente = Number(row.fkCliente)
+      return Number.isFinite(idCliente) && idCliente > 0
+        ? lookup.clientes[idCliente] || `Cliente #${idCliente}`
+        : '-'
+    }
+
+    if (entityKey === 'pedidos' && field.name === 'fkDistribuidor') {
+      const idDistribuidor = Number(row.fkDistribuidor)
+      return Number.isFinite(idDistribuidor) && idDistribuidor > 0
+        ? lookup.distribuidores[idDistribuidor] || `Distribuidor #${idDistribuidor}`
+        : '-'
+    }
+
     const value = getValueByPath(row, field.name)
     if (value === null || value === undefined || value === '') {
       return '-'
     }
 
     if (typeof value === 'boolean') {
-      return value ? 'Sim' : 'Nao'
+      return value ? 'Sim' : 'Não'
     }
 
     if (Array.isArray(value)) {
@@ -194,6 +232,7 @@ export function EntityListPage() {
       <StatusBanner message={status.message} type={status.type} />
       <EntityTable
         entity={entity}
+        fields={tableFields}
         isLoading={isLoading}
         onDelete={handleDelete}
         renderCell={renderCell}

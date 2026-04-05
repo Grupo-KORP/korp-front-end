@@ -371,6 +371,35 @@ a {
   min-width: 620px;
 }
 
+.pedido-items-table tfoot td {
+  padding-top: 14px;
+  border-bottom: none;
+}
+
+.pedido-items-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.pedido-total-venda {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid #b8e6f0;
+  background: #e5f7fb;
+  color: #0f4f63;
+}
+
+.pedido-total-venda strong {
+  font-family: var(--font-title);
+  font-size: 1.05rem;
+}
+
 .form-error {
   color: #9b2118;
   margin-top: 0;

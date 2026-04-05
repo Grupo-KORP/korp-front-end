@@ -14,6 +14,7 @@ export function AppRoutes() {
         <Route element={<EntityListPage />} path=":entityKey" />
         <Route element={<EntityFormPage />} path=":entityKey/new" />
         <Route element={<EntityFormPage />} path=":entityKey/edit/:id" />
+        <Route element={<EntityFormPage />} path=":entityKey/view/:id" />
         <Route element={<NotFoundPage />} path="*" />
       </Route>
     </Routes>

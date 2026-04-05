@@ -25,7 +25,7 @@ export const itemPedidoService = {
   },
 
   async update() {
-    throw new Error('Atualizacao de item de pedido nao esta disponivel na API.')
+    throw new Error('Atualizacao de item de pedido não esta disponivel na API.')
   },
 
   async remove(id) {

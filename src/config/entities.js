@@ -11,10 +11,10 @@ export const entities = [
     allowDelete: true,
     fields: [
       { name: 'razaoSocial', label: 'Razao Social', type: 'text', required: true },
-      { name: 'nomeFantasia', label: 'Nome Fantasia', type: 'text', required: true },
+      { name: 'nomeFantasia', label: 'Nome Fantasia', type: 'text', required: false },
       { name: 'cnpj', label: 'CNPJ', type: 'text', required: true },
-      { name: 'telefone', label: 'Telefone', type: 'text', required: true },
-      { name: 'email', label: 'E-mail', type: 'email', required: true },
+      { name: 'telefone', label: 'Telefone', type: 'text', required: false },
+      { name: 'email', label: 'E-mail', type: 'email', required: false },
     ],
   },
   {
@@ -29,8 +29,8 @@ export const entities = [
     allowDelete: false,
     fields: [
       { name: 'nome', label: 'Nome', type: 'text', required: true },
-      { name: 'email', label: 'E-mail', type: 'email', required: true },
-      { name: 'telefone', label: 'Telefone', type: 'text', required: true },
+      { name: 'email', label: 'E-mail', type: 'email', required: false },
+      { name: 'telefone', label: 'Telefone', type: 'text', required: false },
       { name: 'idCliente', label: 'Cliente', type: 'select', valueType: 'number', required: false },
       { name: 'idDistribuidor', label: 'Distribuidor', type: 'select', valueType: 'number', required: false },
     ],
@@ -47,10 +47,10 @@ export const entities = [
     allowDelete: true,
     fields: [
       { name: 'razaoSocial', label: 'Razao Social', type: 'text', required: true },
-      { name: 'nomeFantasia', label: 'Nome Fantasia', type: 'text', required: true },
+      { name: 'nomeFantasia', label: 'Nome Fantasia', type: 'text', required: false },
       { name: 'cnpj', label: 'CNPJ', type: 'text', required: true },
-      { name: 'telefone', label: 'Telefone', type: 'text', required: true },
-      { name: 'email', label: 'E-mail', type: 'email', required: true },
+      { name: 'telefone', label: 'Telefone', type: 'text', required: false },
+      { name: 'email', label: 'E-mail', type: 'email', required: false },
     ],
   },
   {
@@ -97,7 +97,7 @@ export const entities = [
     allowDelete: true,
     fields: [
       { name: 'dataPedido', label: 'Data do Pedido', type: 'date', required: true },
-      { name: 'numeroNotaDistribuidor', label: 'Nota Distribuidor', type: 'number', required: true },
+      { name: 'numeroNotaDistribuidor', label: 'Nota Distribuidor', type: 'number', required: false },
       { name: 'valorTotalRevenda', label: 'Valor Revenda', type: 'number', required: true },
       { name: 'valorTotalFaturamento', label: 'Valor Faturamento', type: 'number', required: true },
       { name: 'statusPedido', label: 'Status', type: 'text', required: true },
