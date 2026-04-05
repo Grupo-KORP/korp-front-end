@@ -21,9 +21,11 @@ export function HomePage() {
               <Link className="btn btn-light" to={entity.routeBase}>
                 Listar
               </Link>
-              <Link className="btn btn-primary" to={`${entity.routeBase}/new`}>
-                Novo
-              </Link>
+              {entity.allowCreate !== false && (
+                <Link className="btn btn-primary" to={`${entity.routeBase}/new`}>
+                  Novo
+                </Link>
+              )}
             </div>
           </article>
         ))}

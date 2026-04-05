@@ -1,18 +1,34 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { EntityTable } from '../components/crud/EntityTable'
 import { StatusBanner } from '../components/crud/StatusBanner'
 import { useCrudEntity } from '../hooks/useCrudEntity'
 import { clienteService } from '../services/clienteService'
 import { distribuidorService } from '../services/distribuidorService'
 
+function getValueByPath(source, path) {
+  if (!source || !path) {
+    return undefined
+  }
+
+  return path.split('.').reduce((acc, key) => acc?.[key], source)
+}
+
 export function EntityListPage() {
   const { entityKey } = useParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { entity, service } = useCrudEntity(entityKey)
+  const idPedidoParam = searchParams.get('idPedido') || ''
+
   const [rows, setRows] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [status, setStatus] = useState({ type: '', message: '' })
   const [lookup, setLookup] = useState({ clientes: {}, distribuidores: {} })
+  const [pedidoFilter, setPedidoFilter] = useState(idPedidoParam)
+
+  useEffect(() => {
+    setPedidoFilter(idPedidoParam)
+  }, [idPedidoParam])
 
   useEffect(() => {
     if (!entity || !service) {
@@ -24,6 +40,20 @@ export function EntityListPage() {
     async function load() {
       try {
         setIsLoading(true)
+
+        if (entityKey === 'itens-pedido') {
+          if (!idPedidoParam) {
+            setRows([])
+            setStatus({ type: '', message: '' })
+            return
+          }
+
+          const data = await service.list({ idPedido: idPedidoParam })
+          setRows(Array.isArray(data) ? data : [])
+          setStatus({ type: '', message: '' })
+          return
+        }
+
         const requests = [service.list()]
         if (entityKey === 'contatos') {
           requests.push(clienteService.list(), distribuidorService.list())
@@ -46,6 +76,7 @@ export function EntityListPage() {
           })
         }
       } catch (error) {
+        setRows([])
         setStatus({ type: 'error', message: error.message })
       } finally {
         setIsLoading(false)
@@ -53,26 +84,56 @@ export function EntityListPage() {
     }
 
     load()
-  }, [entity, entityKey, service])
+  }, [entity, entityKey, idPedidoParam, service])
 
   function renderCell(field, row) {
-    if (entityKey !== 'contatos') {
-      return String(row[field.name] ?? '-')
+    if (entityKey === 'contatos') {
+      if (field.name === 'idCliente') {
+        const idCliente = row.idCliente
+        return idCliente ? lookup.clientes[idCliente] || `Cliente #${idCliente}` : '-'
+      }
+
+      if (field.name === 'idDistribuidor') {
+        const idDistribuidor = row.idDistribuidor
+        return idDistribuidor
+          ? lookup.distribuidores[idDistribuidor] || `Distribuidor #${idDistribuidor}`
+          : '-'
+      }
     }
 
-    if (field.name === 'idCliente') {
-      const idCliente = row.idCliente
-      return idCliente ? lookup.clientes[idCliente] || `Cliente #${idCliente}` : '-'
+    if (entityKey === 'pedidos' && field.name === 'itens') {
+      return Array.isArray(row.itens) ? `${row.itens.length} item(ns)` : '0 item(ns)'
     }
 
-    if (field.name === 'idDistribuidor') {
-      const idDistribuidor = row.idDistribuidor
-      return idDistribuidor
-        ? lookup.distribuidores[idDistribuidor] || `Distribuidor #${idDistribuidor}`
-        : '-'
+    const value = getValueByPath(row, field.name)
+    if (value === null || value === undefined || value === '') {
+      return '-'
     }
 
-    return String(row[field.name] ?? '-')
+    if (typeof value === 'boolean') {
+      return value ? 'Sim' : 'Nao'
+    }
+
+    if (Array.isArray(value)) {
+      return `${value.length} item(ns)`
+    }
+
+    if (typeof value === 'object') {
+      return value?.nome || value?.id || '-'
+    }
+
+    return String(value)
+  }
+
+  function handleItemPedidoFilterSubmit(event) {
+    event.preventDefault()
+
+    if (!pedidoFilter) {
+      setSearchParams({})
+      return
+    }
+
+    setSearchParams({ idPedido: pedidoFilter })
   }
 
   async function handleDelete(id) {
@@ -101,10 +162,34 @@ export function EntityListPage() {
           <h2>{entity.label}</h2>
           <p>Gerencie os registros de {entity.singularLabel.toLowerCase()}.</p>
         </div>
-        <Link className="btn btn-primary" to={`${entity.routeBase}/new`}>
-          Novo {entity.singularLabel}
-        </Link>
+        {entity.allowCreate !== false && (
+          <Link className="btn btn-primary" to={`${entity.routeBase}/new`}>
+            Novo {entity.singularLabel}
+          </Link>
+        )}
       </header>
+
+      {entityKey === 'itens-pedido' && (
+        <form className="inline-filter" onSubmit={handleItemPedidoFilterSubmit}>
+          <label className="field compact" htmlFor="pedido-filter">
+            <span>ID do Pedido</span>
+            <input
+              id="pedido-filter"
+              min="1"
+              onChange={(event) => setPedidoFilter(event.target.value)}
+              type="number"
+              value={pedidoFilter}
+            />
+          </label>
+          <button className="btn btn-light" type="submit">
+            Buscar Itens
+          </button>
+        </form>
+      )}
+
+      {entityKey === 'itens-pedido' && !idPedidoParam && (
+        <p className="info-text">Informe o ID do pedido para listar os itens.</p>
+      )}
 
       <StatusBanner message={status.message} type={status.type} />
       <EntityTable

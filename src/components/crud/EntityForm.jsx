@@ -1,4 +1,12 @@
 function parseValueByType(field, value) {
+  if (field.valueType === 'boolean') {
+    if (value === '' || value === null || value === undefined) {
+      return null
+    }
+
+    return value === 'true'
+  }
+
   if (field.valueType === 'number' || field.type === 'number') {
     if (value === '' || value === null || value === undefined) {
       return null
@@ -7,13 +15,40 @@ function parseValueByType(field, value) {
     return Number(value)
   }
 
+  if (field.valueType === 'json') {
+    if (!value) {
+      return []
+    }
+
+    return JSON.parse(value)
+  }
+
   return value
 }
 
 function buildInitialForm(entity, initialData) {
   return entity.fields.reduce((acc, field) => {
+    const initialValue = initialData?.[field.name]
+
+    if (field.valueType === 'json' && initialValue !== undefined && initialValue !== null) {
+      acc[field.name] = JSON.stringify(initialValue, null, 2)
+      return acc
+    }
+
+    if (field.valueType === 'boolean') {
+      if (initialValue === true) {
+        acc[field.name] = 'true'
+        return acc
+      }
+
+      if (initialValue === false) {
+        acc[field.name] = 'false'
+        return acc
+      }
+    }
+
     const fallback = field.type === 'number' ? '' : ''
-    acc[field.name] = initialData?.[field.name] ?? fallback
+    acc[field.name] = initialValue ?? fallback
     return acc
   }, {})
 }
@@ -54,6 +89,13 @@ export function EntityForm({ entity, initialData, onSubmit, isSubmitting, fieldO
                 </option>
               ))}
             </select>
+          ) : field.type === 'textarea' ? (
+            <textarea
+              defaultValue={initialForm[field.name]}
+              name={field.name}
+              required={field.required}
+              rows={5}
+            />
           ) : (
             <input
               defaultValue={initialForm[field.name]}
@@ -62,6 +104,7 @@ export function EntityForm({ entity, initialData, onSubmit, isSubmitting, fieldO
               type={field.type}
             />
           )}
+          {field.helpText && <small className="field-help">{field.helpText}</small>}
         </label>
       ))}
 

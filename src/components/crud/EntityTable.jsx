@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
 
 export function EntityTable({ entity, rows, isLoading, onDelete, renderCell }) {
+  const showActions = entity.allowEdit !== false || entity.allowDelete
+
   if (isLoading) {
     return <p className="info-text">Carregando dados...</p>
   }
@@ -17,7 +19,7 @@ export function EntityTable({ entity, rows, isLoading, onDelete, renderCell }) {
             {entity.fields.map((field) => (
               <th key={field.name}>{field.label}</th>
             ))}
-            <th>Acoes</th>
+            {showActions && <th>Acoes</th>}
           </tr>
         </thead>
         <tbody>
@@ -32,25 +34,26 @@ export function EntityTable({ entity, rows, isLoading, onDelete, renderCell }) {
                   {renderCell ? renderCell(field, row) : String(row[field.name] ?? '-')}
                 </td>
               ))}
-              <td>
-                <div className="actions-inline">
-                  <Link
-                    className="btn btn-light"
-                    to={`${entity.routeBase}/edit/${rowId}`}
-                  >
-                    Editar
-                  </Link>
-                  {entity.allowDelete && (
-                    <button
-                      className="btn btn-danger"
-                      onClick={() => onDelete(rowId)}
-                      type="button"
-                    >
-                      Excluir
-                    </button>
-                  )}
-                </div>
-              </td>
+              {showActions && (
+                <td>
+                  <div className="actions-inline">
+                    {entity.allowEdit !== false && (
+                      <Link className="btn btn-light" to={`${entity.routeBase}/edit/${rowId}`}>
+                        Editar
+                      </Link>
+                    )}
+                    {entity.allowDelete && (
+                      <button
+                        className="btn btn-danger"
+                        onClick={() => onDelete(rowId)}
+                        type="button"
+                      >
+                        Excluir
+                      </button>
+                    )}
+                  </div>
+                </td>
+              )}
             </tr>
             )
           })}
