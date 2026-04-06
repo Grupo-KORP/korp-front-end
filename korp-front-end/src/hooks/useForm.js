@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 /**
- * Hook genérico para controle de formulários.
+ * Hook para controle de formulários.
  *
  * Uso:
  *   const { values, errors, handleChange, validate, reset } = useForm(

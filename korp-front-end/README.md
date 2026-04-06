@@ -79,19 +79,3 @@ No arquivo `.env`:
 VITE_API_URL=https://api.tnd.com.br/v1
 ```
 
-### Endpoints esperados
-
-| Método | Endpoint            | Descrição               |
-|--------|---------------------|-------------------------|
-| POST   | `/auth/login`       | Autenticação do vendedor |
-| POST   | `/auth/logout`      | Invalidar sessão         |
-| POST   | `/colaboradores`    | Cadastrar colaborador    |
-| GET    | `/colaboradores`    | Listar colaboradores     |
-
-## Tecnologias
-
-- **React 18** + **Vite 5**
-- **TailwindCSS 3**
-- **React Router DOM 6**
-- **Axios** (disponível, uso configurado em `api.js`)
-- **Google Fonts** – Sora
