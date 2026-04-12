@@ -5,10 +5,10 @@ export function HomePage() {
   return (
     <section className="page-panel">
       <header className="page-header">
-        <h2>Frontend CRUD automatico</h2>
+        <h2>Frontend de testes do Korp API</h2>
         <p>
-          Este painel detecta as entidades mapeadas e gera listagem, criacao,
-          edicao e exclusao de forma padronizada.
+          Use este painel para validar fluxos com JWT (login e cadastro) e operar
+          todos os endpoints CRUD mapeados do back-end.
         </p>
       </header>
 

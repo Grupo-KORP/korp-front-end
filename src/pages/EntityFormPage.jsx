@@ -141,6 +141,16 @@ export function EntityFormPage() {
       return
     }
 
+    if (entityKey === 'usuarios') {
+      setFieldOptions({
+        role: [
+          { value: 1, label: 'VEND (Vendas)' },
+          { value: 2, label: 'FINAN (Financeiro)' },
+        ],
+      })
+      return
+    }
+
     setFieldOptions({})
   }, [canUseForm, entity, entityKey])
 

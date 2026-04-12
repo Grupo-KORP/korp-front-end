@@ -68,6 +68,21 @@ export const entities = [
       { name: 'email', label: 'E-mail', type: 'email', required: true },
       { name: 'senha', label: 'Senha', type: 'password', required: true },
       { name: 'telefone', label: 'Telefone', type: 'text', required: true },
+      {
+        name: 'role',
+        label: 'Perfil',
+        type: 'select',
+        valueType: 'number',
+        required: false,
+        defaultValue: 1,
+        helpText: '1 = VEND, 2 = FINAN',
+      },
+      {
+        name: 'percentualComissao',
+        label: 'Percentual de Comissao',
+        type: 'number',
+        required: false,
+      },
     ],
   },
   {

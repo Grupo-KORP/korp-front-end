@@ -28,7 +28,8 @@ function parseValueByType(field, value) {
 
 function buildInitialForm(entity, initialData) {
   return entity.fields.reduce((acc, field) => {
-    const initialValue = initialData?.[field.name]
+    const hasInitialValue = initialData && Object.prototype.hasOwnProperty.call(initialData, field.name)
+    const initialValue = hasInitialValue ? initialData?.[field.name] : field.defaultValue
 
     if (field.valueType === 'json' && initialValue !== undefined && initialValue !== null) {
       acc[field.name] = JSON.stringify(initialValue, null, 2)
@@ -47,7 +48,7 @@ function buildInitialForm(entity, initialData) {
       }
     }
 
-    const fallback = field.type === 'number' ? '' : ''
+    const fallback = ''
     acc[field.name] = initialValue ?? fallback
     return acc
   }, {})

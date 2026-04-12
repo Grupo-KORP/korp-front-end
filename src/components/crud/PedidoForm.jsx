@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { formatNormalizedNumber, parseFlexibleNumber } from '../../utils/numberParsers'
 
 function mapInitialItems(initialItems) {
   if (!Array.isArray(initialItems)) {
@@ -41,6 +42,7 @@ function normalizeInitialData(initialData) {
     numeroNotaDistribuidor: initialData?.numeroNotaDistribuidor ?? '',
     valorTotalRevenda: initialData?.valorTotalRevenda ?? '',
     valorTotalFaturamento: initialData?.valorTotalFaturamento ?? '',
+    percentualComissao: initialData?.percentualComissao ?? '',
     statusPedido: normalizedStatusMap[originalStatus] || originalStatus,
     frete:
       typeof initialData?.frete === 'boolean'
@@ -96,6 +98,46 @@ export function PedidoForm({
     }, 0)
   }, [form.itens])
 
+  const valorTotalRevendaNumero = useMemo(
+    () => parseFlexibleNumber(form.valorTotalRevenda),
+    [form.valorTotalRevenda],
+  )
+
+  const valorTotalFaturamentoNumero = useMemo(
+    () => parseFlexibleNumber(form.valorTotalFaturamento),
+    [form.valorTotalFaturamento],
+  )
+
+  const percentualComissaoNumero = useMemo(
+    () => parseFlexibleNumber(form.percentualComissao),
+    [form.percentualComissao],
+  )
+
+  const fatorComissao = useMemo(() => {
+    if (!Number.isFinite(percentualComissaoNumero)) {
+      return Number.NaN
+    }
+
+    // Accept both 5 (5%) and 0.05 (5%) to reduce user input friction.
+    return percentualComissaoNumero > 1 ? percentualComissaoNumero / 100 : percentualComissaoNumero
+  }, [percentualComissaoNumero])
+
+  const margemPedido = useMemo(() => {
+    if (!Number.isFinite(valorTotalFaturamentoNumero) || !Number.isFinite(valorTotalRevendaNumero)) {
+      return Number.NaN
+    }
+
+    return valorTotalFaturamentoNumero - valorTotalRevendaNumero
+  }, [valorTotalFaturamentoNumero, valorTotalRevendaNumero])
+
+  const valorComissaoCalculada = useMemo(() => {
+    if (!Number.isFinite(margemPedido) || !Number.isFinite(fatorComissao)) {
+      return Number.NaN
+    }
+
+    return margemPedido * fatorComissao
+  }, [margemPedido, fatorComissao])
+
   const produtoOptions = fieldOptions.fkProduto || []
   const statusOptions = fieldOptions.statusPedido || []
   const itemsRequired = true
@@ -115,6 +157,20 @@ export function PedidoForm({
 
   function updateField(name, value) {
     setForm((prev) => ({ ...prev, [name]: value }))
+  }
+
+  function normalizeNumberField(name) {
+    setForm((prev) => {
+      const parsed = parseFlexibleNumber(prev[name])
+      if (!Number.isFinite(parsed)) {
+        return prev
+      }
+
+      return {
+        ...prev,
+        [name]: formatNormalizedNumber(parsed),
+      }
+    })
   }
 
   function openModal() {
@@ -205,13 +261,35 @@ export function PedidoForm({
     const numeroNotaDistribuidor =
       form.numeroNotaDistribuidor === '' || form.numeroNotaDistribuidor === null
         ? null
-        : Number(form.numeroNotaDistribuidor)
+        : parseFlexibleNumber(form.numeroNotaDistribuidor)
+
+    const valorTotalRevenda = parseFlexibleNumber(form.valorTotalRevenda)
+    const valorTotalFaturamento = parseFlexibleNumber(form.valorTotalFaturamento)
+
+    if (!Number.isFinite(valorTotalRevenda)) {
+      setLocalError('Informe um valor de revenda valido.')
+      return
+    }
+
+    if (!Number.isFinite(valorTotalFaturamento)) {
+      setLocalError('Informe um valor de faturamento valido.')
+      return
+    }
+
+    if (
+      form.percentualComissao !== '' &&
+      form.percentualComissao !== null &&
+      !Number.isFinite(parseFlexibleNumber(form.percentualComissao))
+    ) {
+      setLocalError('Informe um percentual de comissao valido.')
+      return
+    }
 
     await onSubmit({
       dataPedido: form.dataPedido,
       numeroNotaDistribuidor,
-      valorTotalRevenda: Number(form.valorTotalRevenda),
-      valorTotalFaturamento: Number(form.valorTotalFaturamento),
+      valorTotalRevenda,
+      valorTotalFaturamento,
       statusPedido: form.statusPedido,
       frete: form.frete === 'true',
       transportadora: form.transportadora,
@@ -254,9 +332,11 @@ export function PedidoForm({
             disabled={isReadOnly}
             name="valorTotalRevenda"
             onChange={(event) => updateField('valorTotalRevenda', event.target.value)}
+            onBlur={() => normalizeNumberField('valorTotalRevenda')}
             required
             step="0.01"
-            type="number"
+            type="text"
+            inputMode="decimal"
             value={form.valorTotalRevenda}
           />
         </label>
@@ -267,9 +347,11 @@ export function PedidoForm({
             disabled={isReadOnly}
             name="valorTotalFaturamento"
             onChange={(event) => updateField('valorTotalFaturamento', event.target.value)}
+            onBlur={() => normalizeNumberField('valorTotalFaturamento')}
             required
             step="0.01"
-            type="number"
+            type="text"
+            inputMode="decimal"
             value={form.valorTotalFaturamento}
           />
         </label>
@@ -447,6 +529,32 @@ export function PedidoForm({
                 </tr>
               </tfoot>
             </table>
+          </div>
+        </section>
+
+        <section className="pedido-comissao-card">
+          <header className="pedido-comissao-card-header">
+            <h3>Resumo de Comissao</h3>
+            <span>Campo calculado automaticamente</span>
+          </header>
+          <p className="pedido-comissao-card-formula">Formula: (Faturamento - Revenda) x Comissao</p>
+          <div className="pedido-comissao-card-grid">
+            <article className="pedido-comissao-stat">
+              <small>Base (Faturamento - Revenda)</small>
+              <strong>{Number.isFinite(margemPedido) ? `R$ ${formatMoney(margemPedido)}` : '--'}</strong>
+            </article>
+            <article className="pedido-comissao-stat">
+              <small>Comissao aplicada</small>
+              <strong>{Number.isFinite(fatorComissao) ? `${(fatorComissao * 100).toFixed(2)}%` : '--'}</strong>
+            </article>
+            <article className="pedido-comissao-stat destaque">
+              <small>Comissao estimada</small>
+              <strong>
+                {Number.isFinite(valorComissaoCalculada)
+                  ? `R$ ${formatMoney(valorComissaoCalculada)}`
+                  : '--'}
+              </strong>
+            </article>
           </div>
         </section>
 

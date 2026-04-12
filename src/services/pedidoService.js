@@ -1,4 +1,5 @@
 import { api } from './api'
+import { parseFlexibleNumber } from '../utils/numberParsers'
 
 function normalizePedidoItems(itens) {
   if (typeof itens === 'string') {
@@ -15,9 +16,9 @@ function normalizePedidoItems(itens) {
   }
 
   return itens.map((item, index) => {
-    const fkProduto = Number(item?.fkProduto)
-    const quantidade = Number(item?.quantidade)
-    const valorUnitario = Number(item?.valorUnitario)
+    const fkProduto = parseFlexibleNumber(item?.fkProduto)
+    const quantidade = parseFlexibleNumber(item?.quantidade)
+    const valorUnitario = parseFlexibleNumber(item?.valorUnitario)
 
     if (!Number.isFinite(fkProduto) || fkProduto <= 0) {
       throw new Error(`Item ${index + 1}: fkProduto invalido.`)
@@ -32,8 +33,8 @@ function normalizePedidoItems(itens) {
     }
 
     return {
-      fkProduto,
-      quantidade,
+      fkProduto: Math.trunc(fkProduto),
+      quantidade: Math.trunc(quantidade),
       valorUnitario,
     }
   })
@@ -44,10 +45,26 @@ function hasOwn(obj, key) {
 }
 
 function normalizePayload(payload, isEditMode = false) {
+  const fkCliente = parseFlexibleNumber(payload?.fkCliente)
+  const fkDistribuidor = parseFlexibleNumber(payload?.fkDistribuidor)
+  const valorTotalRevenda = parseFlexibleNumber(payload?.valorTotalRevenda)
+  const valorTotalFaturamento = parseFlexibleNumber(payload?.valorTotalFaturamento)
+  const numeroNotaDistribuidorRaw = payload?.numeroNotaDistribuidor
+
+  const numeroNotaDistribuidor =
+    numeroNotaDistribuidorRaw === '' ||
+    numeroNotaDistribuidorRaw === null ||
+    numeroNotaDistribuidorRaw === undefined
+      ? null
+      : Math.trunc(parseFlexibleNumber(numeroNotaDistribuidorRaw))
+
   const normalized = {
     ...payload,
-    fkCliente: Number(payload?.fkCliente),
-    fkDistribuidor: Number(payload?.fkDistribuidor),
+    fkCliente: Math.trunc(fkCliente),
+    fkDistribuidor: Math.trunc(fkDistribuidor),
+    numeroNotaDistribuidor,
+    valorTotalRevenda,
+    valorTotalFaturamento,
   }
 
   const itensProvided = hasOwn(payload, 'itens')
@@ -58,6 +75,21 @@ function normalizePayload(payload, isEditMode = false) {
 
   if (!Number.isFinite(normalized.fkDistribuidor) || normalized.fkDistribuidor <= 0) {
     throw new Error('Selecione um distribuidor valido para o pedido.')
+  }
+
+  if (!Number.isFinite(normalized.valorTotalRevenda)) {
+    throw new Error('Informe um valor de revenda valido.')
+  }
+
+  if (!Number.isFinite(normalized.valorTotalFaturamento)) {
+    throw new Error('Informe um valor de faturamento valido.')
+  }
+
+  if (
+    normalized.numeroNotaDistribuidor !== null &&
+    !Number.isFinite(normalized.numeroNotaDistribuidor)
+  ) {
+    throw new Error('Informe um numero de nota distribuidor valido.')
   }
 
   if (!isEditMode) {
