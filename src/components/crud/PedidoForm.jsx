@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useAuth } from '../../context/AuthContext'
+import { usuarioService } from '../../services/usuarioService'
 import { formatNormalizedNumber, parseFlexibleNumber } from '../../utils/numberParsers'
 
 function mapInitialItems(initialItems) {
@@ -42,7 +44,6 @@ function normalizeInitialData(initialData) {
     numeroNotaDistribuidor: initialData?.numeroNotaDistribuidor ?? '',
     valorTotalRevenda: initialData?.valorTotalRevenda ?? '',
     valorTotalFaturamento: initialData?.valorTotalFaturamento ?? '',
-    percentualComissao: initialData?.percentualComissao ?? '',
     statusPedido: normalizedStatusMap[originalStatus] || originalStatus,
     frete:
       typeof initialData?.frete === 'boolean'
@@ -73,9 +74,12 @@ export function PedidoForm({
   onSubmit,
   fieldOptions = {},
 }) {
+  const { user } = useAuth()
   const parsedInitial = useMemo(() => normalizeInitialData(initialData), [initialData])
 
   const [form, setForm] = useState(parsedInitial)
+  const [percentualComissaoUsuario, setPercentualComissaoUsuario] = useState(Number.NaN)
+  const [isLoadingPercentualComissao, setIsLoadingPercentualComissao] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isSingleItemWarningOpen, setIsSingleItemWarningOpen] = useState(false)
   const [newItem, setNewItem] = useState({
@@ -109,8 +113,8 @@ export function PedidoForm({
   )
 
   const percentualComissaoNumero = useMemo(
-    () => parseFlexibleNumber(form.percentualComissao),
-    [form.percentualComissao],
+    () => parseFlexibleNumber(percentualComissaoUsuario),
+    [percentualComissaoUsuario],
   )
 
   const fatorComissao = useMemo(() => {
@@ -145,6 +149,44 @@ export function PedidoForm({
   useEffect(() => {
     setForm(parsedInitial)
   }, [parsedInitial])
+
+  useEffect(() => {
+    let isMounted = true
+    const idUsuario = Number(user?.idUsuario)
+
+    if (!Number.isFinite(idUsuario) || idUsuario <= 0) {
+      setPercentualComissaoUsuario(Number.NaN)
+      return undefined
+    }
+
+    async function loadPercentualComissao() {
+      try {
+        setIsLoadingPercentualComissao(true)
+        const usuario = await usuarioService.getById(idUsuario)
+        if (!isMounted) {
+          return
+        }
+
+        setPercentualComissaoUsuario(parseFlexibleNumber(usuario?.percentualComissao))
+      } catch {
+        if (!isMounted) {
+          return
+        }
+
+        setPercentualComissaoUsuario(Number.NaN)
+      } finally {
+        if (isMounted) {
+          setIsLoadingPercentualComissao(false)
+        }
+      }
+    }
+
+    loadPercentualComissao()
+
+    return () => {
+      isMounted = false
+    }
+  }, [user?.idUsuario])
 
   function labelRequired(text, requiredInCreate = false) {
     return (
@@ -273,15 +315,6 @@ export function PedidoForm({
 
     if (!Number.isFinite(valorTotalFaturamento)) {
       setLocalError('Informe um valor de faturamento valido.')
-      return
-    }
-
-    if (
-      form.percentualComissao !== '' &&
-      form.percentualComissao !== null &&
-      !Number.isFinite(parseFlexibleNumber(form.percentualComissao))
-    ) {
-      setLocalError('Informe um percentual de comissao valido.')
       return
     }
 
@@ -545,7 +578,13 @@ export function PedidoForm({
             </article>
             <article className="pedido-comissao-stat">
               <small>Comissao aplicada</small>
-              <strong>{Number.isFinite(fatorComissao) ? `${(fatorComissao * 100).toFixed(2)}%` : '--'}</strong>
+              <strong>
+                {isLoadingPercentualComissao
+                  ? 'Carregando...'
+                  : Number.isFinite(fatorComissao)
+                    ? `${(fatorComissao * 100).toFixed(2)}%`
+                    : '--'}
+              </strong>
             </article>
             <article className="pedido-comissao-stat destaque">
               <small>Comissao estimada</small>
