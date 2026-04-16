@@ -1,16 +1,81 @@
-# React + Vite
+# KORP – TND Brasil
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Interface de autenticação para o sistema KORP da TND Brasil.
 
+## Telas implementadas
 
+| Rota        | Descrição                     |
+|-------------|-------------------------------|
+| `/login`    | Login do vendedor             |
+| `/cadastro` | Cadastro de novo colaborador  |
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Como rodar
 
-## React Compiler
+### Pré-requisitos
+- Node.js 18+
+- npm ou yarn
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Instalação
 
-## Expanding the ESLint configuration
+```bash
+# 1. Instale as dependências
+npm install
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+# 2. Configure as variáveis de ambiente
+cp .env.example .env
+# Edite o .env com a URL real do backend
+
+# 3. Inicie o servidor de desenvolvimento
+npm run dev
+```
+
+A aplicação estará disponível em `http://localhost:5173`.
+
+### Build para produção
+
+```bash
+npm run build
+npm run preview   # prévia local do build
+```
+
+## Estrutura de pastas
+
+```
+src/
+├── components/
+│   ├── forms/
+│   │   ├── LoginForm.jsx       # Formulário de login
+│   │   └── CadastroForm.jsx    # Formulário de cadastro
+│   └── ui/
+│       ├── InputField.jsx      # Input reutilizável com validação
+│       ├── Button.jsx          # Botão com variantes e loading
+│       └── Alert.jsx           # Alerta de erro/sucesso
+├── hooks/
+│   ├── useAuth.js              # Hook de autenticação
+│   └── useForm.js              # Hook genérico de formulários
+├── layouts/
+│   └── AuthLayout.jsx          # Layout split-screen compartilhado
+├── pages/
+│   ├── LoginPage.jsx           # Página /login
+│   └── CadastroPage.jsx        # Página /cadastro
+├── routes/
+│   └── AppRoutes.jsx           # Configuração de rotas
+├── services/
+│   └── api.js                  # Camada de integração com backend (+ mocks)
+├── App.jsx
+├── main.jsx
+└── index.css
+```
+
+## Integração com Backend
+
+Todas as chamadas de API estão centralizadas em `src/services/api.js`.
+Cada função tem um comentário `// TODO:` indicando onde substituir o mock pela chamada real.
+
+### Configurar URL base
+
+No arquivo `.env`:
+```
+VITE_API_URL=https://api.tnd.com.br/v1
+```
+
