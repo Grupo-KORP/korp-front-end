@@ -2,6 +2,7 @@ import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import LoginPage from '../pages/LoginPage'
 import CadastroPage from '../pages/CadastroPage'
+import PedidoPage from '../pages/PedidoPage'
 
 /**
  * Configuração central de rotas da aplicação.
@@ -31,6 +32,8 @@ function AppRoutes() {
 
       {/* Fallback para rotas não encontradas */}
       <Route path="*" element={<Navigate to="/login" replace />} />
+
+      <Route path="/pedido" element={<PedidoPage />} />
     </Routes>
   )
 }
