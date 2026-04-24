@@ -1,4 +1,4 @@
-import Navbar from "../layout/Navbar";
+import NavbarVendedor from "../layout/NavbarVendedor";
 import "./PedidoPage.css";
 import PedidoForm from "../components/forms/PedidoForm";
 import ResumoPedido from "../components/pedido/ResumoPedido";
@@ -30,7 +30,7 @@ export default function PedidoPage() {
 
     return (
         <div className="geral">
-            <Navbar />
+            <NavbarVendedor />
 
             <div className="pedido-wrapper">
                 <div className="pedido-content">
