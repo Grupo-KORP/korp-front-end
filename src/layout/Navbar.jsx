@@ -24,12 +24,10 @@ export default function Navbar() {
       <nav className="flex items-center justify-between px-8 py-4 rounded-2xl mx-6 mt-4 shadow-lg"
         style={{ background: "linear-gradient(135deg, #0f2557 0%, #1a3a7a 60%, #1e4d9b 100%)" }}>
 
-        {/* Logo */}
         <div className="flex items-center">
           <img src={logo} alt="TND Brasil" className="h-10 w-auto object-contain" />
         </div>
 
-        {/* Menu */}
         <div className="flex items-center gap-8">
           {menu.map((item) => (
             <button
@@ -46,7 +44,6 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* Actions */}
         <div className="flex items-center gap-2">
           <button
             onClick={toggleDark}
@@ -71,7 +68,6 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Modal de logout */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl p-8 w-80 flex flex-col items-center gap-6">

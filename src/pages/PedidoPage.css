@@ -1,0 +1,46 @@
+.pedido-wrapper {
+  margin: 0 12px;
+  padding: 12px 0;
+  min-height: calc(100vh - 60px);
+  display: flex;
+  flex-direction: column;
+}
+
+.pedido-header {
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.pedido-header h1 {
+  margin: 0 0 8px 0;
+  font-size: 28px;
+}
+
+.pedido-header p {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.pedido-content {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+  align-items: flex-start;
+  flex: 1;
+  min-height: 0;
+}
+
+/* SCROLL só na esquerda */
+.form-area {
+  overflow-y: auto;
+  padding-right: 4px;
+  max-height: 70vh;
+}
+
+/* FIXO na direita */
+.resumo-area {
+  position: sticky;
+  top: 20px;
+  height: fit-content;
+}

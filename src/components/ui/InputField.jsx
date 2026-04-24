@@ -1,27 +1,10 @@
 import React, { useState } from 'react'
+import './InputField.css'
 
-/**
- * InputField
- *
- * Campo de input reutilizável com suporte a:
- *   - label flutuante (placeholder visível)
- *   - exibição de erro
- *   - toggle de senha (show/hide)
- *   - ícone opcional
- *
- * Props:
- *   name        {string}   - name do input (usado pelo useForm)
- *   type        {string}   - tipo do input (text, email, password, tel…)
- *   placeholder {string}   - placeholder exibido
- *   value       {string}   - valor controlado
- *   onChange    {function} - handler de mudança
- *   onBlur      {function} - handler de blur
- *   error       {string}   - mensagem de erro
- *   disabled    {boolean}  - desabilita o campo
- *   autoFocus   {boolean}  - foco automático
- */
 function InputField({
+  label,
   name,
+  className = '',
   type        = 'text',
   placeholder = '',
   value       = '',
@@ -36,7 +19,13 @@ function InputField({
   const resolvedType = isPassword ? (showPassword ? 'text' : 'password') : type
 
   return (
-    <div className="flex flex-col gap-1 w-full">
+    <div className={`input-wrapper ${className}`}>
+      {label && (
+        <label className="input-label">
+          {label.toUpperCase()}
+        </label>
+      )}
+
       <div className="relative">
         <input
           id={name}
@@ -49,16 +38,7 @@ function InputField({
           disabled={disabled}
           autoFocus={autoFocus}
           autoComplete={isPassword ? 'current-password' : 'on'}
-          className={[
-            'w-full rounded-xl border bg-gray-50 px-4 py-3.5 text-sm text-gray-800',
-            'placeholder-gray-400 outline-none transition-all duration-200',
-            'focus:bg-white focus:ring-2',
-            error
-              ? 'border-red-400 focus:ring-red-200'
-              : 'border-gray-200 focus:border-brand-blue focus:ring-blue-100',
-            disabled ? 'opacity-50 cursor-not-allowed' : '',
-            isPassword ? 'pr-11' : '',
-          ].join(' ')}
+          className="input-field"
         />
 
         {/* Botão show/hide senha */}
@@ -67,7 +47,7 @@ function InputField({
             type="button"
             tabIndex={-1}
             onClick={() => setShowPassword(p => !p)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+            className="input-toggle-password"
             aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
           >
             {showPassword ? <EyeOffIcon /> : <EyeIcon />}
@@ -77,7 +57,7 @@ function InputField({
 
       {/* Mensagem de erro */}
       {error && (
-        <p className="text-xs text-red-500 pl-1 animate-pulse">{error}</p>
+        <p className="input-error">{error}</p>
       )}
     </div>
   )
