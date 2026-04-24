@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Navbar from "../layouts/Navbar";
+import Navbar from "../layout/Navbar";
 import Alert from "../components/ui/Alert";
 
 const initialVendedores = [
