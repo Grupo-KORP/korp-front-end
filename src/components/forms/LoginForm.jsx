@@ -72,21 +72,21 @@ function LoginForm() {
         error={errors.senha}
       />
 
+      <div className="flex justify-end mt-2">
+        <Button type="submit" loading={loading} variant="primary">
+          Entrar
+        </Button>
+      </div>
+      
       {/* Link esqueci senha — TODO: criar rota /esqueci-senha */}
       <div className="flex justify-end">
         <button
           type="button"
           className="text-xs text-brand-blue hover:underline"
-          onClick={() => {/* TODO: navigate('/esqueci-senha') */}}
+          onClick={() => {/* TODO: navigate('/esqueci-senha') */ }}
         >
           Esqueci minha senha
         </button>
-      </div>
-
-      <div className="flex justify-end mt-2">
-        <Button type="submit" loading={loading} variant="primary">
-          Entrar
-        </Button>
       </div>
     </form>
   )
