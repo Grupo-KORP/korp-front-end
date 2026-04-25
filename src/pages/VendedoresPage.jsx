@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Navbar from "../layout/Navbar";
 import Alert from "../components/ui/Alert";
+import { api } from "../services/api.js"
 
 const initialVendedores = [
   { id: 1, codigo: "V1", nome: "VENDEDOR 1", emailInterno: "maria.silva@tndbrasil.com", emailExterno: "maria.silva@microsoft.com", compras: 5, status: "Ativo", comissao: "30%" },
@@ -47,42 +48,41 @@ export default function VendedoresPage() {
     return Object.keys(errs).length === 0;
   }
 
-  function handleSubmit(e) {
-    e.preventDefault();
-    if (!validate()) return;
 
-    if (editingId !== null) {
-      setVendedores((prev) =>
-        prev.map((v) =>
-          v.id === editingId
-            ? { ...v, nome: form.nome.toUpperCase(), emailExterno: form.email, emailInterno: form.email, comissao: form.comissao, status: form.status }
-            : v
-        )
+async function handleSubmit(e) {
+  e.preventDefault();
+  if (!validate()) return;
+
+  const payload = {
+    nome: form.nome.toUpperCase(),
+    email: form.email,
+    senha: 123456,
+    telefone: form.fone,
+    role: 2,
+    percentualComissao: parseFloat(form.comissao)
+  };
+
+  try {
+  
+      const response = await api.post(
+        `/usuario`,
+        payload
       );
-      setSuccess("Vendedor atualizado com sucesso!");
-      setEditingId(null);
-    } else {
-      const nextCodigo = `V${vendedores.length + 1}`;
-      const nextId = vendedores.length + 1;
-      setVendedores((prev) => [
-        ...prev,
-        {
-          id: nextId,
-          codigo: nextCodigo,
-          nome: form.nome.toUpperCase(),
-          emailInterno: form.email,
-          emailExterno: form.email,
-          compras: 0,
-          status: form.status,
-          comissao: form.comissao,
-        },
-      ]);
+
+      console.log(response.data);
+
+      setVendedores((prev) => [...prev, response.data]);
+
       setSuccess("Vendedor cadastrado com sucesso!");
-    }
+    
 
     setForm(emptyForm);
     setTimeout(() => setSuccess(null), 3000);
+
+  } catch (error) {
+    console.error("Erro na requisição:", error);
   }
+}
 
   function handleEdit(v) {
     setEditingId(v.id);
