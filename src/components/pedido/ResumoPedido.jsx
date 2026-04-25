@@ -6,7 +6,7 @@ import perfilDistribuidor from "../../assets/distribuidor.png";
 export default function ResumoPedido({ formData, onEntregaChange }) {
   const cliente = formData?.cliente || {};
   const distribuidor = formData?.distribuidor || {};
-  const produto = formData?.produto || {};
+  const produtos = formData?.produtos || [];
   const entrega = formData?.entrega || { endereco: "", cidade: "", cep: "" };
 
   // Estado local para campos de entrega editáveis
@@ -30,10 +30,17 @@ export default function ResumoPedido({ formData, onEntregaChange }) {
 
   const clienteFaturado = cliente.razaoSocial;
   const distribuidorName = distribuidor.razaoSocial;
-  const produtoDesc = produto.descricao ;
+  const produtoDesc = produto.descricao;
 
-  const valorCompra = parseFloat(produto.valorTotal) || 0;
-  const valorFaturamento = parseFloat(produto.totalFaturado) || 0;
+  const valorCompra = produtos.reduce(
+    (acc, p) => acc + (parseFloat(p.valorTotal) || 0),
+    0
+  );
+
+  const valorFaturamento = produtos.reduce(
+    (acc, p) => acc + (parseFloat(p.totalFaturado) || 0),
+    0
+  );
   const comissao = valorFaturamento - valorCompra;
 
   const fmt = (v) =>
@@ -94,42 +101,52 @@ export default function ResumoPedido({ formData, onEntregaChange }) {
 
         <div className="resumo-field">
           <span className="resumo-label">PRODUTO</span>
-          <div className="resumo-select-display">
-          
+          <div className="resumo-produtos-scroll">
+            {produtos.length === 0 ? (
+              <span className="resumo-empty">Nenhum produto</span>
+            ) : (
+              produtos.map((p, i) => (
+                <div key={i} className="resumo-produto-item">
+                  <span>{p.descricao || "Produto"}</span>
+                </div>
+              ))
+            )}
           </div>
+
         </div>
       </div>
 
-      {/* ── Resumo Financeiro ── */}
-      <div className="resumo-card">
-        <div className="resumo-card-title">
-          <span className="resumo-title-icon"><img src={dinheiroIcon} alt="icone-dinheiro" /></span>
-          Resumo Financeiro
-        </div>
+  {/* ── Resumo Financeiro ── */ }
+  <div className="resumo-card">
+    <div className="resumo-card-title">
+      <span className="resumo-title-icon"><img src={dinheiroIcon} alt="icone-dinheiro" /></span>
+      Resumo Financeiro
+    </div>
 
-        <div className="financeiro-grid">
-          <div className="financeiro-item">
-            <span className="resumo-label">VALOR DE COMPRA</span>
-            <span className="financeiro-valor">{fmt(valorCompra)}</span>
-          </div>
-          <div className="financeiro-item">
-            <span className="resumo-label">VALOR DE FATURAMENTO</span>
-            <span className="financeiro-valor green">{fmt(valorFaturamento)}</span>
-          </div>
-        </div>
-
-        <div className="comissao-box">
-          <span className="comissao-label">TOTAL DE COMISSÃO BRUTA</span>
-          <span className="comissao-valor">{fmt(comissao)}</span>
-        </div>
-
-        <button className="btn-primary">
-          Adicionar Pedido
-        </button>
-        <button className="btn-secondary">
-          ⬇ Baixar PDF
-        </button>
+    <div className="financeiro-grid">
+      <div className="financeiro-item">
+        <span className="resumo-label">VALOR DE COMPRA</span>
+        <span className="financeiro-valor">{fmt(valorCompra)}</span>
+      </div>
+      <div className="financeiro-item">
+        <span className="resumo-label">VALOR DE FATURAMENTO</span>
+        <span className="financeiro-valor green">{fmt(valorFaturamento)}</span>
       </div>
     </div>
+
+    <div className="comissao-box">
+      <span className="comissao-label">TOTAL DE COMISSÃO BRUTA</span>
+      <span className="comissao-valor">{fmt(comissao)}</span>
+    </div>
+
+    <button className="btn-primary">
+      Adicionar Pedido
+    </button>
+    <button className="btn-secondary">
+      ⬇ Baixar PDF
+    </button>
+  </div>
+    </div>
   );
+
 }

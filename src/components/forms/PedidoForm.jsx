@@ -5,16 +5,35 @@ import perfilCliente from "../../assets/perfil_cliente.png";
 import carrinho from "../../assets/produto_carrinho.png";
 
 const UF_LIST = [
-  "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS",
-  "MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO",
+  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS",
+  "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO",
 ];
 
 function ClienteSection({ onChange }) {
   const [open, setOpen] = useState(true);
+  const [showModal, setShowModal] = useState(false);
   const [data, setData] = useState({
     razaoSocial: "", cnpj: "", inscEst: "", fone: "", cep: "",
     endereco: "", cidade: "", uf: "", contato: "", email: "",
   });
+  const [search, setSearch] = useState("");
+  const clientesMock = [
+    {
+      id: 1,
+      razaoSocial: "Tech Solutions Ltda",
+      cnpj: "00.000.000/0000-00",
+      cidade: "São Paulo",
+      uf: "SP",
+      email: "contato@tech.com",
+      fone: "(11) 99999-9999",
+      endereco: "Rua das Inovações, 123",
+      contato: "Maria Silva",
+    }
+  ];
+
+  const clientesFiltrados = clientesMock.filter((c) =>
+    c.razaoSocial.toLowerCase().includes(search.toLowerCase())
+  );
 
   const handle = (e) => {
     const updated = { ...data, [e.target.name]: e.target.value };
@@ -30,8 +49,14 @@ function ClienteSection({ onChange }) {
           Dados do Cliente
         </div>
         <div className="section-header-right">
-          <button className="btn-link" onClick={(e) => e.stopPropagation()}>
-            ⊕ Adicionar Cliente
+          <button
+            className="btn-link"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowModal(true);
+            }}
+          >
+            + Adicionar Cliente Cadastrado
           </button>
           <span className={`chevron ${open ? "open" : ""}`}>▾</span>
         </div>
@@ -92,6 +117,49 @@ function ClienteSection({ onChange }) {
               <label>E-MAIL</label>
               <input name="email" type="email" value={data.email} onChange={handle} placeholder="contato@empresa.com" />
             </div>
+          </div>
+        </div>
+      )}
+
+      {showModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+
+            <h3>Buscar Cliente</h3>
+
+            {/*  INPUT DE BUSCA */}
+            <input
+              type="text"
+              placeholder="Digite o nome do cliente..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="input-busca"
+            />
+
+            {/*  LISTA */}
+            <div className="lista-clientes">
+              {clientesFiltrados.length > 0 ? (
+                clientesFiltrados.map((c) => (
+                  <div
+                    key={c.id}
+                    className="cliente-item"
+                    onClick={() => {
+                      setData(c);
+                      onChange?.(c);
+                      setShowModal(false);
+                      setSearch("");
+                    }}
+                  >
+                    <strong>{c.razaoSocial}</strong>
+                    <span>{c.cnpj}</span>
+                  </div>
+                ))
+              ) : (
+                <p>Nenhum cliente encontrado</p>
+              )}
+            </div>
+
+            <button onClick={() => setShowModal(false)}>Fechar</button>
           </div>
         </div>
       )}
@@ -111,6 +179,26 @@ function DistribuidorSection({ onChange }) {
     setData(updated);
     onChange?.(updated);
   };
+  const [showModal, setShowModal] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const distribuidoresMock = [
+    {
+      id: 1,
+      razaoSocial: "Distribuidora XYZ",
+      cnpj: "22.222.222/0001-22",
+      cidade: "São Paulo",
+      uf: "SP",
+      email: "contato@distribuidora.com",
+      fone: "(11) 88888-8888",
+      endereco: "Avenida Paulista, 456",
+      contato: "João Oliveira",
+    }
+  ];
+
+  const distribuidoresFiltrados = distribuidoresMock.filter((d) =>
+    d.razaoSocial.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className="form-section">
@@ -120,8 +208,14 @@ function DistribuidorSection({ onChange }) {
           Dados do Distribuidor
         </div>
         <div className="section-header-right">
-          <button className="btn-link" onClick={(e) => e.stopPropagation()}>
-            ⊕ Adicionar Distribuidor
+          <button
+            className="btn-link"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowModal(true);
+            }}
+          >
+            + Adicionar Distribuidor Cadastrado
           </button>
           <span className={`chevron ${open ? "open" : ""}`}>▾</span>
         </div>
@@ -185,6 +279,43 @@ function DistribuidorSection({ onChange }) {
           </div>
         </div>
       )}
+
+      {showModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>Buscar Distribuidor</h3>
+
+            <input
+              type="text"
+              placeholder="Digite o nome do distribuidor..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="input-busca"
+            />
+
+            <div className="lista-clientes">
+              {distribuidoresFiltrados.map((d) => (
+                <div
+                  key={d.id}
+                  className="cliente-item"
+                  onClick={() => {
+                    setData(d);
+                    onChange?.(d);
+                    setShowModal(false);
+                    setSearch("");
+                  }}
+                >
+                  <strong>{d.razaoSocial}</strong>
+                  <span>{d.cnpj}</span>
+                </div>
+              ))}
+            </div>
+
+            <button onClick={() => setShowModal(false)}>Fechar</button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
@@ -220,6 +351,23 @@ function ProdutoSection({ onChange }) {
     return isNaN(n) ? "R$ 0,00" : n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   };
 
+  const [showModal, setShowModal] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const produtosMock = [
+    {
+      id: 1,
+      descricao: "Produto A",
+      pn: "00.000.000",
+      valorUnitario: 100.00,
+    }
+  ];
+
+  const produtosFiltrados = produtosMock.filter((p) =>
+    p.descricao.toLowerCase().includes(search.toLowerCase()) ||
+    p.pn.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <div className="form-section">
       <div className="section-header" onClick={() => setOpen(!open)}>
@@ -228,8 +376,14 @@ function ProdutoSection({ onChange }) {
           Dados do Produto
         </div>
         <div className="section-header-right">
-          <button className="btn-link" onClick={(e) => e.stopPropagation()}>
-            ⊕ Adicionar Produto
+          <button
+            className="btn-link"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowModal(true);
+            }}
+          >
+            + Adicionar Produto Cadastrado
           </button>
           <span className={`chevron ${open ? "open" : ""}`}>▾</span>
         </div>
@@ -280,6 +434,50 @@ function ProdutoSection({ onChange }) {
           </div>
         </div>
       )}
+
+      {showModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>Buscar Produto</h3>
+
+            <input
+              type="text"
+              placeholder="Digite o nome ou P/N..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="input-busca"
+            />
+
+            <div className="lista-clientes">
+              {produtosFiltrados.map((p) => (
+                <div
+                  key={p.id}
+                  className="cliente-item"
+                  onClick={() => {
+                    const novo = {
+                      ...data,
+                      descricao: p.descricao,
+                      pn: p.pn,
+                      valorUnitario: p.valorUnitario,
+                    };
+
+                    setData(novo);
+                    onChange?.(novo);
+
+                    setShowModal(false);
+                    setSearch("");
+                  }}
+                >
+                  <strong>{p.descricao}</strong>
+                  <span>{p.pn}</span>
+                </div>
+              ))}
+            </div>
+
+            <button onClick={() => setShowModal(false)}>Fechar</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -287,17 +485,56 @@ function ProdutoSection({ onChange }) {
 export default function PedidoForm({ onFormChange }) {
   const [cliente, setCliente] = useState({});
   const [distribuidor, setDistribuidor] = useState({});
-  const [produto, setProduto] = useState({});
+  const [produtos, setProdutos] = useState([{}]);
 
   const notify = (patch) => {
     onFormChange?.({ ...{ cliente, distribuidor, produto }, ...patch });
+  };
+
+  const updateProduto = (index, data) => {
+    const novos = [...produtos];
+    novos[index] = data;
+    setProdutos(novos);
+    notify({ produtos: novos });
+  };
+
+  const addProduto = () => {
+    setProdutos([...produtos, {}]);
+  };
+
+  const removeProduto = (index) => {
+    const novos = produtos.filter((_, i) => i !== index);
+    setProdutos(novos);
+    notify({ produtos: novos });
   };
 
   return (
     <div className="pedido-form">
       <ClienteSection onChange={(d) => { setCliente(d); notify({ cliente: d }); }} />
       <DistribuidorSection onChange={(d) => { setDistribuidor(d); notify({ distribuidor: d }); }} />
-      <ProdutoSection onChange={(d) => { setProduto(d); notify({ produto: d }); }} />
+      {produtos.map((prod, index) => (
+        <div key={index}>
+
+          <ProdutoSection
+            onChange={(d) => updateProduto(index, d)}
+          />
+
+          {index > 0 && (
+            <button
+              className="btn-remover-produto"
+              onClick={() => removeProduto(index)}
+            >
+              Remover produto
+            </button>
+          )}
+
+        </div>
+      ))}
+
+      <button className="btn-add-produto" onClick={addProduto}>
+        + Adicionar outro produto
+      </button>
+
     </div>
   );
 }
