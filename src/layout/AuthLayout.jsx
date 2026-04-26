@@ -6,7 +6,7 @@ import bgDireito from '../assets/bg-direito.png'
 /**
  * AuthLayout
  *
- * Layout compartilhado pelas telas de autenticação (Login e Cadastro).
+ * Layout da tela de autenticação (Login).
  * Divide a tela em dois painéis:
  *   - Esquerdo: formulário (branco)
  *   - Direito:  branding TND Brasil (preto + imagem de ondas)
