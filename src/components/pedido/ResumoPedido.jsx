@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "./ResumoPedido.css";
 import dinheiroIcon from "../../assets/dinheiro.png";
 import perfilDistribuidor from "../../assets/distribuidor.png";
@@ -60,6 +61,34 @@ export default function ResumoPedido({ formData, onEntregaChange }) {
     html2pdf().set(opt).from(element).save().then(() => {
       document.body.classList.remove("pdf-mode");
     });
+  };
+
+  const navigate = useNavigate();
+
+  const adicionarPedido = () => {
+    const novoId = `V${Date.now().toString().slice(-6)}`;
+    const clienteLabel = clienteFaturado || cliente.nome || "Cliente";
+    const nomeVenda = `VENDA ${novoId}`;
+    const pedido = {
+      id: novoId,
+      nome: nomeVenda,
+      cliente: clienteLabel,
+      comissao: fmt(comissao),
+      status: "Aguardando",
+      tipo: "pendente",
+      parcelas: [{ label: "Parcela 1/1", valor: fmt(valorFaturamento) }],
+    };
+
+    try {
+      const chave = "korp_pedidos";
+      const armazenado = JSON.parse(localStorage.getItem(chave) || "[]");
+      armazenado.push(pedido);
+      localStorage.setItem(chave, JSON.stringify(armazenado));
+    } catch (e) {
+      console.error("Erro ao salvar pedido:", e);
+    }
+
+    navigate("/vendedores/home");
   };
 
   return (
@@ -159,7 +188,7 @@ export default function ResumoPedido({ formData, onEntregaChange }) {
         </div>
 
         <div className="botoes-resumo">
-          <button className="btn-primary">
+          <button className="btn-primary" onClick={adicionarPedido}>
             Adicionar Pedido
           </button>
           <button className="btn-secondary" onClick={gerarPDF}>
