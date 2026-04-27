@@ -10,8 +10,12 @@
  * ─────────────────────────────────────────────
  */
 
+import axios from "axios"
+
 // TODO: mover para variável de ambiente (.env)
-const BASE_URL = import.meta.env.VITE_API_URL || 'https://api.tnd.com.br/v1'
+export const api = axios.create({
+  baseURL:import.meta.env.VITE_API_URL
+})
 
 // ─── Utilitário de requisição ───────────────────────────────────────────────
 
@@ -41,33 +45,23 @@ async function request(endpoint, options = {}) {
   // return response.json()
 
   // ─── MOCK: simula latência de rede ───
-  await new Promise(r => setTimeout(r, 800))
+  // await new Promise(r => setTimeout(r, 800))
 }
 
 // ─── Auth ───────────────────────────────────────────────────────────────────
-
-/**
- * Realiza login do vendedor.
- * @param {{ email: string, senha: string }} credentials
- * @returns {{ token: string, usuario: object }}
- */
 export async function login({ email, senha }) {
-  // TODO: substituir pelo request() real
-  // return request('/auth/login', { method: 'POST', body: JSON.stringify({ email, senha }) })
+  const response = await api.get(`/usuario/1`);
+  const dados = response.data
 
-  await new Promise(r => setTimeout(r, 800))
-
-  // Mock de validação
-  if (email.endsWith('@tnd.com.br') && senha.length >= 6) {
-    const token = 'mock_token_' + Math.random().toString(36).slice(2)
-    localStorage.setItem('korp_token', token)
-    return {
-      token,
-      usuario: { id: 1, nome: 'Vendedor Demo', email, perfil: 'vendedor' },
-    }
+  if (dados.email != email){
+    throw new Error("E-mail inválido")
+  }
+  if (dados.senha != senha){
+    throw new Error("Senha inválida")
   }
 
-  throw new Error('E-mail ou senha inválidos.')
+  return dados
+
 }
 
 /**

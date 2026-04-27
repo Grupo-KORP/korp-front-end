@@ -40,7 +40,7 @@ function LoginForm() {
     try {
       // TODO: após login bem-sucedido, redirecionar para /dashboard
       await entrar({ email: values.email, senha: values.senha })
-      navigate('/dashboard')
+      navigate('/vendedores')
     } catch {
       // Erro já capturado pelo hook useAuth e exibido via `error`
     }

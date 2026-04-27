@@ -8,10 +8,10 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="*"           element={<Navigate to="/login" replace />} />
       <Route path="/login"      element={<LoginPage />} />
       <Route path="/vendedores" element={<VendedoresPage />} />
       <Route path="/pedido"     element={<PedidoPage />} />
-      <Route path="*"           element={<Navigate to="/login" replace />} />
     </Routes>
   )
 }
