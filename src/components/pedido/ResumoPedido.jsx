@@ -1,103 +1,151 @@
+import { useState, useEffect } from "react";
 import "./ResumoPedido.css";
-import { useState } from "react";
+import dinheiroIcon from "../../assets/dinheiro.png";
+import perfilDistribuidor from "../../assets/distribuidor.png";
 
-export default function ResumoPedido({ formData, setFormData }) {
-    const [canalVenda, setCanalVenda] = useState("direct");
+export default function ResumoPedido({ formData, onEntregaChange }) {
+  const cliente = formData?.cliente || {};
+  const distribuidor = formData?.distribuidor || {};
+  const produtos = formData?.produtos || [];
+  const entrega = formData?.entrega || { endereco: "", cidade: "", cep: "" };
 
-    return (
-        <div className="resumo-container">
-            {/* ================= RESUMO PEDIDO ================= */}
-            <div className="resumo-box">
-                <h3>📋 Resumo do Pedido</h3>
+  // Estado local para campos de entrega editáveis
+  const [localEntrega, setLocalEntrega] = useState(entrega.endereco);
+  const [cidadeEntrega, setCidadeEntrega] = useState(entrega.cidade);
+  const [cepEntrega, setCepEntrega] = useState(entrega.cep);
 
-                <div className="resumo-item">
-                    <span>Distribuidor Responsável</span>
-                    <select defaultValue="main">
-                        <option value="main">Main Distribution Hub SE</option>
-                        <option value="other">Outro Distribuidor</option>
-                    </select>
-                </div>
+  // Sincronizar com formData quando entrega mudar
+  useEffect(() => {
+    setLocalEntrega(entrega.endereco || "");
+    setCidadeEntrega(entrega.cidade || "");
+    setCepEntrega(entrega.cep || "");
+  }, [entrega.endereco, entrega.cidade, entrega.cep]);
 
-                <div className="resumo-item">
-                    <span>Canal de Venda</span>
-                    <div className="canal-buttons">
-                        <button 
-                            className={`canal-btn ${canalVenda === "direct" ? "active" : ""}`}
-                            onClick={() => setCanalVenda("direct")}
-                        >
-                            Direct
-                        </button>
-                        <button 
-                            className={`canal-btn ${canalVenda === "partner" ? "active" : ""}`}
-                            onClick={() => setCanalVenda("partner")}
-                        >
-                            Partner
-                        </button>
-                        <button 
-                            className={`canal-btn ${canalVenda === "online" ? "active" : ""}`}
-                            onClick={() => setCanalVenda("online")}
-                        >
-                            Online
-                        </button>
-                    </div>
-                </div>
+  const handleEntregaChange = (field, value) => {
+    if (field === "endereco") setLocalEntrega(value);
+    if (field === "cidade") setCidadeEntrega(value);
+    if (field === "cep") setCepEntrega(value);
+    onEntregaChange?.({ [field]: value });
+  };
 
-                <div className="resumo-item">
-                    <span>Cliente Faturado</span>
-                    <select value={formData.cliente || ""} onChange={(e) => 
-                        setFormData({...formData, cliente: e.target.value})
-                    }>
-                        <option value="">Selecionar Cliente</option>
-                        <option value="Tech Solutions Ltda">Tech Solutions Ltda</option>
-                    </select>
-                </div>
+  const clienteFaturado = cliente.razaoSocial;
+  const distribuidorName = distribuidor.razaoSocial;
 
-                <div className="resumo-item">
-                    <span>Local de Entrega</span>
-                    <select value={formData.endereco || ""} onChange={(e) => 
-                        setFormData({...formData, endereco: e.target.value})
-                    }>
-                        <option value="">Selecionar Local</option>
-                        <option value="Rua das Inovações, 123">Rua das Inovações, 123</option>
-                    </select>
-                </div>
+  const valorCompra = produtos.reduce(
+    (acc, p) => acc + (parseFloat(p.valorTotal) || 0),
+    0
+  );
 
-                <div className="resumo-row">
-                    <div className="resumo-item">
-                        <span>Cidade</span>
-                        <strong>{formData.cidade || "—"}</strong>
-                    </div>
-                    <div className="resumo-item">
-                        <span>CEP</span>
-                        <strong>{formData.cep || "—"}</strong>
-                    </div>
-                </div>
+  const valorFaturamento = produtos.reduce(
+    (acc, p) => acc + (parseFloat(p.totalFaturado) || 0),
+    0
+  );
+  const comissao = valorFaturamento - valorCompra;
 
-                <div className="resumo-item">
-                    <span>Produto</span>
-                    <select defaultValue="office365">
-                        <option value="office365">Pacote Office 365</option>
-                        <option value="office">Pacote Office</option>
-                    </select>
-                </div>
-            </div>
+  const fmt = (v) =>
+    v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-            {/* ================= RESUMO FINANCEIRO ================= */}
-            <div className="resumo-box resumo-financeiro-box">
-                <h3>💰 Resumo Financeiro</h3>
-
-                <div className="financeiro-item">
-                    <span>Valor de Compra</span>
-                    <strong>R$ 5.500,00</strong>
-                </div>
-
-                <div className="financeiro-item">
-                    <span>Valor de Faturamento</span>
-                    <strong>R$ 6.500,00</strong>
-                </div>
-
-                <button className="btn-final">Adicionar Pedido</button>
-            </div>
+  return (
+    <div className="resumo-wrapper">
+      {/* ── Resumo do Pedido ── */}
+      <div className="resumo-card">
+        <div className="resumo-card-title">
+          <span className="resumo-title-icon"><img src={perfilDistribuidor} alt="Dinehiro" /></span>
+          Resumo do Pedido
         </div>
-    );
+
+        <div className="resumo-field">
+          <span className="resumo-label">DISTRIBUIDOR RESPONSÁVEL</span>
+          <span className="resumo-plain-value">{distribuidorName}</span>
+        </div>
+
+        <div className="resumo-field">
+          <span className="resumo-label">CLIENTE FATURADO</span>
+          <span className="resumo-plain-value">{clienteFaturado}</span>
+        </div>
+
+        <div className="resumo-field">
+          <span className="resumo-label">LOCAL DE ENTREGA</span>
+          <input
+            type="text"
+            value={localEntrega}
+            onChange={(e) => handleEntregaChange("endereco", e.target.value)}
+            className="resumo-input"
+            placeholder="Digite o local de entrega"
+          />
+        </div>
+
+        <div className="resumo-row-2col">
+          <div className="resumo-field">
+            <span className="resumo-label">CIDADE</span>
+            <input
+              type="text"
+              value={cidadeEntrega}
+              onChange={(e) => handleEntregaChange("cidade", e.target.value)}
+              className="resumo-input"
+              placeholder="Digite a cidade"
+            />
+          </div>
+          <div className="resumo-field">
+            <span className="resumo-label">CEP</span>
+            <input
+              type="text"
+              value={cepEntrega}
+              onChange={(e) => handleEntregaChange("cep", e.target.value)}
+              className="resumo-input"
+              placeholder="00000-000"
+            />
+          </div>
+        </div>
+
+        <div className="resumo-field">
+          <span className="resumo-label">PRODUTO</span>
+          <div className="resumo-produtos-scroll">
+            {produtos.length === 0 ? (
+              <span className="resumo-empty">Nenhum produto</span>
+            ) : (
+              produtos.map((p, i) => (
+                <div key={i} className="resumo-produto-item">
+                  <span>{p.descricao || "Produto"}</span>
+                </div>
+              ))
+            )}
+          </div>
+
+        </div>
+      </div>
+
+  {/* ── Resumo Financeiro ── */ }
+  <div className="resumo-card">
+    <div className="resumo-card-title">
+      <span className="resumo-title-icon"><img src={dinheiroIcon} alt="icone-dinheiro" /></span>
+      Resumo Financeiro
+    </div>
+
+    <div className="financeiro-grid">
+      <div className="financeiro-item">
+        <span className="resumo-label">VALOR DE COMPRA</span>
+        <span className="financeiro-valor">{fmt(valorCompra)}</span>
+      </div>
+      <div className="financeiro-item">
+        <span className="resumo-label">VALOR DE FATURAMENTO</span>
+        <span className="financeiro-valor green">{fmt(valorFaturamento)}</span>
+      </div>
+    </div>
+
+    <div className="comissao-box">
+      <span className="comissao-label">TOTAL DE COMISSÃO BRUTA</span>
+      <span className="comissao-valor">{fmt(comissao)}</span>
+    </div>
+
+    <button className="btn-primary">
+      Adicionar Pedido
+    </button>
+    <button className="btn-secondary">
+      ⬇ Baixar PDF
+    </button>
+  </div>
+    </div>
+  );
+
 }

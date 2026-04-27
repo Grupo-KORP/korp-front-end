@@ -1,6 +1,9 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import logo from "../assets/logo-tnd.webp";
+import lua from "../assets/lua.png";
+import logout from "../assets/logout.png";
+import sun from "../assets/sun.png";
 
 export default function Navbar() {
   const { pathname } = useLocation();
@@ -15,8 +18,14 @@ export default function Navbar() {
   ];
 
   function toggleDark() {
-    setDarkMode(!darkMode);
-    document.body.classList.toggle("dark");
+    const newDark = !darkMode;
+  setDarkMode(newDark);
+
+  if (newDark) {
+    document.body.classList.add("dark");
+  } else {
+    document.body.classList.remove("dark");
+  }
   }
 
   return (

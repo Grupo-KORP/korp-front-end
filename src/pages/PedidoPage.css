@@ -1,7 +1,13 @@
+body {
+  background: linear-gradient(120deg, #e0e7ff, #f8fafc);
+  overflow: hidden;
+}
+
 .pedido-wrapper {
-  margin: 0 12px;
-  padding: 12px 0;
-  min-height: calc(100vh - 60px);
+  margin: 0 22.2px;
+  padding: 4px 0 0;
+
+  min-height: calc(100vh - 80px); /* respeita navbar real */
   display: flex;
   flex-direction: column;
 }
@@ -12,20 +18,18 @@
 }
 
 .pedido-header h1 {
-  margin: 0 0 8px 0;
-  font-size: 28px;
+  font-size: 26px;
+  font-weight: 700;
 }
 
 .pedido-header p {
-  margin: 0;
-  color: #666;
-  font-size: 14px;
+  color: #64748b;
 }
 
 .pedido-content {
   display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 16px;
+  grid-template-columns: 1.6fr 1fr; /* antes 2fr 1fr */
+  gap: 20px;
   align-items: flex-start;
   flex: 1;
   min-height: 0;
@@ -34,13 +38,15 @@
 /* SCROLL só na esquerda */
 .form-area {
   overflow-y: auto;
-  padding-right: 4px;
-  max-height: 70vh;
+  padding-right: 6px;
+
+  max-height: calc(100vh - 120px); /* ajusta com navbar + header */
 }
 
 /* FIXO na direita */
 .resumo-area {
   position: sticky;
-  top: 20px;
-  height: fit-content;
+  top: 80px; /* respeita navbar */
+  height: calc(100vh - 100px);
+  overflow: hidden;
 }

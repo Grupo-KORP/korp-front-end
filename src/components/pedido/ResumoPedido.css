@@ -1,183 +1,274 @@
-.resumo-container {
+.resumo-wrapper {
+  height: 100%;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.resumo-wrapper::-webkit-scrollbar {
+  width: 5px;
+}
+
+.resumo-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.3);
+  border-radius: 10px;
+}
+
+.resumo-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  gap: 14px;
+}
+
+.resumo-card:first-child {
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 12px;
 }
 
-.resumo-box {
-  background: #fff;
-  padding: 16px;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-}
-
-.resumo-box h3 {
-  margin: 0 0 12px 0;
-  font-size: 13px;
-  font-weight: 600;
-  color: #1f2937;
+.resumo-card-title {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+  padding-bottom: 2px;
 }
 
-/* ITENS DO RESUMO */
-.resumo-item {
+.resumo-title-icon {
+  font-size: 13px;
+}
+
+/* Field */
+.resumo-field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-bottom: 10px;
+  gap: 3px;
 }
 
-.resumo-item:last-of-type {
-  margin-bottom: 0;
-}
-
-.resumo-item span {
-  font-size: 10px;
-  color: #9ca3af;
-  font-weight: 600;
+.resumo-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
-.resumo-item strong {
-  color: #1f2937;
-  font-weight: 600;
+.resumo-field select {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
   font-size: 12px;
+  color: #1e293b;
+  background: #ffffff;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2394a3b8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+  cursor: pointer;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
 }
 
-/* LINHA COM MÚLTIPLOS ITENS */
-.resumo-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+.resumo-field select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Display box (cliente faturado / local entrega) */
+.resumo-select-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #1e293b;
+  cursor: pointer;
+  background: #ffffff;
+}
+
+
+/* Plain text values (cidade/cep) */
+.resumo-plain-value {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #1e293b;
+  cursor: pointer;
+  background: #ffffff;
+}
+
+.resumo-select-display:hover {
+  border-color: #94a3b8;
+}
+
+
+/* Editable input fields */
+.resumo-input {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #1e293b;
+  background: #ffffff;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  font-family: inherit;
+}
+
+.resumo-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.resumo-input::placeholder {
+  color: #cbd5e1;
+}
+
+/* 2 col row */
+.resumo-row-2col {
+  display: flex;
   gap: 10px;
 }
 
-/* INPUT EDITÁVEL */
-.input-resumo {
-  border: 1px solid #e5e7eb;
-  padding: 6px 10px;
-  border-radius: 4px;
-  width: 100%;
-  font-size: 12px;
-  font-family: inherit;
-  background: #f9fafb;
+.resumo-row-2col .resumo-field {
+  flex: 1;
 }
 
-.input-resumo::placeholder {
-  color: #d1d5db;
-  font-size: 12px;
-}
-
-.resumo-box hr {
-  border: none;
-  border-top: 1px solid #f3f4f6;
-  margin: 10px 0;
-}
-
-/* FINANCEIRO */
-.resumo-financeiro-box {
-  background: #fff;
-  border: 1px solid #e5e7eb;
+/* Financeiro */
+.financeiro-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 
 .financeiro-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-bottom: 10px;
+  gap: 2px;
 }
 
-.financeiro-item:last-of-type {
-  margin-bottom: 8px;
-}
-
-.financeiro-item span {
-  font-size: 10px;
-  color: #9ca3af;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.financeiro-item strong {
-  color: #1f2937;
-  font-weight: 600;
+.financeiro-valor {
   font-size: 12px;
+  font-weight: 700;
+  color: #1e293b;
 }
 
-/* BOTÃO */
-.btn-final {
-  width: 100%;
-  padding: 8px;
-  background: #16a34a;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 12px;
-  transition: background 0.3s;
-  margin-top: 4px;
+.financeiro-valor.green {
+  color: #16a34a;
 }
 
-.btn-final:hover {
-  background: #15803d;
-}
-
-/* DROPDOWNS E SELEÇÕES */
-select {
-  border: 1px solid #e5e7eb;
-  padding: 6px 10px;
-  border-radius: 4px;
-  width: 100%;
-  font-size: 12px;
-  font-family: inherit;
-  background: #f9fafb;
-  cursor: pointer;
-  color: #1f2937;
-  transition: border-color 0.2s;
-}
-
-select:focus {
-  outline: none;
-  border-color: #3b82f6;
-  background: #fff;
-}
-
-select option {
-  background: white;
-  color: #1f2937;
-}
-
-/* BOTÕES DE SELEÇÃO */
-.canal-buttons {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.canal-btn {
-  flex: 1;
-  padding: 8px 10px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  background: #f9fafb;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-  color: #6b7280;
-  transition: all 0.2s;
-}
-
-.canal-btn:hover {
-  border-color: #3b82f6;
-  background: #eff6ff;
-}
-
-.canal-btn.active {
+/* Comissão */
+.comissao-box {
   background: #1e3a8a;
-  color: white;
-  border-color: #1e3a8a;
+  border-radius: 10px;
+  margin-top: 8px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+
+}
+
+.comissao-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.65);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.comissao-valor {
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.5px;
+}
+
+/* Buttons */
+.btn-primary {
+  display: flex;
+  height: 38px;
+  background: #1e3a8a;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-primary:hover {
+  background: #1e40af;
+}
+
+.btn-secondary {
+  display: flex;
+  height: 36px;
+  background: #ffffff;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.15s;
+}
+
+.btn-secondary:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.resumo-produtos-scroll {
+  max-height: 120px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-right: 4px;
+}
+
+/* scrollbar discreta */
+.resumo-produtos-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.resumo-produtos-scroll::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.3);
+  border-radius: 10px;
+}
+
+.resumo-produto-item {
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: #1e293b;
 }

@@ -1,4 +1,4 @@
-import Navbar from "../layout/Navbar";
+import NavbarVendedor from "../layout/NavbarVendedor";
 import "./PedidoPage.css";
 import PedidoForm from "../components/forms/PedidoForm";
 import ResumoPedido from "../components/pedido/ResumoPedido";
@@ -7,16 +7,30 @@ import { useState } from "react";
 export default function PedidoPage() {
 
     const [formData, setFormData] = useState({
-        cliente: "",
-        cnpj: "",
-        endereco: "",
-        cidade: "",
-        cep: "",
+        cliente: {},
+        distribuidor: {},
+        produto: {},
+        entrega: {
+            endereco: "",
+            cidade: "",
+            cep: "",
+        },
     });
+
+    const handleFormChange = (data) => {
+        setFormData(prev => ({ ...prev, ...data }));
+    };
+
+    const handleEntregaChange = (updates) => {
+        setFormData(prev => ({
+            ...prev,
+            entrega: { ...prev.entrega, ...updates }
+        }));
+    };
 
     return (
         <div className="geral">
-            <Navbar />
+            <NavbarVendedor />
 
             <div className="pedido-wrapper">
                 <div className="pedido-content">
@@ -27,8 +41,7 @@ export default function PedidoPage() {
                             <p>Preencha os dados abaixo para gerar uma nova ordem de venda</p>
                         </div>
                         <PedidoForm
-                            formData={formData}
-                            setFormData={setFormData}
+                            onFormChange={handleFormChange}
                         />
                     </div>
 
@@ -36,7 +49,7 @@ export default function PedidoPage() {
                     <div className="resumo-area">
                         <ResumoPedido
                             formData={formData}
-                            setFormData={setFormData}
+                            onEntregaChange={handleEntregaChange}
                         />                    </div>
                 </div>
             </div>
