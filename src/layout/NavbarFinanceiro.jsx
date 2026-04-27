@@ -16,10 +16,8 @@ export default function NavbarVendedor() {
 
   const menu = [
     { name: "HOME", path: "/" },
-    { name: "CLIENTE", path: "/cliente" },
-    { name: "DISTRIBUIDOR", path: "/distribuidor" },
-    { name: "PRODUTOS", path: "/produtos" },
-    { name: "ADICIONAR PEDIDO", path: "/pedido" },
+    { name: "VENDEDORES", path: "/vendedores" },
+    { name: "COMISSÕES", path: "/comissoes" },
   ];
 
   function handleLogout() {

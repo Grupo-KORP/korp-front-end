@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import Navbar from "../layout/Navbar";
 import Alert from "../components/ui/Alert";
-import { api } from "../services/api.js"
+import { api } from "../services/api.js";
+import NavbarVendedor from "../layout/NavbarFinanceiro.jsx";
+import { useDarkMode } from "../hooks/useDarkMode.jsx";
 
 const initialVendedores = [
   { id: 1, codigo: "V1", nome: "VENDEDOR 1", emailInterno: "maria.silva@tndbrasil.com", emailExterno: "maria.silva@microsoft.com", compras: 5, status: "Ativo", comissao: "30%" },
@@ -13,6 +14,8 @@ const initialVendedores = [
 const emptyForm = { nome: "", email: "", fone: "", comissao: "30%", status: "Ativo" };
 
 export default function VendedoresPage() {
+  const { darkMode: modoEscuro } = useDarkMode();
+
   const [vendedores, setVendedores] = useState(initialVendedores);
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
@@ -20,6 +23,16 @@ export default function VendedoresPage() {
   const [success, setSuccess] = useState(null);
   const [search, setSearch] = useState("");
   const [showAll, setShowAll] = useState(false);
+
+  /* classes de tema */
+  const bg      = modoEscuro ? "bg-gray-900"  : "bg-gray-100";
+  const cardBg  = modoEscuro ? "bg-gray-800"  : "bg-white";
+  const borda   = modoEscuro ? "border-gray-700" : "border-gray-200";
+  const textoP  = modoEscuro ? "text-white"   : "text-gray-900";
+  const textoM  = modoEscuro ? "text-gray-300" : "text-gray-800";
+  const textoS  = modoEscuro ? "text-gray-400" : "text-gray-400";
+  const inputBg = modoEscuro ? "bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-500" : "bg-gray-50 border-gray-200 text-gray-700 placeholder-gray-300";
+  const hover   = modoEscuro ? "hover:bg-gray-700" : "hover:bg-gray-50";
 
   /* ── Máscara de telefone ── */
   function maskPhone(raw) {
@@ -48,41 +61,30 @@ export default function VendedoresPage() {
     return Object.keys(errs).length === 0;
   }
 
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!validate()) return;
 
-async function handleSubmit(e) {
-  e.preventDefault();
-  if (!validate()) return;
+    const payload = {
+      nome: form.nome.toUpperCase(),
+      email: form.email,
+      senha: 123456,
+      telefone: form.fone,
+      role: 2,
+      percentualComissao: parseFloat(form.comissao)
+    };
 
-  const payload = {
-    nome: form.nome.toUpperCase(),
-    email: form.email,
-    senha: 123456,
-    telefone: form.fone,
-    role: 2,
-    percentualComissao: parseFloat(form.comissao)
-  };
-
-  try {
-  
-      const response = await api.post(
-        `/usuario`,
-        payload
-      );
-
+    try {
+      const response = await api.post(`/usuario`, payload);
       console.log(response.data);
-
       setVendedores((prev) => [...prev, response.data]);
-
       setSuccess("Vendedor cadastrado com sucesso!");
-    
-
-    setForm(emptyForm);
-    setTimeout(() => setSuccess(null), 3000);
-
-  } catch (error) {
-    console.error("Erro na requisição:", error);
+      setForm(emptyForm);
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (error) {
+      console.error("Erro na requisição:", error);
+    }
   }
-}
 
   function handleEdit(v) {
     setEditingId(v.id);
@@ -109,17 +111,17 @@ async function handleSubmit(e) {
   const displayed = showAll ? filtered : filtered.slice(0, 4);
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <Navbar />
+    <div className={`min-h-screen ${bg} transition-colors duration-300`}>
+      <NavbarVendedor />
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Header */}
         <div className="flex items-end justify-between mb-6">
           <div>
-            <p className="text-xs font-semibold tracking-widest text-blue-700 uppercase mb-1">
+            <p className="text-xs font-semibold tracking-widest text-blue-500 uppercase mb-1">
               Colaboradores Cadastrados
             </p>
-            <h1 className="text-3xl font-extrabold text-gray-900">Painel de vendedores</h1>
+            <h1 className={`text-3xl font-extrabold ${textoP}`}>Painel de vendedores</h1>
           </div>
 
           {/* Search */}
@@ -134,30 +136,31 @@ async function handleSubmit(e) {
               placeholder="PESQUISAR VENDEDOR"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 pr-4 py-2.5 rounded-full border border-gray-200 bg-white text-sm text-gray-500 placeholder-gray-400 tracking-wider focus:outline-none focus:ring-2 focus:ring-blue-300 w-64 shadow-sm"
+              className={`pl-9 pr-4 py-2.5 rounded-full border text-sm placeholder-gray-400 tracking-wider focus:outline-none focus:ring-2 focus:ring-blue-300 w-64 shadow-sm ${inputBg}`}
             />
           </div>
         </div>
 
         {/* Main Grid */}
         <div className="flex gap-6 items-start">
+
           {/* ── Tabela de Vendedores ── */}
-          <div className="flex-1 bg-white rounded-2xl shadow-sm p-6">
+          <div className={`flex-1 ${cardBg} rounded-2xl shadow-sm p-6 transition-colors duration-300`}>
             <div className="flex items-center gap-2 mb-6">
-              <div className="w-1 h-6 rounded-full bg-brand-blue" />
-              <h2 className="text-lg font-bold text-gray-800">Base de vendedores</h2>
+              <div className="w-1 h-6 rounded-full bg-blue-700" />
+              <h2 className={`text-lg font-bold ${textoM}`}>Base de vendedores</h2>
             </div>
 
             {/* Table header */}
             <div className="grid grid-cols-[2fr_2fr_1fr_1fr] gap-4 px-2 mb-3">
-              <span className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">
+              <span className={`text-[10px] font-bold tracking-widest uppercase ${textoS}`}>
                 Identificação dos Cadastros
               </span>
-              <span className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">E-Mail</span>
-              <span className="text-[10px] font-bold tracking-widest text-gray-400 uppercase text-center">
+              <span className={`text-[10px] font-bold tracking-widest uppercase ${textoS}`}>E-Mail</span>
+              <span className={`text-[10px] font-bold tracking-widest uppercase text-center ${textoS}`}>
                 Compras Realizadas
               </span>
-              <span className="text-[10px] font-bold tracking-widest text-gray-400 uppercase text-right pr-2">
+              <span className={`text-[10px] font-bold tracking-widest uppercase text-right pr-2 ${textoS}`}>
                 Ferramentas
               </span>
             </div>
@@ -165,35 +168,35 @@ async function handleSubmit(e) {
             {/* Rows */}
             <div className="flex flex-col gap-1">
               {displayed.length === 0 && (
-                <p className="text-gray-400 text-sm text-center py-8">Nenhum vendedor encontrado.</p>
+                <p className={`text-sm text-center py-8 ${textoS}`}>Nenhum vendedor encontrado.</p>
               )}
               {displayed.map((v) => (
                 <div
                   key={v.id}
-                  className="grid grid-cols-[2fr_2fr_1fr_1fr] gap-4 items-center px-2 py-3.5 rounded-xl hover:bg-gray-50 transition-colors group"
+                  className={`grid grid-cols-[2fr_2fr_1fr_1fr] gap-4 items-center px-2 py-3.5 rounded-xl ${hover} transition-colors group`}
                 >
                   {/* Identificação */}
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-bold text-brand-blue">{v.codigo}</span>
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${modoEscuro ? "bg-blue-900/50" : "bg-blue-50"}`}>
+                      <span className="text-xs font-bold text-blue-500">{v.codigo}</span>
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-gray-800">{v.nome}</p>
-                      <p className="text-xs text-gray-400">{v.emailInterno}</p>
+                      <p className={`text-sm font-bold ${textoM}`}>{v.nome}</p>
+                      <p className={`text-xs ${textoS}`}>{v.emailInterno}</p>
                     </div>
                   </div>
 
                   {/* E-mail externo */}
-                  <span className="text-sm text-blue-600 font-medium truncate">{v.emailExterno}</span>
+                  <span className="text-sm text-blue-500 font-medium truncate">{v.emailExterno}</span>
 
                   {/* Compras */}
-                  <span className="text-sm font-bold text-gray-700 text-center">{v.compras}</span>
+                  <span className={`text-sm font-bold text-center ${textoM}`}>{v.compras}</span>
 
                   {/* Ferramentas */}
                   <div className="flex items-center justify-end gap-2">
                     <button
                       onClick={() => handleEdit(v)}
-                      className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
+                      className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${textoS} hover:text-blue-500 ${modoEscuro ? "hover:bg-blue-900/40" : "hover:bg-blue-50"}`}
                       aria-label="Editar"
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -203,7 +206,7 @@ async function handleSubmit(e) {
                     </button>
                     <button
                       onClick={() => handleDelete(v.id)}
-                      className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
+                      className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${textoS} hover:text-red-500 ${modoEscuro ? "hover:bg-red-900/30" : "hover:bg-red-50"}`}
                       aria-label="Excluir"
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -218,12 +221,12 @@ async function handleSubmit(e) {
 
             {/* Ver mais */}
             {filtered.length > 4 && (
-              <div className="flex justify-center mt-6 pt-4 border-t border-gray-100">
+              <div className={`flex justify-center mt-6 pt-4 border-t ${borda}`}>
                 <button
                   onClick={() => setShowAll(!showAll)}
-                  className="flex items-center gap-2 text-sm font-semibold text-gray-500 tracking-widest hover:text-brand-blue transition-colors uppercase"
+                  className={`flex items-center gap-2 text-sm font-semibold tracking-widest uppercase transition-colors ${textoS} hover:text-blue-500`}
                 >
-                  {showAll ? "VER MENOS" : "VER MAIS CLIENTES"}
+                  {showAll ? "VER MENOS" : "VER MAIS VENDEDORES"}
                   <svg
                     className={`w-4 h-4 transition-transform ${showAll ? "rotate-180" : ""}`}
                     fill="none" viewBox="0 0 24 24" stroke="currentColor"
@@ -236,19 +239,19 @@ async function handleSubmit(e) {
           </div>
 
           {/* ── Painel de Cadastro ── */}
-          <div className="w-80 flex-shrink-0 bg-white rounded-2xl shadow-sm p-6 flex flex-col gap-5">
+          <div className={`w-80 flex-shrink-0 ${cardBg} rounded-2xl shadow-sm p-6 flex flex-col gap-5 transition-colors duration-300`}>
             {/* Header do form */}
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <svg className="w-4 h-4 text-brand-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                     d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
-                <h3 className="text-xs font-extrabold tracking-widest text-gray-800 uppercase">
+                <h3 className={`text-xs font-extrabold tracking-widest uppercase ${textoM}`}>
                   {editingId ? "Editar Vendedor" : "Cadastrar Novo Vendedor"}
                 </h3>
               </div>
-              <p className="text-[10px] text-gray-400 tracking-wider uppercase">Formulário de Cadastro</p>
+              <p className={`text-[10px] tracking-wider uppercase ${textoS}`}>Formulário de Cadastro</p>
             </div>
 
             {/* Feedback */}
@@ -258,7 +261,7 @@ async function handleSubmit(e) {
             <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
               {/* Nome */}
               <div>
-                <label className="text-[10px] font-bold tracking-widest text-gray-500 uppercase block mb-1.5">
+                <label className={`text-[10px] font-bold tracking-widest uppercase block mb-1.5 ${textoS}`}>
                   Nome Completo
                 </label>
                 <input
@@ -267,16 +270,14 @@ async function handleSubmit(e) {
                   placeholder="Ex: Maria Silva"
                   value={form.nome}
                   onChange={handleFormChange}
-                  className={`w-full px-3.5 py-2.5 rounded-xl border text-sm bg-gray-50 text-gray-700 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 transition ${
-                    errors.nome ? "border-red-400" : "border-gray-200"
-                  }`}
+                  className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition ${inputBg} ${errors.nome ? "border-red-400" : ""}`}
                 />
                 {errors.nome && <p className="text-xs text-red-500 mt-1">{errors.nome}</p>}
               </div>
 
               {/* E-mail */}
               <div>
-                <label className="text-[10px] font-bold tracking-widest text-gray-500 uppercase block mb-1.5">
+                <label className={`text-[10px] font-bold tracking-widest uppercase block mb-1.5 ${textoS}`}>
                   E-mail TND
                 </label>
                 <input
@@ -285,16 +286,14 @@ async function handleSubmit(e) {
                   placeholder="rafael.santos@tndbrasil.com"
                   value={form.email}
                   onChange={handleFormChange}
-                  className={`w-full px-3.5 py-2.5 rounded-xl border text-sm bg-gray-50 text-gray-700 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 transition ${
-                    errors.email ? "border-red-400" : "border-gray-200"
-                  }`}
+                  className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition ${inputBg} ${errors.email ? "border-red-400" : ""}`}
                 />
                 {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
               </div>
 
               {/* Fone */}
               <div>
-                <label className="text-[10px] font-bold tracking-widest text-gray-500 uppercase block mb-1.5">
+                <label className={`text-[10px] font-bold tracking-widest uppercase block mb-1.5 ${textoS}`}>
                   Fone
                 </label>
                 <input
@@ -303,16 +302,14 @@ async function handleSubmit(e) {
                   placeholder="(00) 0000-0000"
                   value={form.fone}
                   onChange={handleFormChange}
-                  className={`w-full px-3.5 py-2.5 rounded-xl border text-sm bg-gray-50 text-gray-700 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 transition ${
-                    errors.fone ? "border-red-400" : "border-gray-200"
-                  }`}
+                  className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition ${inputBg} ${errors.fone ? "border-red-400" : ""}`}
                 />
                 {errors.fone && <p className="text-xs text-red-500 mt-1">{errors.fone}</p>}
               </div>
 
               {/* Comissão */}
               <div>
-                <label className="text-[10px] font-bold tracking-widest text-gray-500 uppercase block mb-1.5">
+                <label className={`text-[10px] font-bold tracking-widest uppercase block mb-1.5 ${textoS}`}>
                   Percentual de Comissão
                 </label>
                 <input
@@ -321,20 +318,20 @@ async function handleSubmit(e) {
                   placeholder="30%"
                   value={form.comissao}
                   onChange={handleFormChange}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 text-gray-700 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 transition"
+                  className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition ${inputBg}`}
                 />
               </div>
 
               {/* Status */}
               <div>
-                <label className="text-[10px] font-bold tracking-widest text-gray-500 uppercase block mb-1.5">
+                <label className={`text-[10px] font-bold tracking-widest uppercase block mb-1.5 ${textoS}`}>
                   Status do Colaborador
                 </label>
                 <select
                   name="status"
                   value={form.status}
                   onChange={handleFormChange}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300 transition appearance-none cursor-pointer"
+                  className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition appearance-none cursor-pointer ${inputBg}`}
                 >
                   <option>Ativo</option>
                   <option>Inativo</option>
@@ -347,7 +344,7 @@ async function handleSubmit(e) {
                   <button
                     type="button"
                     onClick={handleCancel}
-                    className="flex-1 py-3 rounded-xl border border-gray-200 text-sm font-semibold text-gray-500 hover:bg-gray-50 transition-colors"
+                    className={`flex-1 py-3 rounded-xl border text-sm font-semibold transition-colors ${borda} ${textoS} ${hover}`}
                   >
                     Cancelar
                   </button>
@@ -362,6 +359,7 @@ async function handleSubmit(e) {
               </div>
             </form>
           </div>
+
         </div>
       </div>
     </div>
