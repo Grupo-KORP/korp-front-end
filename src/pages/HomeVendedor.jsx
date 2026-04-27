@@ -206,7 +206,21 @@ export default function HomeVendedor() {
     return () => document.removeEventListener("mousedown", fecharAoClicarFora);
   }, []);
 
-  const dados = DADOS_POR_MES[mesSelecionado] || DADOS_POR_MES[MES_ATUAL];
+  const baseDados = DADOS_POR_MES[mesSelecionado] || DADOS_POR_MES[MES_ATUAL];
+
+  const pedidosSalvos = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("korp_pedidos") || "[]");
+    } catch (e) {
+      return [];
+    }
+  })();
+
+  const dados = {
+    ...baseDados,
+    vendas: [...baseDados.vendas, ...pedidosSalvos],
+    totalVendas: (baseDados.totalVendas || 0) + pedidosSalvos.length,
+  };
 
   const vendasFiltradas = dados.vendas.filter((v) => {
     if (cardAtivo === "liberadas") return v.tipo === "liberada";

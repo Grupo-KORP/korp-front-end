@@ -13,7 +13,7 @@ function AppRoutes() {
       <Route path="/login"      element={<LoginPage />} />
       <Route path="/financeiro/vendedores" element={<VendedoresPage />} />
       <Route path="/vendedores/pedido"     element={<PedidoPage />} />
-      <Route path="/vendedores/home"     element={<HomeVendedor/>} />
+      <Route path="/vendedores/home"     element={<HomeVendedor/>}   />
     </Routes>
   )
 }

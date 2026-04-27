@@ -15,11 +15,11 @@ export default function NavbarVendedor() {
   const [showModal, setShowModal] = useState(false);
 
   const menu = [
-    { name: "HOME", path: "/" },
+    { name: "HOME", path: "/vendedores/home" },
     { name: "CLIENTE", path: "/cliente" },
     { name: "DISTRIBUIDOR", path: "/distribuidor" },
     { name: "PRODUTOS", path: "/produtos" },
-    { name: "ADICIONAR PEDIDO", path: "/pedido" },
+    { name: "ADICIONAR PEDIDO", path: "/vendedores/pedido" },
   ];
 
   function handleLogout() {
