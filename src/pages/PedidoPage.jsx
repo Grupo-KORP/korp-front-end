@@ -4,12 +4,13 @@ import PedidoForm from "../components/forms/PedidoForm";
 import ResumoPedido from "../components/pedido/ResumoPedido";
 import { useState } from "react";
 
+
 export default function PedidoPage() {
 
     const [formData, setFormData] = useState({
         cliente: {},
         distribuidor: {},
-        produto: {},
+        produtos: [],
         entrega: {
             endereco: "",
             cidade: "",
@@ -35,7 +36,7 @@ export default function PedidoPage() {
             <div className="pedido-wrapper">
                 <div className="pedido-content">
                     {/* ESQUERDA (SCROLL) */}
-                    <div className="form-area">
+                    <div className="form-area" id="area-pdf">
                         <div className="pedido-header">
                             <h1>Novo Pedido</h1>
                             <p>Preencha os dados abaixo para gerar uma nova ordem de venda</p>

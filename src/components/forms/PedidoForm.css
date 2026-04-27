@@ -222,7 +222,7 @@
 }
 
 .btn-add-produto {
-  margin-top: 12px;
+  margin-top: 5px;
   padding: 10px;
   border-radius: 10px;
   border: 1px dashed #3b82f6;
@@ -237,8 +237,8 @@
 }
 
 .btn-remover-produto {
-  margin: 8px 0 16px;
-  padding: 6px 10px;
+  margin: 6px 0 6px;
+  padding: 4px 8px;
   border: none;
   background: #fee2e2;
   color: #dc2626;
