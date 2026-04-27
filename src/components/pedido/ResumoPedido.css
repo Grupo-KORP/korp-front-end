@@ -1,9 +1,16 @@
 .resumo-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
   height: 100%;
-  overflow: hidden;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.resumo-wrapper::-webkit-scrollbar {
+  width: 5px;
+}
+
+.resumo-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.3);
+  border-radius: 10px;
 }
 
 .resumo-card {
@@ -12,6 +19,7 @@
   border-radius: 12px;
   padding: 14px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  gap: 14px;
 }
 
 .resumo-card:first-child {
@@ -149,7 +157,7 @@
 .financeiro-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 12px;
 }
 
 .financeiro-item {
@@ -172,10 +180,12 @@
 .comissao-box {
   background: #1e3a8a;
   border-radius: 10px;
-  padding: 10px 12px;
+  margin-top: 8px;
+  padding: 14px;
   display: flex;
   flex-direction: column;
   gap: 3px;
+
 }
 
 .comissao-label {
@@ -195,7 +205,7 @@
 
 /* Buttons */
 .btn-primary {
-  width: 100%;
+  display: flex;
   height: 38px;
   background: #1e3a8a;
   color: #ffffff;
@@ -212,7 +222,7 @@
 }
 
 .btn-secondary {
-  width: 100%;
+  display: flex;
   height: 36px;
   background: #ffffff;
   color: #475569;
@@ -224,7 +234,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 10px;
   transition: all 0.15s;
 }
 

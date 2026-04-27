@@ -30,7 +30,6 @@ export default function ResumoPedido({ formData, onEntregaChange }) {
 
   const clienteFaturado = cliente.razaoSocial;
   const distribuidorName = distribuidor.razaoSocial;
-  const produtoDesc = produto.descricao;
 
   const valorCompra = produtos.reduce(
     (acc, p) => acc + (parseFloat(p.valorTotal) || 0),

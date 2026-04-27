@@ -1,12 +1,13 @@
 body {
   background: linear-gradient(120deg, #e0e7ff, #f8fafc);
+  overflow: hidden;
 }
 
 .pedido-wrapper {
-  margin: 0 16px;
-  padding: 16px 0;
+  margin: 0 22.2px;
+  padding: 4px 0 0;
 
-  height: calc(100vh - 80px); /* respeita navbar real */
+  min-height: calc(100vh - 80px); /* respeita navbar real */
   display: flex;
   flex-direction: column;
 }
@@ -37,9 +38,9 @@ body {
 /* SCROLL só na esquerda */
 .form-area {
   overflow-y: auto;
-  padding-right: 8px;
+  padding-right: 6px;
 
-  height: calc(100vh - 140px); /* ajusta com navbar + header */
+  max-height: calc(100vh - 120px); /* ajusta com navbar + header */
 }
 
 /* FIXO na direita */
@@ -47,5 +48,5 @@ body {
   position: sticky;
   top: 80px; /* respeita navbar */
   height: calc(100vh - 100px);
-  display: flex;
+  overflow: hidden;
 }
