@@ -357,7 +357,7 @@ function ProdutoSection({ onChange }) {
   const produtosMock = [
     {
       id: 1,
-      descricao: "Produto A",
+      descricao: "Pacote Office 365 - 1 ano",
       pn: "00.000.000",
       valorUnitario: 100.00,
     }
@@ -485,10 +485,10 @@ function ProdutoSection({ onChange }) {
 export default function PedidoForm({ onFormChange }) {
   const [cliente, setCliente] = useState({});
   const [distribuidor, setDistribuidor] = useState({});
-  const [produtos, setProdutos] = useState([{}]);
+  const [produtos, setProdutos] = useState([]);
 
   const notify = (patch) => {
-    onFormChange?.({ ...{ cliente, distribuidor, produto }, ...patch });
+    onFormChange?.({ ...{ cliente, distribuidor, produtos }, ...patch });
   };
 
   const updateProduto = (index, data) => {
@@ -499,7 +499,11 @@ export default function PedidoForm({ onFormChange }) {
   };
 
   const addProduto = () => {
-    setProdutos([...produtos, {}]);
+    setProdutos([...produtos, {
+      descricao: "",
+      valorTotal: 0,
+      totalFaturado: 0
+    }]);
   };
 
   const removeProduto = (index) => {
@@ -532,7 +536,7 @@ export default function PedidoForm({ onFormChange }) {
       ))}
 
       <button className="btn-add-produto" onClick={addProduto}>
-        + Adicionar outro produto
+        + Adicionar produto
       </button>
 
     </div>

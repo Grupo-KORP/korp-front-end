@@ -48,5 +48,30 @@ body {
   position: sticky;
   top: 80px; /* respeita navbar */
   height: calc(100vh - 100px);
-  overflow: hidden;
+  overflow-y: auto;
+  padding-right: 1.1px;
+  display: flex;
+  flex-direction: column;
+}
+
+.pdf-mode .form-area {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.pdf-mode body {
+  overflow: visible !important;
+}
+
+.pdf-mode .form-section {
+  break-inside: avoid; /* evita cortar no meio */
+}
+
+.pdf-mode input {
+  border: 1px solid #ccc !important;
+  background: #fff !important;
+}
+
+.pdf-mode button {
+  display: none !important; /* remove botões no PDF */
 }

@@ -1,31 +1,31 @@
 .resumo-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 14px; /* espaço entre os cards */
   height: 100%;
-  overflow-y: auto;
-  padding-right: 6px;
-}
-
-.resumo-wrapper::-webkit-scrollbar {
-  width: 5px;
-}
-
-.resumo-wrapper::-webkit-scrollbar-thumb {
-  background: rgba(100, 116, 139, 0.3);
-  border-radius: 10px;
 }
 
 .resumo-card {
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
-  padding: 14px;
+  padding: 12px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-  gap: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .resumo-card:first-child {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+   max-height: 420px;
+}
+
+.resumo-card:last-child {
+  max-height: 230px; 
+  flex-shrink: 0;
 }
 
 .resumo-card-title {
@@ -35,30 +35,32 @@
   font-size: 13px;
   font-weight: 700;
   color: #1e293b;
-  padding-bottom: 2px;
+  padding-bottom: 4px;
+  margin-bottom: 1px;
 }
 
 .resumo-title-icon {
   font-size: 13px;
+  width: 30px;
 }
 
 /* Field */
 .resumo-field {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4.5px;
 }
 
 .resumo-label {
   font-size: 9px;
   font-weight: 700;
-  color: #94a3b8;
+  color: #8a96a7;
   letter-spacing: 0.07em;
   text-transform: uppercase;
 }
 
 .resumo-field select {
-  height: 32px;
+  height: 30px;
   padding: 0 10px;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
@@ -66,9 +68,6 @@
   color: #1e293b;
   background: #ffffff;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2394a3b8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
   padding-right: 28px;
   cursor: pointer;
   outline: none;
@@ -87,7 +86,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 32px;
+  height: 30px;
   padding: 0 10px;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
@@ -103,7 +102,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 32px;
+  height: 30px;
   padding: 0 10px;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
@@ -120,7 +119,7 @@
 
 /* Editable input fields */
 .resumo-input {
-  height: 32px;
+  height: 30px;
   padding: 0 10px;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
@@ -157,7 +156,7 @@
 .financeiro-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 14px;
 }
 
 .financeiro-item {
@@ -170,6 +169,7 @@
   font-size: 12px;
   font-weight: 700;
   color: #1e293b;
+  letter-spacing: -0.5px;
 }
 
 .financeiro-valor.green {
@@ -178,35 +178,53 @@
 
 /* Comissão */
 .comissao-box {
-  background: #1e3a8a;
+   background: linear-gradient(90deg,
+      rgba(5, 32, 124, 0.95) 20%,
+      rgba(25, 61, 178, 0.9) 60%,
+      rgba(64, 139, 186, 0.85));
   border-radius: 10px;
   margin-top: 8px;
-  padding: 14px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
 
 }
 
 .comissao-label {
   font-size: 9px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(255, 255, 255, 0.881);
   letter-spacing: 0.07em;
   text-transform: uppercase;
 }
 
 .comissao-valor {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
   color: #ffffff;
   letter-spacing: -0.5px;
 }
 
 /* Buttons */
+
+.botoes-resumo {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.botoes-resumo button {
+  flex: 1;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .btn-primary {
   display: flex;
-  height: 38px;
+  height: 36px;
   background: #1e3a8a;
   color: #ffffff;
   border: none;
@@ -243,27 +261,8 @@
   border-color: #94a3b8;
 }
 
-.resumo-produtos-scroll {
-  max-height: 120px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding-right: 4px;
-}
-
-/* scrollbar discreta */
-.resumo-produtos-scroll::-webkit-scrollbar {
-  width: 4px;
-}
-
-.resumo-produtos-scroll::-webkit-scrollbar-thumb {
-  background: rgba(100, 116, 139, 0.3);
-  border-radius: 10px;
-}
-
 .resumo-produto-item {
-  height: 32px;
+  height: 30px;
   padding: 0 10px;
   border-radius: 6px;
   background: #f1f5f9;
@@ -271,4 +270,19 @@
   align-items: center;
   font-size: 12px;
   color: #1e293b;
+  margin-bottom: 6px;
+}
+
+.resumo-scroll-content {
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.resumo-scroll-content::-webkit-scrollbar {
+  width: 5px;
+}
+
+.resumo-scroll-content::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
 }
