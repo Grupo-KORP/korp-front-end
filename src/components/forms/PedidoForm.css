@@ -14,19 +14,20 @@
 }
 
 .pedido-form-wrapper::-webkit-scrollbar-thumb {
-  background: rgba(100, 116, 139, 0.3);
+  background: var(--pedido-scrollbar, rgba(100, 116, 139, 0.3));
   border-radius: 10px;
 }
 
 .pedido-form-wrapper::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 116, 139, 0.5);
+  background: var(--pedido-scrollbar, rgba(100, 116, 139, 0.5));
 }
 
 /* Seção */
 .form-section {
-  background: #f8fafc;
-
+  background: var(--pedido-card-bg, #fdfeff);
+  border: 1px solid var(--pedido-border, transparent);
   border-radius: 14px;
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .section-header {
@@ -44,7 +45,7 @@
   gap: 8px;
   font-size: 14.5px;
   font-weight: 700;
-  color: #061d51;
+  color: var(--pedido-text-strong, #061d51);
 }
 
 .section-icon {
@@ -63,7 +64,7 @@
 .btn-link {
   background: none;
   border: none;
-  color: #0a3490;
+  color: var(--pedido-blue, #0a3490);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -75,7 +76,7 @@
 }
 
 .chevron {
-  color: #0a3490;
+  color: var(--pedido-blue, #0a3490);
   font-size: 16px;
   transition: transform 0.2s;
   display: inline-block;
@@ -132,7 +133,7 @@
 .form-group label {
   font-size: 10px;
   font-weight: 600;
-  color: #8a96a7;
+  color: var(--pedido-text-soft, #8a96a7);
   letter-spacing: 0.07em;
   text-transform: uppercase;
 }
@@ -141,11 +142,11 @@
 .form-group select {
   height: 30px;
   padding: 0 10px;
-  border: 1px solid #fcfbfb;
+  border: 1px solid var(--pedido-border, #fcfbfb);
   border-radius: 6px;
   font-size: 12.5px;
-  color: #1e293b;
-  background: #e3e9f7;
+  color: var(--pedido-text-main, #1e293b);
+  background: var(--pedido-field-bg, #e3e9f7);
   outline: none;
   width: 100%;
   box-sizing: border-box;
@@ -154,17 +155,17 @@
 
 .form-group input:focus,
 .form-group select:focus {
-  border-color: #0a3490;
-  box-shadow: 0 0 0 2px rgba(0, 55, 143, 0.192);
+  border-color: var(--pedido-blue, #0a3490);
+  box-shadow: 0 0 0 2px var(--pedido-focus-ring, rgba(0, 55, 143, 0.192));
 }
 
 .form-group input::placeholder {
-  color: #acb6c3;
+  color: var(--pedido-placeholder, #acb6c3);
 }
 
 .form-group input.readonly {
-  background: #d6e2ff;
-  color: #171718;
+  background: var(--pedido-field-readonly-bg, #d6e2ff);
+  color: var(--pedido-text-main, #171718);
   cursor: default;
 }
 
@@ -182,12 +183,12 @@
 }
 
 .form-area::-webkit-scrollbar-thumb {
-  background: rgba(100, 116, 139, 0.25);
+  background: var(--pedido-scrollbar, rgba(100, 116, 139, 0.25));
   border-radius: 10px;
 }
 
 .form-area::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 116, 139, 0.45);
+  background: var(--pedido-scrollbar, rgba(100, 116, 139, 0.45));
 }
 
 .modal-overlay {
@@ -203,10 +204,12 @@
 }
 
 .modal {
-  background: white;
+  background: var(--pedido-modal-bg, white);
+  color: var(--pedido-text-main, #1e293b);
   padding: 20px;
   border-radius: 12px;
   width: 400px;
+  border: 1px solid var(--pedido-border, transparent);
 
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
@@ -215,33 +218,34 @@
   padding: 10px;
   border-radius: 8px;
   cursor: pointer;
+  color: var(--pedido-text-main, #1e293b);
 }
 
 .cliente-item:hover {
-  background: #f1f5f9;
+  background: var(--pedido-blue-soft, #f1f5f9);
 }
 
 .btn-add-produto {
   margin-top: 5px;
   padding: 10px;
   border-radius: 10px;
-  border: 1px dashed #3b82f6;
+  border: 1px dashed var(--pedido-blue, #3b82f6);
   background: transparent;
-  color: #3b82f6;
+  color: var(--pedido-blue, #3b82f6);
   cursor: pointer;
   transition: 0.2s;
 }
 
 .btn-add-produto:hover {
-  background: #eff6ff;
+  background: var(--pedido-blue-soft, #eff6ff);
 }
 
 .btn-remover-produto {
   margin: 6px 0 6px;
   padding: 4px 8px;
   border: none;
-  background: #fee2e2;
-  color: #dc2626;
+  background: var(--pedido-danger-bg, #fee2e2);
+  color: var(--pedido-danger-text, #dc2626);
   border-radius: 8px;
   cursor: pointer;
 }
@@ -252,7 +256,13 @@
   margin: 12px 0;
   padding: 0 10px;
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--pedido-border, #e2e8f0);
+  background: var(--pedido-field-bg, #ffffff);
+  color: var(--pedido-text-main, #1e293b);
+}
+
+.input-busca::placeholder {
+  color: var(--pedido-placeholder, #acb6c3);
 }
 
 .lista-clientes {
@@ -270,5 +280,5 @@
 }
 
 .cliente-item:hover {
-  background: #f1f5f9;
+  background: var(--pedido-blue-soft, #f1f5f9);
 }

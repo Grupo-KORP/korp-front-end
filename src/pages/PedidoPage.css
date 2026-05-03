@@ -1,11 +1,64 @@
-body {
-  background: linear-gradient(120deg, #e0e7ff, #f8fafc);
+.pedido-page {
+  --pedido-bg: linear-gradient(120deg, #e0e7ff, #f8fafc);
+  --pedido-card-bg: #ffffff;
+  --pedido-card-soft-bg: #f8fafc;
+  --pedido-field-bg: #e3e9f7;
+  --pedido-field-readonly-bg: #d6e2ff;
+  --pedido-border: #e2e8f0;
+  --pedido-border-soft: #f1f5f9;
+  --pedido-text-strong: #111827;
+  --pedido-text-main: #1e293b;
+  --pedido-text-muted: #64748b;
+  --pedido-text-soft: #8a96a7;
+  --pedido-placeholder: #acb6c3;
+  --pedido-blue: #0a3490;
+  --pedido-blue-soft: #eff6ff;
+  --pedido-scrollbar: rgba(100, 116, 139, 0.25);
+  --pedido-focus-ring: rgba(0, 55, 143, 0.192);
+  --pedido-shadow: rgba(0, 0, 0, 0.04);
+  --pedido-modal-bg: #ffffff;
+  --pedido-danger-bg: #fee2e2;
+  --pedido-danger-text: #dc2626;
+
+  min-height: 100vh;
+  background: var(--pedido-bg);
+  color: var(--pedido-text-main);
   overflow: hidden;
+  transition: background 300ms cubic-bezier(0.4, 0, 0.2, 1), color 200ms ease;
+}
+
+.pedido-page-dark {
+  --pedido-bg: #111827;
+  --pedido-card-bg: #1f2937;
+  --pedido-card-soft-bg: #111827;
+  --pedido-field-bg: #374151;
+  --pedido-field-readonly-bg: #263449;
+  --pedido-border: #374151;
+  --pedido-border-soft: #334155;
+  --pedido-text-strong: #ffffff;
+  --pedido-text-main: #d1d5db;
+  --pedido-text-muted: #9ca3af;
+  --pedido-text-soft: #9ca3af;
+  --pedido-placeholder: #6b7280;
+  --pedido-blue: #60a5fa;
+  --pedido-blue-soft: rgba(30, 58, 138, 0.28);
+  --pedido-scrollbar: rgba(148, 163, 184, 0.35);
+  --pedido-focus-ring: rgba(96, 165, 250, 0.22);
+  --pedido-shadow: rgba(0, 0, 0, 0.22);
+  --pedido-modal-bg: #1f2937;
+  --pedido-danger-bg: rgba(127, 29, 29, 0.35);
+  --pedido-danger-text: #fca5a5;
+}
+
+.pedido-page-dark .modal-buttons button:last-child {
+  background: #374151;
+  color: #f9fafb;
+  border: 1px solid #4b5563;
 }
 
 .pedido-wrapper {
   margin: 0 22.2px;
-  padding: 4px 0 0;
+  padding: 6.5px 0 0;
 
   min-height: calc(100vh - 80px); /* respeita navbar real */
   display: flex;
@@ -20,10 +73,11 @@ body {
 .pedido-header h1 {
   font-size: 26px;
   font-weight: 700;
+  color: var(--pedido-text-strong);
 }
 
 .pedido-header p {
-  color: #64748b;
+  color: var(--pedido-text-muted);
 }
 
 .pedido-content {
