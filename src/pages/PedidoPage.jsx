@@ -3,9 +3,11 @@ import "./PedidoPage.css";
 import PedidoForm from "../components/forms/PedidoForm";
 import ResumoPedido from "../components/pedido/ResumoPedido";
 import { useState } from "react";
+import { useDarkMode } from "../hooks/useDarkMode";
 
 
 export default function PedidoPage() {
+    const { darkMode: modoEscuro } = useDarkMode();
 
     const [formData, setFormData] = useState({
         cliente: {},
@@ -30,7 +32,7 @@ export default function PedidoPage() {
     };
 
     return (
-        <div className="geral">
+        <div className={`geral pedido-page ${modoEscuro ? "pedido-page-dark" : ""}`}>
             <NavbarVendedor />
 
             <div className="pedido-wrapper">
