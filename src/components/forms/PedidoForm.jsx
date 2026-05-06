@@ -424,7 +424,7 @@ function ProdutoSection({ onChange }) {
 
           <div className="form-row">
             <div className="form-group grow-1">
-              <label>UNIT. FATURADO</label>
+              <label>VALOR UNIT. FATURADO</label>
               <input name="unitFaturado" type="number" step="0.01" value={data.unitFaturado} onChange={handle} placeholder="R$ 0,00" />
             </div>
             <div className="form-group grow-1">

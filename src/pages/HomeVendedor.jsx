@@ -241,14 +241,15 @@ export default function HomeVendedor() {
 
   const tendenciaPositiva = dados.tendencia.startsWith("+");
 
-  function gerarPDF() {
-    const janela = window.open("", "_blank");
-    janela.document.write(`
+  async function gerarPDF() {
+    const pdfHtml = `
       <html>
         <head>
           <title>Relatório de Comissões – ${mesSelecionado} 2026</title>
           <style>
-            body { font-family: Arial, sans-serif; padding: 32px; color: #1e293b; }
+            * { box-sizing: border-box; }
+            body { margin: 0; background: #ffffff; font-family: Arial, sans-serif; color: #1e293b; }
+            .pdf-document { width: 794px; padding: 32px; background: #ffffff; }
             h1 { font-size: 22px; color: #1a3a7a; margin-bottom: 4px; }
             p.sub { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 24px; }
             .resumo { display: flex; gap: 16px; margin-bottom: 32px; }
@@ -261,10 +262,12 @@ export default function HomeVendedor() {
             .badge { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
             .liberada { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
             .pendente { background: #fff7ed; color: #d97706; border: 1px solid #fed7aa; }
+            .resumo, .caixa, tr { break-inside: avoid; page-break-inside: avoid; }
             footer { margin-top: 40px; font-size: 10px; color: #cbd5e1; text-align: center; }
           </style>
         </head>
         <body>
+          <main class="pdf-document">
           <p class="sub">Operações de Venda</p>
           <h1>Painel do Consultor – ${mesSelecionado} 2026</h1>
           <div class="resumo">
@@ -290,11 +293,249 @@ export default function HomeVendedor() {
             </tbody>
           </table>
           <footer>Gerado em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR")} • TND Brasil</footer>
-          <script>window.onload = () => { window.print(); }<\/script>
+          </main>
         </body>
       </html>
-    `);
-    janela.document.close();
+    `;
+
+    const { default: html2pdf } = await import("html2pdf.js");
+    const iframe = document.createElement("iframe");
+
+    iframe.style.position = "fixed";
+    iframe.style.left = "-10000px";
+    iframe.style.top = "0";
+    iframe.style.width = "794px";
+    iframe.style.height = "1123px";
+    iframe.style.border = "0";
+
+    document.body.appendChild(iframe);
+
+    const iframeDocument = iframe.contentDocument || iframe.contentWindow.document;
+    iframeDocument.open();
+    iframeDocument.write(pdfHtml);
+    iframeDocument.close();
+    iframeDocument.body.style.width = "794px";
+    const pdfElement = iframeDocument.querySelector(".pdf-document") || iframeDocument.body;
+
+    const opt = {
+      margin: 10,
+      filename: `relatorio-comissoes-${mesSelecionado.toLowerCase()}-2026.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
+      pagebreak: { mode: ["css", "legacy"] },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    };
+
+    html2pdf()
+      .set(opt)
+      .from(pdfElement)
+      .save()
+      .then(() => {
+        iframe.remove();
+      }, () => {
+        iframe.remove();
+      });
+  }
+
+  async function gerarPDFRelatorio() {
+    const { jsPDF } = await import("jspdf");
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 14;
+    const usableWidth = pageWidth - margin * 2;
+    let y = 16;
+
+    const safeText = (value) => {
+      const valueText = String(value ?? "").trim();
+      return valueText || "-";
+    };
+
+    const ensureSpace = (height) => {
+      if (y + height > pageHeight - 18) {
+        doc.addPage();
+        y = 16;
+      }
+    };
+
+    const sectionTitle = (title) => {
+      ensureSpace(14);
+      y += y > 18 ? 5 : 0;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(6, 29, 81);
+      doc.text(title, margin, y);
+      y += 3;
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.45);
+      doc.line(margin, y, pageWidth - margin, y);
+      y += 7;
+    };
+
+    const metricCards = () => {
+      const gap = 4;
+      const cardWidth = (usableWidth - gap * 3) / 4;
+      const metrics = [
+        { label: "Total de Vendas", value: dados.totalVendas, color: [30, 41, 59] },
+        { label: "Comissoes Liberadas", value: dados.comissoesLiberadas, color: [22, 163, 74] },
+        { label: "Pagamentos Pendentes", value: dados.pagamentosPendentes, color: [217, 119, 6] },
+        { label: "Projecao Bruta", value: dados.projecao, color: [30, 58, 138] },
+      ];
+
+      ensureSpace(30);
+      metrics.forEach((metric, index) => {
+        const x = margin + index * (cardWidth + gap);
+        doc.setDrawColor(226, 232, 240);
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(x, y, cardWidth, 25, 2, 2, "FD");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(6.8);
+        doc.setTextColor(148, 163, 184);
+        doc.text(metric.label.toUpperCase(), x + 3, y + 6);
+        doc.setFontSize(16);
+        doc.setTextColor(...metric.color);
+        doc.text(String(metric.value), x + 3, y + 17);
+      });
+      y += 32;
+    };
+
+    const tableHeader = (columns) => {
+      ensureSpace(10);
+      doc.setFillColor(241, 245, 249);
+      doc.rect(margin, y, usableWidth, 9, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
+      doc.setTextColor(100, 116, 139);
+
+      let x = margin;
+      columns.forEach((column) => {
+        doc.text(column.label, x + 1.5, y + 5.8, { maxWidth: column.width - 3 });
+        x += column.width;
+      });
+      y += 9;
+    };
+
+    const salesTable = () => {
+      const columns = [
+        { label: "ID", width: 16, value: (v) => v.id },
+        { label: "Venda", width: 34, value: (v) => v.nome },
+        { label: "Cliente", width: 58, value: (v) => v.cliente },
+        { label: "Comissao", width: 38, value: (v) => v.comissao },
+        { label: "Status", width: 36, value: (v) => v.status },
+      ];
+
+      tableHeader(columns);
+
+      dados.vendas.forEach((venda) => {
+        const cells = columns.map((column) => {
+          const lines = doc.splitTextToSize(safeText(column.value(venda)), column.width - 3);
+          return { ...column, lines };
+        });
+        const rowHeight = Math.max(12, ...cells.map((cell) => 5 + cell.lines.length * 4));
+
+        if (y + rowHeight > pageHeight - 18) {
+          doc.addPage();
+          y = 16;
+          tableHeader(columns);
+        }
+
+        let x = margin;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.5);
+        doc.setTextColor(30, 41, 59);
+
+        cells.forEach((cell, index) => {
+          if (index === 4) {
+            const isLiberada = venda.tipo === "liberada";
+            doc.setFillColor(isLiberada ? 240 : 255, isLiberada ? 253 : 247, isLiberada ? 244 : 237);
+            doc.setDrawColor(isLiberada ? 187 : 254, isLiberada ? 247 : 215, isLiberada ? 208 : 170);
+            doc.roundedRect(x + 1.5, y + 2.5, cell.width - 3, 6.5, 2, 2, "FD");
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(6.7);
+            doc.setTextColor(isLiberada ? 22 : 217, isLiberada ? 163 : 119, isLiberada ? 74 : 6);
+            doc.text(cell.lines, x + 3, y + 7, { maxWidth: cell.width - 6 });
+          } else {
+            doc.setFont("helvetica", index === 0 ? "bold" : "normal");
+            doc.setFontSize(8.5);
+            doc.setTextColor(30, 41, 59);
+            doc.text(cell.lines, x + 1.5, y + 6, { maxWidth: cell.width - 3 });
+          }
+          x += cell.width;
+        });
+
+        doc.setDrawColor(241, 245, 249);
+        doc.line(margin, y + rowHeight, pageWidth - margin, y + rowHeight);
+        y += rowHeight;
+      });
+
+      y += 4;
+    };
+
+    const parcelSummary = () => {
+      if (todasParcelas.length === 0) return;
+
+      sectionTitle("Parcelas Liberadas");
+      const gap = 4;
+      const columns = 2;
+      const boxWidth = (usableWidth - gap) / columns;
+
+      for (let i = 0; i < todasParcelas.length; i += columns) {
+        const row = todasParcelas.slice(i, i + columns);
+        ensureSpace(17);
+
+        row.forEach((parcela, index) => {
+          const x = margin + index * (boxWidth + gap);
+          doc.setDrawColor(226, 232, 240);
+          doc.setFillColor(255, 255, 255);
+          doc.roundedRect(x, y, boxWidth, 14, 2, 2, "FD");
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(7);
+          doc.setTextColor(148, 163, 184);
+          doc.text(safeText(parcela.label).toUpperCase(), x + 3, y + 5);
+          doc.setFontSize(10);
+          doc.setTextColor(30, 41, 59);
+          doc.text(safeText(parcela.valor), x + 3, y + 11);
+        });
+
+        y += 18;
+      }
+    };
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(59, 130, 246);
+    doc.text("OPERACOES DE VENDA", margin, y);
+    y += 8;
+    doc.setFontSize(18);
+    doc.setTextColor(26, 58, 122);
+    doc.text(`Painel do Consultor - ${mesSelecionado} 2026`, margin, y);
+    y += 9;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(100, 116, 139);
+    doc.text("Relatorio mensal de comissoes e vendas", margin, y);
+    y += 10;
+
+    metricCards();
+    sectionTitle("Todas as Vendas");
+    salesTable();
+    parcelSummary();
+
+    const totalPages = doc.getNumberOfPages();
+    for (let page = 1; page <= totalPages; page += 1) {
+      doc.setPage(page);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(148, 163, 184);
+      doc.text(
+        `Gerado em ${new Date().toLocaleDateString("pt-BR")} as ${new Date().toLocaleTimeString("pt-BR")} - TND Brasil`,
+        margin,
+        pageHeight - 8
+      );
+      doc.text(`Pagina ${page} de ${totalPages}`, pageWidth - margin, pageHeight - 8, { align: "right" });
+    }
+
+    doc.save(`relatorio-comissoes-${mesSelecionado.toLowerCase()}-2026.pdf`);
   }
 
   function alternarCard(chave) {
@@ -604,7 +845,7 @@ export default function HomeVendedor() {
 
             {/* Emitir PDF */}
             <button
-              onClick={gerarPDF}
+              onClick={gerarPDFRelatorio}
               className="w-full py-2.5 rounded-xl text-sm font-bold text-white tracking-wide transition-all duration-200 hover:opacity-90 active:scale-[0.98] shadow-md"
               style={{ background: "linear-gradient(135deg, #1a3a7a 0%, #2d5fa6 100%)" }}
             >
