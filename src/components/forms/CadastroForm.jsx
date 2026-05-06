@@ -55,22 +55,17 @@ function CadastroForm() {
     setLoading(true)
     setApiError(null)
 
-    // Modificar, caso o financeiro utilize
-
-    // try {
-    //   // TODO: integração real — chamar endpoint POST /colaboradores
-    //   await cadastrarColaborador(values)
-    //   setSuccess(true)
-    //   reset()
-
-    //   // Redireciona para login após 2s
-    //   setTimeout(() => navigate('/login'), 2000)
-    // } catch (err) {
-    //   setApiError(err.message)
-    // } finally {
-    //   setLoading(false)
-    // }
-  }
+    try {
+      await cadastrarColaborador(values)
+      setSuccess(true)
+      reset()
+      setTimeout(() => navigate('/login'), 2000)
+    } catch (err) {
+      setApiError(err.message)
+    } finally {
+      setLoading(false)
+    }
+}
 
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4 w-full">
