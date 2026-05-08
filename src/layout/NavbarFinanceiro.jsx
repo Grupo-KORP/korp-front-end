@@ -6,6 +6,7 @@ import lua from "../assets/lua.png";
 import logout from "../assets/logout.png";
 import sun from "../assets/sun.png";
 import { useDarkMode } from "../hooks/useDarkMode";
+import { useAuth } from '../hooks/useAuth'
 
 export default function NavbarVendedor() {
   const { pathname } = useLocation();
@@ -20,13 +21,15 @@ export default function NavbarVendedor() {
     { name: "COMISSÕES", path: "/comissoes" },
   ];
 
-  function handleLogout() {
-    setShowModal(true);
-  }
-
-  function confirmLogout() {
-    navigate("/login");
-  }
+   const { sair } = useAuth()
+    function handleLogout() {
+      setShowModal(true);
+    }
+  
+    async function confirmLogout() {
+      await sair() 
+      navigate("/login");
+    }
 
   return (
     <>

@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useAuth } from '../hooks/useAuth'
 import "./NavbarVendedor.css";
 import logo from "../assets/logo-tnd.webp";
 import lua from "../assets/lua.png";
@@ -22,11 +23,13 @@ export default function NavbarVendedor() {
     { name: "ADICIONAR PEDIDO", path: "/vendedores/pedido" },
   ];
 
+  const { sair } = useAuth()
   function handleLogout() {
     setShowModal(true);
   }
 
-  function confirmLogout() {
+  async function confirmLogout() {
+    await sair() 
     navigate("/login");
   }
 

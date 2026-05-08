@@ -19,7 +19,7 @@ function AppRoutes() {
       <Route path="/vendedores/distribuidor" element={<DistribuidorPage />} />
       <Route path="/vendedores/produtos" element={<ProdutoPage />} />
       <Route path="/vendedores/pedido"     element={<PedidoPage />} />
-      <Route path="/vendedores/home"     element={<HomeVendedor/>} />
+      <Route path="/vendedores/home"     element={<HomeVendedor/>}   />
     </Routes>
   )
 }

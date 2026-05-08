@@ -1,17 +1,10 @@
 import { useState } from 'react'
 import { login as apiLogin, logout as apiLogout } from '../services/api'
 
-/**
- * Hook de autenticação.
- * Encapsula a lógica de login/logout e mantém o estado do usuário.
- *
- * Uso:
- *   const { usuario, loading, error, entrar, sair } = useAuth()
- */
 export function useAuth() {
   const [usuario, setUsuario] = useState(null)
-  const [loading, setLoading]  = useState(false)
-  const [error, setError]      = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState(null)
 
   async function entrar(credentials) {
     setLoading(true)
@@ -21,8 +14,13 @@ export function useAuth() {
       setUsuario(data.usuario)
       return data
     } catch (err) {
-      setError(err.message)
-      throw err
+      const mensagem =
+        err.status === 401 || err.status === 403
+          ? 'Usuário ou senha incorretos'
+          : 'Erro inesperado. Tente novamente.'
+
+      setError(mensagem)
+      throw new Error(mensagem) // relança para o componente tratar se quiser
     } finally {
       setLoading(false)
     }
