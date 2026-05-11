@@ -42,12 +42,7 @@ const rows = [
 const fields = [
   { label: "Descri\u00e7\u00e3o do Produto", placeholder: "Ex: Pacote Office 365", span: "full" },
   { label: "Codigo P/N", placeholder: "#000000" },
-  { label: "Valor Unit\u00e1rio", placeholder: "R$ 0,00" },
-  { label: "Especialidade", placeholder: "softwer" },
-  { label: "CEP", placeholder: "00000-000" },
-  { label: "Distribuidor", placeholder: "Ex: Empresa Solution", span: "full" },
-  { label: "Contato", placeholder: "Nome do Respons\u00e1vel", span: "full" },
-  { label: "E-mail", placeholder: "contato@empresa.com", span: "full" },
+
 ];
 
 export default function ProdutoPage() {
