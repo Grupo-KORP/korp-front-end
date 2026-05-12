@@ -50,7 +50,7 @@ useEffect(() => {
   const [showAll, setShowAll] = useState(false);
 
   /* classes de tema */
-  const bg      = modoEscuro ? "bg-gray-900"  : "bg-gray-100";
+  const bg      = modoEscuro ? "bg-gray-900"  : "";
   const cardBg  = modoEscuro ? "bg-gray-800"  : "bg-white";
   const borda   = modoEscuro ? "border-gray-700" : "border-gray-200";
   const textoP  = modoEscuro ? "text-white"   : "text-gray-900";
@@ -136,26 +136,30 @@ useEffect(() => {
   const displayed = showAll ? filtered : filtered.slice(0, 4);
 
   return (
-    <div className={`h-screen overflow-hidden flex flex-col ${bg} transition-colors duration-300`}>
+    <div
+      className={`h-screen overflow-hidden flex flex-col ${bg} transition-colors duration-300`}
+      style={!modoEscuro ? { background: "linear-gradient(120deg, #e0e7ff, #f8fafc)" } : undefined}
+    >
       <NavbarVendedor />
 
-      <div className="flex-1 overflow-y-auto lg:overflow-hidden w-full px-6 py-5">
+      <div className="flex-1 overflow-y-auto lg:overflow-hidden w-full px-5 py-4 sm:py-5">
+        <div className="flex h-full w-full flex-col">
         {/* Main Grid */}
-        <div className="flex flex-col lg:flex-row gap-4 items-stretch">
+        <div className="flex min-h-0 flex-1 flex-col lg:flex-row gap-4 items-stretch">
 
           {/* ── Tabela de Vendedores ── */}
-          <div className="flex-1 flex flex-col">
+          <div className="min-w-0 flex-1 flex flex-col">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-3">
-              <div>
-                <p className="text-xs font-semibold tracking-widest text-blue-500 uppercase mb-1">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
+              <div className="pl-4 sm:pl-6">
+                <h1 className={`text-xl font-extrabold leading-tight ${textoP}`}>Painel de vendedores</h1>
+                <p className="text-[10px] font-semibold tracking-widest text-blue-500 uppercase leading-none mt-0.5">
                   Colaboradores Cadastrados
                 </p>
-                <h1 className={`text-2xl font-extrabold ${textoP}`}>Painel de vendedores</h1>
               </div>
 
               {/* Search */}
-              <div className="relative w-full max-w-sm">
+              <div className="relative w-full sm:max-w-xs md:max-w-sm xl:max-w-md">
                 <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
                   fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -170,7 +174,8 @@ useEffect(() => {
                 />
               </div>
             </div>
-            <div className={`${cardBg} rounded-2xl shadow-sm p-6 transition-colors duration-300 flex flex-col flex-1 lg:min-h-[30rem]`}>
+
+            <div className={`${cardBg} rounded-2xl shadow-sm p-4 sm:p-6 transition-colors duration-300 flex min-h-0 flex-col flex-1`}>
             <div className="flex items-center gap-2 mb-6">
               <div className="w-1 h-6 rounded-full bg-blue-700" />
               <h2 className={`text-lg font-bold ${textoM}`}>Base de vendedores</h2>
@@ -247,28 +252,29 @@ useEffect(() => {
             </div>
 
             {/* Ver mais */}
-            {filtered.length > 4 && (
-            <div className={`flex justify-center mt-4 pt-3 border-t ${borda}`}>
-                <button
-                  onClick={() => setShowAll(!showAll)}
-                  className={`flex items-center gap-2 text-sm font-semibold tracking-widest uppercase transition-colors ${textoS} hover:text-blue-500`}
+            <div className={`-mx-6 mt-4 flex justify-center border-t ${borda} pt-4 pb-1`}>
+              <button
+                onClick={() => setShowAll(!showAll)}
+                disabled={filtered.length <= 4}
+                className={`flex items-center gap-3 text-[11px] font-extrabold tracking-widest uppercase transition-colors ${
+                  filtered.length > 4 ? `${textoS} hover:text-blue-500` : `${textoS} cursor-default`
+                }`}
+              >
+                {showAll ? "VER MENOS" : "VER MAIS VENDEDORES"}
+                <svg
+                  className={`w-4 h-4 transition-transform ${showAll ? "rotate-180" : ""}`}
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor"
                 >
-                  {showAll ? "VER MENOS" : "VER MAIS VENDEDORES"}
-                  <svg
-                    className={`w-4 h-4 transition-transform ${showAll ? "rotate-180" : ""}`}
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-              </div>
-            )}
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            </div>
           </div>
 
           {/* ── Painel de Cadastro ── */}
           </div>
 
-          <div className={`w-full lg:w-72 flex-shrink-0 ${cardBg} rounded-2xl shadow-sm p-6 flex flex-col gap-5 transition-colors duration-300 lg:min-h-[33.5rem]`}>
+          <div className={`w-full lg:w-72 xl:w-80 2xl:w-96 flex-shrink-0 ${cardBg} rounded-2xl shadow-sm p-4 sm:p-6 flex flex-col gap-5 transition-colors duration-300`}>
             {/* Header do form */}
             <div>
               <div className="flex items-center gap-2 mb-1">
@@ -389,6 +395,7 @@ useEffect(() => {
             </form>
           </div>
 
+        </div>
         </div>
       </div>
     </div>
