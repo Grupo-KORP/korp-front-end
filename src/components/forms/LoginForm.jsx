@@ -5,6 +5,7 @@ import Button from '../ui/Button'
 import Alert from '../ui/Alert'
 import { useForm } from '../../hooks/useForm'
 import { useAuth } from '../../hooks/useAuth'
+import { decodeJWT } from '../../services/api'
 
 /**
  * LoginForm
@@ -38,9 +39,16 @@ function LoginForm() {
     if (!validate()) return
 
     try {
-      // TODO: após login bem-sucedido, redirecionar para /dashboard
+      // TODO: após login bem-sucedido, redirecionar para /vendedores/home
       await entrar({ email: values.email, senha: values.senha })
-      navigate('/vendedores/home')
+     const token = localStorage.getItem('korp_token')
+     const isVendedor = decodeJWT(token).roles.includes('ROLE_VEND')
+
+      if (isVendedor) {
+        navigate('/vendedores/home')
+      } else {
+        navigate('/financeiro/vendedores')
+       }
     } catch {
       // Erro já capturado pelo hook useAuth e exibido via `error`
     }

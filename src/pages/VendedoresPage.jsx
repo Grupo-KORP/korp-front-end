@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Alert from "../components/ui/Alert";
-import { api } from "../services/api.js";
+import { api, verificarSeFinanceiro, verificarToken } from "../services/api.js";
 import NavbarVendedor from "../layout/NavbarFinanceiro.jsx";
 import { useDarkMode } from "../hooks/useDarkMode.jsx";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 const initialVendedores = [
   { id: 1, codigo: "V1", nome: "VENDEDOR 1", emailInterno: "maria.silva@tndbrasil.com", emailExterno: "maria.silva@microsoft.com", compras: 5, status: "Ativo", comissao: "30%" },
@@ -14,6 +16,29 @@ const initialVendedores = [
 const emptyForm = { nome: "", email: "", fone: "", comissao: "30%", status: "Ativo" };
 
 export default function VendedoresPage() {
+  const navigate = useNavigate();
+  const toastShown = useRef(false);
+
+useEffect(() => {
+  if (toastShown.current) return;
+
+  if (!verificarToken()) {
+    toastShown.current = true;
+    toast.error("Sessão expirada. Faça login novamente.", {
+      duration: 500,
+      onAutoClose: () => navigate("/login"),
+    });
+    return;
+  }
+
+  // Página exclusiva do financeiro — vendedor não tem acesso
+  if (!verificarSeFinanceiro()) {
+    toastShown.current = true;
+    toast.error("Acesso negado. Você não tem permissão para acessar esta página.");
+    navigate("/vendedores/home");
+  }
+}, []);
+
   const { darkMode: modoEscuro } = useDarkMode();
 
   const [vendedores, setVendedores] = useState(initialVendedores);
@@ -68,7 +93,7 @@ export default function VendedoresPage() {
     const payload = {
       nome: form.nome.toUpperCase(),
       email: form.email,
-      senha: 123456,
+      senha: "",
       telefone: form.fone,
       role: 2,
       percentualComissao: parseFloat(form.comissao)
