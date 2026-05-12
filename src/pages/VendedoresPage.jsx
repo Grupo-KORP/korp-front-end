@@ -25,7 +25,7 @@ export default function VendedoresPage() {
   const [showAll, setShowAll] = useState(false);
 
   /* classes de tema */
-  const bg      = modoEscuro ? "bg-gray-900"  : "bg-gray-100";
+  const bg      = modoEscuro ? "bg-gray-900"  : "";
   const cardBg  = modoEscuro ? "bg-gray-800"  : "bg-white";
   const borda   = modoEscuro ? "border-gray-700" : "border-gray-200";
   const textoP  = modoEscuro ? "text-white"   : "text-gray-900";
@@ -111,7 +111,10 @@ export default function VendedoresPage() {
   const displayed = showAll ? filtered : filtered.slice(0, 4);
 
   return (
-    <div className={`h-screen overflow-hidden flex flex-col ${bg} transition-colors duration-300`}>
+    <div
+      className={`h-screen overflow-hidden flex flex-col ${bg} transition-colors duration-300`}
+      style={!modoEscuro ? { background: "linear-gradient(120deg, #e0e7ff, #f8fafc)" } : undefined}
+    >
       <NavbarVendedor />
 
       <div className="flex-1 overflow-y-auto lg:overflow-hidden w-full px-6 py-5">
