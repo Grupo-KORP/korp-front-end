@@ -36,15 +36,71 @@ api.interceptors.response.use(
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
 export async function login({ email, senha }) {
+  console.log('API: login', { email, senha })
   const { data } = await api.post('/auth/login', { email, senha })
   // data = { token, nome, email }
   localStorage.setItem('korp_token', data.token)
   return { usuario: { nome: data.nome, email: data.email } }
 }
 
-export async function logout() {
+export function logout() {
   localStorage.removeItem('korp_token')
 }
+
+export function verificarToken() {
+  const token = localStorage.getItem("korp_token");
+  if (!token) return false;
+
+  try {
+    const { expiresAt } = decodeJWT(token);
+    return new Date() < expiresAt; 
+  } catch {
+    return false;
+  }
+}
+
+export function decodeJWT(token) {
+  try {
+    const [header, payload, signature] = token.split('.');
+
+    if (!header || !payload || !signature) {
+      throw new Error('Token JWT inválido: formato incorreto.');
+    }
+
+    const base64Decode = (str) => {
+      const base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+      const padded = base64.padEnd(base64.length + (4 - base64.length % 4) % 4, '=');
+      return JSON.parse(atob(padded));
+    };
+
+    const { sub, roles, id, iat, exp } = base64Decode(payload);
+
+    return {
+      email: sub,
+      roles: roles.map(r => r.authority), 
+      id,
+      issuedAt: new Date(iat * 1000),
+      expiresAt: new Date(exp * 1000),
+    };
+
+  } catch (error) {
+    throw new Error(`Falha ao decodificar o JWT: ${error.message}`);
+  }
+}
+
+
+export function verificarSeVendedor() {
+  if (!verificarToken()) return false;
+  const token = localStorage.getItem("korp_token");
+  return decodeJWT(token).roles.includes("ROLE_VEND");
+}
+
+export function verificarSeFinanceiro() {
+  if (!verificarToken()) return false;
+  const token = localStorage.getItem("korp_token");
+  return decodeJWT(token).roles.includes("ROLE_FINAN");
+}
+
 
 // ─── Colaboradores ───────────────────────────────────────────────────────────
 

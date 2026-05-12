@@ -1,6 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import Navbar from "../layout/NavbarVendedor";
 import { useDarkMode } from "../hooks/useDarkMode";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { verificarSeVendedor, verificarToken } from "../services/api";
 
 /* ══════════════════════════════════════════
    DADOS MOCKADOS
@@ -186,6 +189,7 @@ function CardMetrica({ icone, rotulo, valor, badge, sub, ativo, aoClicar, dark }
 ══════════════════════════════════════════ */
 export default function HomeVendedor() {
   const { darkMode: modoEscuro } = useDarkMode();
+  const navigate = useNavigate();
   const [mesSelecionado, setMesSelecionado] = useState(MES_ATUAL);
   const [mostrarMeses, setMostrarMeses]     = useState(false);
   const [cardAtivo, setCardAtivo]           = useState(null);
@@ -194,6 +198,7 @@ export default function HomeVendedor() {
   const [ocultarProjecao, setOcultarProjecao] = useState(false);
 
   const refDropdown = useRef(null);
+  const toastShown = useRef(false);
 
   /* fecha dropdown ao clicar fora */
   useEffect(() => {
@@ -205,6 +210,25 @@ export default function HomeVendedor() {
     document.addEventListener("mousedown", fecharAoClicarFora);
     return () => document.removeEventListener("mousedown", fecharAoClicarFora);
   }, []);
+
+  useEffect(() => {
+  if (toastShown.current) return;
+
+  if (!verificarToken()) {
+    toastShown.current = true;
+    toast.error("Sessão expirada. Faça login novamente.");
+    navigate("/login");
+    return;
+  }
+
+  // Página exclusiva do vendedor — financeiro não tem acesso
+  if (!verificarSeVendedor()) {
+    toastShown.current = true;
+    toast.error("Acesso negado. Você não tem permissão para acessar esta página.");
+    navigate("/financeiro/vendedores");
+  }
+}, []);
+
 
   const baseDados = DADOS_POR_MES[mesSelecionado] || DADOS_POR_MES[MES_ATUAL];
 
