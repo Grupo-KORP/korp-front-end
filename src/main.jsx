@@ -10,7 +10,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
       <DarkModeProvider>
-        <Toaster />
+        <Toaster  richColors position="bottom-right" />
         <App />
       </DarkModeProvider>
     </BrowserRouter>

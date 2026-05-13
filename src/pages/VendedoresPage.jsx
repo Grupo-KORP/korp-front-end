@@ -18,26 +18,27 @@ const emptyForm = { nome: "", email: "", fone: "", comissao: "30%", status: "Ati
 export default function VendedoresPage() {
   const navigate = useNavigate();
   const toastShown = useRef(false);
+  const [loading, setLoading] = useState(false);
 
-useEffect(() => {
-  if (toastShown.current) return;
+  useEffect(() => {
+    if (toastShown.current) return;
 
-  if (!verificarToken()) {
-    toastShown.current = true;
-    toast.error("Sessão expirada. Faça login novamente.", {
-      duration: 500,
-      onAutoClose: () => navigate("/login"),
-    });
-    return;
-  }
+    if (!verificarToken()) {
+      toastShown.current = true;
+      toast.error("Sessão expirada. Faça login novamente.", {
+        duration: 500,
+        onAutoClose: () => navigate("/login"),
+      });
+      return;
+    }
 
-  // Página exclusiva do financeiro — vendedor não tem acesso
-  if (!verificarSeFinanceiro()) {
-    toastShown.current = true;
-    toast.error("Acesso negado. Você não tem permissão para acessar esta página.");
-    navigate("/vendedores/home");
-  }
-}, []);
+    // Página exclusiva do financeiro — vendedor não tem acesso
+    if (!verificarSeFinanceiro()) {
+      toastShown.current = true;
+      toast.error("Acesso negado. Você não tem permissão para acessar esta página.");
+      navigate("/vendedores/home");
+    }
+  }, []);
 
   const { darkMode: modoEscuro } = useDarkMode();
 
@@ -50,14 +51,14 @@ useEffect(() => {
   const [showAll, setShowAll] = useState(false);
 
   /* classes de tema */
-  const bg      = modoEscuro ? "bg-gray-900"  : "bg-gray-100";
-  const cardBg  = modoEscuro ? "bg-gray-800"  : "bg-white";
-  const borda   = modoEscuro ? "border-gray-700" : "border-gray-200";
-  const textoP  = modoEscuro ? "text-white"   : "text-gray-900";
-  const textoM  = modoEscuro ? "text-gray-300" : "text-gray-800";
-  const textoS  = modoEscuro ? "text-gray-400" : "text-gray-400";
+  const bg = modoEscuro ? "bg-gray-900" : "bg-gray-100";
+  const cardBg = modoEscuro ? "bg-gray-800" : "bg-white";
+  const borda = modoEscuro ? "border-gray-700" : "border-gray-200";
+  const textoP = modoEscuro ? "text-white" : "text-gray-900";
+  const textoM = modoEscuro ? "text-gray-300" : "text-gray-800";
+  const textoS = modoEscuro ? "text-gray-400" : "text-gray-400";
   const inputBg = modoEscuro ? "bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-500" : "bg-gray-50 border-gray-200 text-gray-700 placeholder-gray-300";
-  const hover   = modoEscuro ? "hover:bg-gray-700" : "hover:bg-gray-50";
+  const hover = modoEscuro ? "hover:bg-gray-700" : "hover:bg-gray-50";
 
   /* ── Máscara de telefone ── */
   function maskPhone(raw) {
@@ -95,19 +96,26 @@ useEffect(() => {
       email: form.email,
       senha: "",
       telefone: form.fone,
-      role: 2,
-      percentualComissao: parseFloat(form.comissao)
+      role: 1,
+      percentualComissao: parseFloat(form.comissao),
     };
 
+    setLoading(true);
     try {
       const response = await api.post(`/usuario`, payload);
-      console.log(response.data);
       setVendedores((prev) => [...prev, response.data]);
-      setSuccess("Vendedor cadastrado com sucesso!");
+      // setSuccess("Vendedor cadastrado com sucesso!");
+       toast.success("Vendedor cadastrado com sucesso! Verifique o e-mail para receber a senha de acesso da conta!.", { duration: 7000 });
       setForm(emptyForm);
       setTimeout(() => setSuccess(null), 3000);
     } catch (error) {
-      console.error("Erro na requisição:", error);
+      if (error.status === 409) {
+        toast.error(error.message);
+      } else {
+        toast.error("Erro ao cadastrar vendedor. Tente novamente.");
+      }
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -293,6 +301,7 @@ useEffect(() => {
                   name="nome"
                   type="text"
                   placeholder="Ex: Maria Silva"
+                  maxLength={100}
                   value={form.nome}
                   onChange={handleFormChange}
                   className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition ${inputBg} ${errors.nome ? "border-red-400" : ""}`}
@@ -309,6 +318,7 @@ useEffect(() => {
                   name="email"
                   type="email"
                   placeholder="rafael.santos@tndbrasil.com"
+                  maxLength={60}
                   value={form.email}
                   onChange={handleFormChange}
                   className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition ${inputBg} ${errors.email ? "border-red-400" : ""}`}
@@ -376,10 +386,11 @@ useEffect(() => {
                 )}
                 <button
                   type="submit"
-                  className="flex-1 py-3 rounded-xl text-sm font-bold text-white tracking-wide transition-all duration-200 hover:opacity-90 active:scale-[0.98] shadow-md"
+                  disabled={loading}
+                  className="flex-1 py-3 rounded-xl text-sm font-bold text-white tracking-wide transition-all duration-200 hover:opacity-90 active:scale-[0.98] shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
                   style={{ background: "linear-gradient(135deg, #1a3a7a 0%, #2d5fa6 100%)" }}
                 >
-                  {editingId ? "Salvar" : "Cadastrar"}
+                  {loading ? "Aguarde..." : editingId ? "Salvar" : "Cadastrar"}
                 </button>
               </div>
             </form>

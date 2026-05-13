@@ -119,7 +119,7 @@ export async function cadastrarColaborador(dados) {
   return data
 }
 
-export async function listarColaboradores() {
-  await new Promise(r => setTimeout(r, 500))
-  return []
-}
+// export async function listarColaboradores() {
+//   await new Promise(r => setTimeout(r, 500))
+//   return []
+// }
