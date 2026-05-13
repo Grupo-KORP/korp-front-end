@@ -7,10 +7,10 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 const initialVendedores = [
-  { id: 1, codigo: "V1", nome: "VENDEDOR 1", emailInterno: "maria.silva@tndbrasil.com", emailExterno: "maria.silva@microsoft.com", compras: 5, status: "Ativo", comissao: "30%" },
-  { id: 2, codigo: "V2", nome: "VENDEDOR 2", emailInterno: "joao.oliveira@tndbrasil.com", emailExterno: "joao.oliveira@techsolutons.com", compras: 2, status: "Ativo", comissao: "25%" },
-  { id: 3, codigo: "V3", nome: "VENDEDOR 3", emailInterno: "ana.costa@tndbrasil.com", emailExterno: "ana.costa@glabal.corp", compras: 4, status: "Ativo", comissao: "30%" },
-  { id: 4, codigo: "V4", nome: "VENDEDOR 4", emailInterno: "rafa.santos@tndbrasil.com", emailExterno: "rafa.santos@globan.com", compras: 1, status: "Ativo", comissao: "20%" },
+  { id: 1, codigo: "V1", nome: "Matheus Camargo", emailInterno: "maria.silva@tndbrasil.com", emailExterno: "maria.silva@microsoft.com", vendas: 5, comissoesPendentes: 2, status: "Ativo", comissao: "30%" },
+  { id: 2, codigo: "V2", nome: "Ana Silva", emailInterno: "joao.oliveira@tndbrasil.com", emailExterno: "joao.oliveira@techsolutons.com", vendas: 2, comissoesPendentes: 1, status: "Ativo", comissao: "25%" },
+  { id: 3, codigo: "V3", nome: "Henrique Santos", emailInterno: "ana.costa@tndbrasil.com", emailExterno: "ana.costa@glabal.corp", vendas: 4, comissoesPendentes: 0, status: "Ativo", comissao: "30%" },
+  { id: 4, codigo: "V4", nome: "Rafael Almeida", emailInterno: "rafa.santos@tndbrasil.com", emailExterno: "rafa.santos@globan.com", vendas: 1, comissoesPendentes: 1, status: "Ativo", comissao: "20%" },
 ];
 
 const emptyForm = { nome: "", email: "", fone: "", comissao: "30%", status: "Ativo" };
@@ -51,12 +51,12 @@ export default function VendedoresPage() {
   const [showAll, setShowAll] = useState(false);
 
   /* classes de tema */
-  const bg = modoEscuro ? "bg-gray-900" : "bg-gray-100";
-  const cardBg = modoEscuro ? "bg-gray-800" : "bg-white";
-  const borda = modoEscuro ? "border-gray-700" : "border-gray-200";
-  const textoP = modoEscuro ? "text-white" : "text-gray-900";
-  const textoM = modoEscuro ? "text-gray-300" : "text-gray-800";
-  const textoS = modoEscuro ? "text-gray-400" : "text-gray-400";
+  const bg      = modoEscuro ? "bg-gray-900"  : "";
+  const cardBg  = modoEscuro ? "bg-gray-800"  : "bg-white";
+  const borda   = modoEscuro ? "border-gray-700" : "border-gray-200";
+  const textoP  = modoEscuro ? "text-white"   : "text-gray-900";
+  const textoM  = modoEscuro ? "text-gray-300" : "text-gray-800";
+  const textoS  = modoEscuro ? "text-gray-400" : "text-gray-400";
   const inputBg = modoEscuro ? "bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-500" : "bg-gray-50 border-gray-200 text-gray-700 placeholder-gray-300";
   const hover = modoEscuro ? "hover:bg-gray-700" : "hover:bg-gray-50";
 
@@ -144,73 +144,80 @@ export default function VendedoresPage() {
   const displayed = showAll ? filtered : filtered.slice(0, 4);
 
   return (
-    <div className={`min-h-screen ${bg} transition-colors duration-300`}>
+    <div
+      className={`h-screen overflow-hidden flex flex-col ${bg} transition-colors duration-300`}
+      style={!modoEscuro ? { background: "linear-gradient(120deg, #e0e7ff, #f8fafc)" } : undefined}
+    >
       <NavbarVendedor />
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Header */}
-        <div className="flex items-end justify-between mb-6">
-          <div>
-            <p className="text-xs font-semibold tracking-widest text-blue-500 uppercase mb-1">
-              Colaboradores Cadastrados
-            </p>
-            <h1 className={`text-3xl font-extrabold ${textoP}`}>Painel de vendedores</h1>
-          </div>
-
-          {/* Search */}
-          <div className="relative">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
-              fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z" />
-            </svg>
-            <input
-              type="text"
-              placeholder="PESQUISAR VENDEDOR"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className={`pl-9 pr-4 py-2.5 rounded-full border text-sm placeholder-gray-400 tracking-wider focus:outline-none focus:ring-2 focus:ring-blue-300 w-64 shadow-sm ${inputBg}`}
-            />
-          </div>
-        </div>
-
+      <div className="flex-1 overflow-y-auto lg:overflow-hidden w-full px-5 py-4 sm:py-5">
+        <div className="flex h-full w-full flex-col">
         {/* Main Grid */}
-        <div className="flex gap-6 items-start">
+        <div className="flex min-h-0 flex-1 flex-col lg:flex-row gap-4 items-stretch">
 
           {/* ── Tabela de Vendedores ── */}
-          <div className={`flex-1 ${cardBg} rounded-2xl shadow-sm p-6 transition-colors duration-300`}>
+          <div className="min-w-0 flex-1 flex flex-col">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
+              <div className="pl-4 sm:pl-6">
+                <h1 className={`text-xl font-extrabold leading-tight ${textoP}`}>Painel de vendedores</h1>
+                <p className="text-[10px] font-semibold tracking-widest text-blue-500 uppercase leading-none mt-0.5">
+                  Colaboradores Cadastrados
+                </p>
+              </div>
+
+              {/* Search */}
+              <div className="relative w-full sm:max-w-xs md:max-w-sm xl:max-w-md">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="PESQUISAR VENDEDOR"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className={`pl-9 pr-4 py-2 rounded-xl border text-[13px] placeholder-gray-400 tracking-wider focus:outline-none focus:ring-2 focus:ring-blue-300 w-full shadow-sm ${inputBg}`}
+                />
+              </div>
+            </div>
+
+            <div className={`${cardBg} rounded-2xl shadow-sm p-4 sm:p-6 transition-colors duration-300 flex min-h-0 flex-col flex-1`}>
             <div className="flex items-center gap-2 mb-6">
               <div className="w-1 h-6 rounded-full bg-blue-700" />
               <h2 className={`text-lg font-bold ${textoM}`}>Base de vendedores</h2>
             </div>
 
             {/* Table header */}
-            <div className="grid grid-cols-[2fr_2fr_1fr_1fr] gap-4 px-2 mb-3">
+            <div className="grid grid-cols-4 gap-4 px-2 mb-2">
               <span className={`text-[10px] font-bold tracking-widest uppercase ${textoS}`}>
                 Identificação dos Cadastros
               </span>
-              <span className={`text-[10px] font-bold tracking-widest uppercase ${textoS}`}>E-Mail</span>
               <span className={`text-[10px] font-bold tracking-widest uppercase text-center ${textoS}`}>
-                Compras Realizadas
+                Vendas Realizadas
               </span>
-              <span className={`text-[10px] font-bold tracking-widest uppercase text-right pr-2 ${textoS}`}>
+              <span className={`text-[10px] font-bold tracking-widest uppercase text-center whitespace-nowrap ${textoS}`}>
+                Comiss&otilde;es Pendentes
+              </span>
+              <span className={`text-[10px] font-bold tracking-widest uppercase text-center ${textoS}`}>
                 Ferramentas
               </span>
             </div>
 
             {/* Rows */}
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1 flex-1">
               {displayed.length === 0 && (
                 <p className={`text-sm text-center py-8 ${textoS}`}>Nenhum vendedor encontrado.</p>
               )}
               {displayed.map((v) => (
                 <div
                   key={v.id}
-                  className={`grid grid-cols-[2fr_2fr_1fr_1fr] gap-4 items-center px-2 py-3.5 rounded-xl ${hover} transition-colors group`}
+                  className={`grid grid-cols-4 gap-4 items-center px-2 py-3.5 rounded-xl ${hover} transition-colors group`}
                 >
                   {/* Identificação */}
                   <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${modoEscuro ? "bg-blue-900/50" : "bg-blue-50"}`}>
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${modoEscuro ? "bg-blue-900/50" : "bg-blue-50"}`}>
                       <span className="text-xs font-bold text-blue-500">{v.codigo}</span>
                     </div>
                     <div>
@@ -219,14 +226,14 @@ export default function VendedoresPage() {
                     </div>
                   </div>
 
-                  {/* E-mail externo */}
-                  <span className="text-sm text-blue-500 font-medium truncate">{v.emailExterno}</span>
+                  {/* Vendas */}
+                  <span className={`text-sm font-bold text-center ${textoM}`}>{v.vendas ?? 0}</span>
 
-                  {/* Compras */}
-                  <span className={`text-sm font-bold text-center ${textoM}`}>{v.compras}</span>
+                  {/* Comissoes pendentes */}
+                  <span className={`text-sm font-bold text-center ${textoM}`}>{v.comissoesPendentes ?? 0}</span>
 
                   {/* Ferramentas */}
-                  <div className="flex items-center justify-end gap-2">
+                  <div className="flex items-center justify-center gap-2">
                     <button
                       onClick={() => handleEdit(v)}
                       className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${textoS} hover:text-blue-500 ${modoEscuro ? "hover:bg-blue-900/40" : "hover:bg-blue-50"}`}
@@ -253,26 +260,29 @@ export default function VendedoresPage() {
             </div>
 
             {/* Ver mais */}
-            {filtered.length > 4 && (
-              <div className={`flex justify-center mt-6 pt-4 border-t ${borda}`}>
-                <button
-                  onClick={() => setShowAll(!showAll)}
-                  className={`flex items-center gap-2 text-sm font-semibold tracking-widest uppercase transition-colors ${textoS} hover:text-blue-500`}
+            <div className={`-mx-6 mt-4 flex justify-center border-t ${borda} pt-4 pb-1`}>
+              <button
+                onClick={() => setShowAll(!showAll)}
+                disabled={filtered.length <= 4}
+                className={`flex items-center gap-3 text-[11px] font-extrabold tracking-widest uppercase transition-colors ${
+                  filtered.length > 4 ? `${textoS} hover:text-blue-500` : `${textoS} cursor-default`
+                }`}
+              >
+                {showAll ? "VER MENOS" : "VER MAIS VENDEDORES"}
+                <svg
+                  className={`w-4 h-4 transition-transform ${showAll ? "rotate-180" : ""}`}
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor"
                 >
-                  {showAll ? "VER MENOS" : "VER MAIS VENDEDORES"}
-                  <svg
-                    className={`w-4 h-4 transition-transform ${showAll ? "rotate-180" : ""}`}
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-              </div>
-            )}
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            </div>
           </div>
 
           {/* ── Painel de Cadastro ── */}
-          <div className={`w-80 flex-shrink-0 ${cardBg} rounded-2xl shadow-sm p-6 flex flex-col gap-5 transition-colors duration-300`}>
+          </div>
+
+          <div className={`w-full lg:w-72 xl:w-80 2xl:w-96 flex-shrink-0 ${cardBg} rounded-2xl shadow-sm p-4 sm:p-6 flex flex-col gap-5 transition-colors duration-300`}>
             {/* Header do form */}
             <div>
               <div className="flex items-center gap-2 mb-1">
@@ -281,7 +291,7 @@ export default function VendedoresPage() {
                     d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
                 <h3 className={`text-xs font-extrabold tracking-widest uppercase ${textoM}`}>
-                  {editingId ? "Editar Vendedor" : "Cadastrar Novo Vendedor"}
+                  {editingId ? "Editar Vendedor" : "Cadastrar Vendedor"}
                 </h3>
               </div>
               <p className={`text-[10px] tracking-wider uppercase ${textoS}`}>Formulário de Cadastro</p>
@@ -294,7 +304,7 @@ export default function VendedoresPage() {
             <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
               {/* Nome */}
               <div>
-                <label className={`text-[10px] font-bold tracking-widest uppercase block mb-1.5 ${textoS}`}>
+                <label className={`text-[10px] font-bold tracking-widest uppercase block mb-1 ${textoS}`}>
                   Nome Completo
                 </label>
                 <input
@@ -311,7 +321,7 @@ export default function VendedoresPage() {
 
               {/* E-mail */}
               <div>
-                <label className={`text-[10px] font-bold tracking-widest uppercase block mb-1.5 ${textoS}`}>
+                <label className={`text-[10px] font-bold tracking-widest uppercase block mb-1 ${textoS}`}>
                   E-mail TND
                 </label>
                 <input
@@ -328,8 +338,8 @@ export default function VendedoresPage() {
 
               {/* Fone */}
               <div>
-                <label className={`text-[10px] font-bold tracking-widest uppercase block mb-1.5 ${textoS}`}>
-                  Fone
+                <label className={`text-[10px] font-bold tracking-widest uppercase block mb-1 ${textoS}`}>
+                  Telefone
                 </label>
                 <input
                   name="fone"
@@ -344,7 +354,7 @@ export default function VendedoresPage() {
 
               {/* Comissão */}
               <div>
-                <label className={`text-[10px] font-bold tracking-widest uppercase block mb-1.5 ${textoS}`}>
+                <label className={`text-[10px] font-bold tracking-widest uppercase block mb-1 ${textoS}`}>
                   Percentual de Comissão
                 </label>
                 <input
@@ -359,7 +369,7 @@ export default function VendedoresPage() {
 
               {/* Status */}
               <div>
-                <label className={`text-[10px] font-bold tracking-widest uppercase block mb-1.5 ${textoS}`}>
+                <label className={`text-[10px] font-bold tracking-widest uppercase block mb-1 ${textoS}`}>
                   Status do Colaborador
                 </label>
                 <select
@@ -374,7 +384,7 @@ export default function VendedoresPage() {
               </div>
 
               {/* Buttons */}
-              <div className="flex gap-2 mt-2">
+              <div className="flex gap-2 mt-1">
                 {editingId && (
                   <button
                     type="button"
@@ -396,6 +406,7 @@ export default function VendedoresPage() {
             </form>
           </div>
 
+        </div>
         </div>
       </div>
     </div>

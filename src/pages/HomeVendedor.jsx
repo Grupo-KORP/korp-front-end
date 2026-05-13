@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { verificarSeVendedor, verificarToken } from "../services/api";
 
 /* ══════════════════════════════════════════
-   DADOS MOCKADOS POR CATEGORIA
+   DADOS MOCKADOS
 ══════════════════════════════════════════ */
 const MESES = [
   "Janeiro", "Fevereiro", "Março", "Abril",
@@ -146,7 +146,7 @@ function CardMetrica({ icone, rotulo, valor, badge, sub, ativo, aoClicar, dark }
   return (
     <button
       onClick={aoClicar}
-      className={`flex-1 rounded-xl px-4 py-3 flex flex-col gap-1.5 shadow-sm text-left transition-all duration-200 cursor-pointer focus:outline-none
+      className={`rounded-xl px-4 py-3 flex flex-col gap-1.5 shadow-sm text-left transition-all duration-200 cursor-pointer focus:outline-none
         ${ativo
           ? "text-white ring-2 ring-blue-400 scale-[1.02]"
           : dark
@@ -587,18 +587,18 @@ export default function HomeVendedor() {
   const linhaBg  = modoEscuro ? "bg-gray-750"  : "";
 
   return (
-    <div className={`min-h-screen ${bg} transition-colors duration-300`}>
+    <div className={`h-screen overflow-hidden flex flex-col ${bg} transition-colors duration-300`}>
       <Navbar />
 
-      <div className="max-w-7xl mx-auto px-6 py-6">
+      <div className="flex-1 overflow-y-auto w-full px-6 py-6">
 
         {/* ── Header ── */}
-        <div className="flex items-end justify-between mb-5">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
           <div>
             <p className="text-xs font-semibold tracking-widest text-blue-500 uppercase mb-0.5">
               Operações de Venda
             </p>
-            <h1 className={`text-2xl font-extrabold ${textoP}`}>Painel do Consultor</h1>
+            <h1 className={`text-2xl font-extrabold ${textoP}`}>Painel do Vendedor</h1>
           </div>
 
           <div className="flex items-center gap-3">
@@ -640,13 +640,13 @@ export default function HomeVendedor() {
         </div>
 
         {/* ── Layout principal ── */}
-        <div className="flex gap-5 items-start">
+        <div className="flex flex-col lg:flex-row gap-5 items-start">
 
           {/* ── Coluna esquerda ── */}
           <div className="flex-1 flex flex-col gap-4">
 
             {/* Cards de métricas — compactos */}
-            <div className="flex gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <CardMetrica
                 icone={<IconCarrinho />}
                 rotulo="Total de Vendas"
@@ -724,8 +724,8 @@ export default function HomeVendedor() {
                           </span>
                         </div>
                         <div>
-                          <p className={`text-xs font-bold ${textoM}`}>{v.nome}</p>
-                          <p className={`text-[10px] ${textoS}`}>{v.cliente}</p>
+                          <p className={`text-xs font-bold truncate ${textoM}`}>{v.nome}</p>
+                          <p className={`text-[10px] truncate ${textoS}`}>{v.cliente}</p>
                         </div>
                       </div>
 
@@ -787,7 +787,7 @@ export default function HomeVendedor() {
           </div>
 
           {/* ── Coluna direita ── */}
-          <div className="w-64 flex-shrink-0 flex flex-col gap-3">
+          <div className="w-full lg:w-64 flex-shrink-0 flex flex-col gap-3">
 
             {/* Resumo de comissões */}
             <div className={`${cardBg} rounded-2xl shadow-sm p-4 flex flex-col gap-3`}>
