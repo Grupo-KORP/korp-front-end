@@ -21,14 +21,20 @@ export default function PedidoPage() {
     });
 
     const handleFormChange = (data) => {
-        setFormData(prev => ({ ...prev, ...data }));
-    };
+        setFormData(prev => {
+            const nextData = { ...prev, ...data };
 
-    const handleEntregaChange = (updates) => {
-        setFormData(prev => ({
-            ...prev,
-            entrega: { ...prev.entrega, ...updates }
-        }));
+            if (data.cliente) {
+                nextData.entrega = {
+                    ...prev.entrega,
+                    endereco: data.cliente.endereco || "",
+                    cidade: data.cliente.cidade || "",
+                    cep: data.cliente.cep || "",
+                };
+            }
+
+            return nextData;
+        });
     };
 
     return (
@@ -52,7 +58,6 @@ export default function PedidoPage() {
                     <div className="resumo-area">
                         <ResumoPedido
                             formData={formData}
-                            onEntregaChange={handleEntregaChange}
                         />                    </div>
                 </div>
             </div>

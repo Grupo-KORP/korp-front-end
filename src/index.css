@@ -3,6 +3,22 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --app-input-bg: #f9fafb;
+    --app-input-border: #e5e7eb;
+    --app-input-text: #374151;
+    --app-input-placeholder: #d1d5db;
+    --app-input-focus-ring: rgba(147, 197, 253, 0.7);
+  }
+
+  body.dark {
+    --app-input-bg: #374151;
+    --app-input-border: #4b5563;
+    --app-input-text: #e5e7eb;
+    --app-input-placeholder: #6b7280;
+    --app-input-focus-ring: rgba(147, 197, 253, 0.45);
+  }
+
   * {
     box-sizing: border-box;
   }

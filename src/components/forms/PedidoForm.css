@@ -142,11 +142,11 @@
 .form-group select {
   height: 30px;
   padding: 0 10px;
-  border: 1px solid var(--pedido-border, #fcfbfb);
+  border: 1px solid var(--pedido-border, var(--app-input-border));
   border-radius: 6px;
   font-size: 12.5px;
-  color: var(--pedido-text-main, #1e293b);
-  background: var(--pedido-field-bg, #e3e9f7);
+  color: var(--pedido-text-main, var(--app-input-text));
+  background: var(--pedido-field-bg, var(--app-input-bg));
   outline: none;
   width: 100%;
   box-sizing: border-box;
@@ -160,12 +160,12 @@
 }
 
 .form-group input::placeholder {
-  color: var(--pedido-placeholder, #acb6c3);
+  color: var(--pedido-placeholder, var(--app-input-placeholder));
 }
 
 .form-group input.readonly {
-  background: var(--pedido-field-readonly-bg, #d6e2ff);
-  color: var(--pedido-text-main, #171718);
+  background: var(--pedido-field-readonly-bg, var(--app-input-bg));
+  color: var(--pedido-text-main, var(--app-input-text));
   cursor: default;
 }
 
@@ -256,13 +256,13 @@
   margin: 12px 0;
   padding: 0 10px;
   border-radius: 8px;
-  border: 1px solid var(--pedido-border, #e2e8f0);
-  background: var(--pedido-field-bg, #ffffff);
-  color: var(--pedido-text-main, #1e293b);
+  border: 1px solid var(--pedido-border, var(--app-input-border));
+  background: var(--pedido-field-bg, var(--app-input-bg));
+  color: var(--pedido-text-main, var(--app-input-text));
 }
 
 .input-busca::placeholder {
-  color: var(--pedido-placeholder, #acb6c3);
+  color: var(--pedido-placeholder, var(--app-input-placeholder));
 }
 
 .lista-clientes {

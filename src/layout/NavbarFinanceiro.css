@@ -164,12 +164,13 @@ body.dark {
 }
 
 .modal-buttons button:first-child {
-  background: #ef4444;
-  color: white;
+  background: #e5e7eb;
+  color: #111827;
 }
 
 .modal-buttons button:last-child {
-  background: #e5e7eb;
+  background: #ef4444;
+  color: white;
 }
 
 /* DARK MODE */

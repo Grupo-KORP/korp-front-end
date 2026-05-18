@@ -18,26 +18,27 @@
 }
 
 .input-field {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--app-input-border);
   padding: 6px 8px;
   border-radius: 4px;
   width: 100%;
   font-size: 12px;
   font-family: inherit;
-  background: #f9fafb;
-  color: #1f2937;
+  background: var(--app-input-bg);
+  color: var(--app-input-text);
   transition: border-color 0.2s;
   height: 32px;
 }
 
 .input-field:focus {
   outline: none;
-  border-color: #3b82f6;
-  background: #fff;
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 2px var(--app-input-focus-ring);
+  background: var(--app-input-bg);
 }
 
 .input-field::placeholder {
-  color: #d1d5db;
+  color: var(--app-input-placeholder);
 }
 
 .input-error {

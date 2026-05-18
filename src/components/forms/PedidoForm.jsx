@@ -24,6 +24,7 @@ function ClienteSection({ onChange }) {
       cnpj: "00.000.000/0000-00",
       cidade: "São Paulo",
       uf: "SP",
+      cep: "01000-000",
       email: "contato@tech.com",
       fone: "(11) 99999-9999",
       endereco: "Rua das Inovações, 123",

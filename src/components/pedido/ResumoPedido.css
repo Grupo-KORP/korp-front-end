@@ -63,11 +63,11 @@
 .resumo-field select {
   height: 30px;
   padding: 0 10px;
-  border: 1px solid var(--pedido-border, #e2e8f0);
+  border: 1px solid var(--pedido-border, var(--app-input-border));
   border-radius: 6px;
   font-size: 12px;
-  color: var(--pedido-text-main, #1e293b);
-  background: var(--pedido-field-bg, #ffffff);
+  color: var(--pedido-text-main, var(--app-input-text));
+  background: var(--pedido-field-bg, var(--app-input-bg));
   appearance: none;
   padding-right: 28px;
   cursor: pointer;
@@ -89,12 +89,12 @@
   justify-content: space-between;
   height: 30px;
   padding: 0 10px;
-  border: 1px solid var(--pedido-border, #e2e8f0);
+  border: 1px solid var(--pedido-border, var(--app-input-border));
   border-radius: 6px;
   font-size: 12px;
-  color: var(--pedido-text-main, #1e293b);
+  color: var(--pedido-text-main, var(--app-input-text));
   cursor: pointer;
-  background: var(--pedido-field-bg, #ffffff);
+  background: var(--pedido-field-bg, var(--app-input-bg));
 }
 
 
@@ -105,12 +105,12 @@
   justify-content: space-between;
   height: 30px;
   padding: 0 10px;
-  border: 1px solid var(--pedido-border, #e2e8f0);
+  border: 1px solid var(--pedido-border, var(--app-input-border));
   border-radius: 6px;
   font-size: 12px;
-  color: var(--pedido-text-main, #1e293b);
+  color: var(--pedido-text-main, var(--app-input-text));
   cursor: pointer;
-  background: var(--pedido-field-bg, #ffffff);
+  background: var(--pedido-field-bg, var(--app-input-bg));
 }
 
 .resumo-select-display:hover {
@@ -122,11 +122,11 @@
 .resumo-input {
   height: 30px;
   padding: 0 10px;
-  border: 1px solid var(--pedido-border, #e2e8f0);
+  border: 1px solid var(--pedido-border, var(--app-input-border));
   border-radius: 6px;
   font-size: 12px;
-  color: var(--pedido-text-main, #1e293b);
-  background: var(--pedido-field-bg, #ffffff);
+  color: var(--pedido-text-main, var(--app-input-text));
+  background: var(--pedido-field-bg, var(--app-input-bg));
   outline: none;
   width: 100%;
   box-sizing: border-box;
@@ -140,7 +140,7 @@
 }
 
 .resumo-input::placeholder {
-  color: var(--pedido-placeholder, #cbd5e1);
+  color: var(--pedido-placeholder, var(--app-input-placeholder));
 }
 
 /* 2 col row */
@@ -308,4 +308,62 @@
 .resumo-scroll-content::-webkit-scrollbar-thumb {
   background: var(--pedido-scrollbar, #cbd5e1);
   border-radius: 10px;
+}
+
+.resumo-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+}
+
+.resumo-modal {
+  width: min(100%, 420px);
+  padding: 22px;
+  border: 1px solid var(--pedido-border, #e2e8f0);
+  border-radius: 12px;
+  background: var(--pedido-card-bg, #ffffff);
+  color: var(--pedido-text-main, #1e293b);
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.2);
+}
+
+.resumo-modal h3 {
+  margin: 0 0 10px;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--pedido-text-strong, #111827);
+}
+
+.resumo-modal p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--pedido-text-muted, #64748b);
+}
+
+.resumo-modal strong {
+  color: var(--pedido-text-main, #1e293b);
+}
+
+.resumo-modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.resumo-modal-actions button {
+  flex: 1;
+  height: 38px;
+  align-items: center;
+  justify-content: center;
+}
+
+.resumo-modal-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
