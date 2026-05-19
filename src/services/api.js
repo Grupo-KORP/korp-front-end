@@ -95,11 +95,18 @@ export function verificarSeVendedor() {
   return decodeJWT(token).roles.includes("ROLE_VEND");
 }
 
-export function verificarSeFinanceiro() {
+export function verificarSeFinanceiroEAdmin() {
   if (!verificarToken()) return false;
   const token = localStorage.getItem("korp_token");
-  return decodeJWT(token).roles.includes("ROLE_FINAN");
+  return decodeJWT(token).roles.includes("ROLE_FINAN") || decodeJWT(token).roles.includes("ROLE_ADMIN");
 }
+
+export function verificarSeAdmin() {
+  if (!verificarToken()) return false;
+  const token = localStorage.getItem("korp_token");
+  return decodeJWT(token).roles.includes("ROLE_ADMIN");
+}
+
 
 
 // ─── Colaboradores ───────────────────────────────────────────────────────────
