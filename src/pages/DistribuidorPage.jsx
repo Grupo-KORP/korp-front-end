@@ -40,16 +40,16 @@ const rows = [
 ];
 
 const fields = [
-  { label: "Raz\u00e3o Social", placeholder: "Ex: Tech Solutions Ltda", span: "full" },
+  { label: "Razão Social", placeholder: "Ex: Tech Solutions Ltda", span: "full" },
   { label: "CNPJ", placeholder: "00.000.000/0000-00" },
   { label: "Insc. Est.", placeholder: "isento" },
   { label: "Fone", placeholder: "(00) 0000-0000" },
   { label: "CEP", placeholder: "00000-000" },
-  { label: "Endere\u00e7o", placeholder: "Rua das inova\u00e7\u00f5es, 104", span: "full" },
+  { label: "Endereço", placeholder: "Rua das inovações, 104", span: "full" },
   { label: "Cidade", placeholder: "Centro" },
   { label: "UF", type: "select", value: "SP", options: ["SP", "RJ", "MG", "PR"] },
   { label: "Especialidade", placeholder: "Softwer", span: "full" },
-  { label: "Contato", placeholder: "Nome do Respons\u00e1vel", span: "full" },
+  { label: "Contato", placeholder: "Nome do Responsável", span: "full" },
   { label: "E-mail", placeholder: "contato@empresa.com", span: "full" },
 ];
 
@@ -61,7 +61,7 @@ export default function DistribuidorPage() {
       searchPlaceholder="Pesquisar Distribuidor"
       tableTitle="Base de Fornecedores"
       tableColumns={[
-        { label: "Identifica\u00e7\u00e3o dos Cadastros", width: "2fr" },
+        { label: "Identificação dos Cadastros", width: "2fr" },
         { label: "E-mail", width: "1.55fr" },
         { label: "Especialidade", width: "1.25fr" },
       ]}

@@ -46,8 +46,8 @@ export default function PedidoPage() {
                     {/* ESQUERDA (SCROLL) */}
                     <div className="form-area" id="area-pdf">
                         <div className="pedido-header">
+                            <p>Pedidos</p>
                             <h1>Novo Pedido</h1>
-                            <p>Preencha os dados abaixo para gerar uma nova ordem de venda</p>
                         </div>
                         <PedidoForm
                             onFormChange={handleFormChange}
