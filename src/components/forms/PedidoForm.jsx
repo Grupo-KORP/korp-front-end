@@ -61,6 +61,11 @@ function CnpjSearchButton({ children, onClick }) {
   );
 }
 
+const readonlyInputProps = {
+  readOnly: true,
+  className: "readonly",
+};
+
 function ClienteSection({ onChange }) {
   const [open, setOpen] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -71,6 +76,7 @@ function ClienteSection({ onChange }) {
   const [search, setSearch] = useState("");
   const [searchError, setSearchError] = useState("");
   const [searched, setSearched] = useState(false);
+  const [showSaveButton, setShowSaveButton] = useState(false);
 
   const clientesMock = [
     {
@@ -116,12 +122,43 @@ function ClienteSection({ onChange }) {
     setSearched(true);
   };
 
+  const handleSearchChange = (value) => {
+    const formatted = formatCnpj(value);
+    const digits = onlyDigits(formatted);
+
+    setSearch(formatted);
+    setSearched(false);
+
+    if (!digits) {
+      setSearchError("");
+      return;
+    }
+
+    if (digits.length < 14) {
+      setSearchError("");
+      return;
+    }
+
+    if (!isValidCnpj(formatted)) {
+      setSearchError("Informe um CNPJ valido para pesquisar clientes.");
+      return;
+    }
+
+    setSearchError("");
+    setSearched(true);
+  };
+
   const startNewCliente = () => {
     const updated = { ...data, cnpj: formatCnpj(search) };
     setData(updated);
     onChange?.(updated);
     setOpen(true);
+    setShowSaveButton(true);
     closeModal();
+  };
+
+  const saveCliente = () => {
+    setShowSaveButton(false);
   };
 
   return (
@@ -149,41 +186,41 @@ function ClienteSection({ onChange }) {
           <div className="form-row">
             <div className="form-group grow-2">
               <label>RAZAO SOCIAL</label>
-              <input name="razaoSocial" value={data.razaoSocial} onChange={handle} placeholder="Ex: Tech Solutions Ltda" />
+              <input name="razaoSocial" value={data.razaoSocial} onChange={handle} placeholder="Ex: Tech Solutions Ltda" {...readonlyInputProps} />
             </div>
             <div className="form-group grow-1">
               <label>CNPJ</label>
-              <input name="cnpj" value={data.cnpj} onChange={handle} placeholder="00.000.000/0000-00" />
+              <input name="cnpj" value={data.cnpj} onChange={handle} placeholder="00.000.000/0000-00" {...readonlyInputProps} />
             </div>
           </div>
 
           <div className="form-row">
             <div className="form-group w-160">
               <label>INSC. EST.</label>
-              <input name="inscEst" value={data.inscEst} onChange={handle} placeholder="Isento" />
+              <input name="inscEst" value={data.inscEst} onChange={handle} placeholder="Isento" {...readonlyInputProps} />
             </div>
             <div className="form-group grow-1">
               <label>FONE</label>
-              <input name="fone" value={data.fone} onChange={handle} placeholder="(00) 0000-0000" />
+              <input name="fone" value={data.fone} onChange={handle} placeholder="(00) 0000-0000" {...readonlyInputProps} />
             </div>
             <div className="form-group w-140">
               <label>CEP</label>
-              <input name="cep" value={data.cep} onChange={handle} placeholder="00000-000" />
+              <input name="cep" value={data.cep} onChange={handle} placeholder="00000-000" {...readonlyInputProps} />
             </div>
           </div>
 
           <div className="form-row">
             <div className="form-group grow-2">
               <label>ENDERECO</label>
-              <input name="endereco" value={data.endereco} onChange={handle} placeholder="Rua das Inovacoes, 123" />
+              <input name="endereco" value={data.endereco} onChange={handle} placeholder="Rua das Inovacoes, 123" {...readonlyInputProps} />
             </div>
             <div className="form-group grow-1">
               <label>CIDADE</label>
-              <input name="cidade" value={data.cidade} onChange={handle} placeholder="Centro" />
+              <input name="cidade" value={data.cidade} onChange={handle} placeholder="Centro" {...readonlyInputProps} />
             </div>
             <div className="form-group w-70">
               <label>UF</label>
-              <select name="uf" value={data.uf} onChange={handle}>
+              <select name="uf" value={data.uf} onChange={handle} disabled className="readonly">
                 <option value="">--</option>
                 {UF_LIST.map((s) => <option key={s}>{s}</option>)}
               </select>
@@ -193,13 +230,19 @@ function ClienteSection({ onChange }) {
           <div className="form-row">
             <div className="form-group grow-1">
               <label>CONTATO</label>
-              <input name="contato" value={data.contato} onChange={handle} placeholder="Nome do Responsavel" />
+              <input name="contato" value={data.contato} onChange={handle} placeholder="Nome do Responsavel" {...readonlyInputProps} />
             </div>
             <div className="form-group grow-1">
               <label>E-MAIL</label>
-              <input name="email" type="email" value={data.email} onChange={handle} placeholder="contato@empresa.com" />
+              <input name="email" type="email" value={data.email} onChange={handle} placeholder="contato@empresa.com" {...readonlyInputProps} />
             </div>
           </div>
+
+          {showSaveButton && (
+            <button type="button" className="btn-salvar-cadastro" onClick={saveCliente}>
+              Salvar cadastro do cliente
+            </button>
+          )}
         </div>
       )}
 
@@ -214,11 +257,7 @@ function ClienteSection({ onChange }) {
                 type="text"
                 placeholder="00.000.000/0000-00"
                 value={search}
-                onChange={(e) => {
-                  setSearch(formatCnpj(e.target.value));
-                  setSearchError("");
-                  setSearched(false);
-                }}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="input-busca"
               />
               <button type="button" className="btn-modal-search" onClick={handleSearch}>
@@ -236,10 +275,12 @@ function ClienteSection({ onChange }) {
                   onClick={() => {
                     setData(cliente);
                     onChange?.(cliente);
+                    setShowSaveButton(false);
                     closeModal();
                   }}
                 >
                   <strong>{cliente.razaoSocial}</strong>
+                  <small>Nome associado ao CNPJ</small>
                   <span>{cliente.cnpj}</span>
                 </div>
               ))}
@@ -272,6 +313,7 @@ function DistribuidorSection({ onChange }) {
   const [search, setSearch] = useState("");
   const [searchError, setSearchError] = useState("");
   const [searched, setSearched] = useState(false);
+  const [showSaveButton, setShowSaveButton] = useState(false);
 
   const distribuidoresMock = [
     {
@@ -316,12 +358,43 @@ function DistribuidorSection({ onChange }) {
     setSearched(true);
   };
 
+  const handleSearchChange = (value) => {
+    const formatted = formatCnpj(value);
+    const digits = onlyDigits(formatted);
+
+    setSearch(formatted);
+    setSearched(false);
+
+    if (!digits) {
+      setSearchError("");
+      return;
+    }
+
+    if (digits.length < 14) {
+      setSearchError("");
+      return;
+    }
+
+    if (!isValidCnpj(formatted)) {
+      setSearchError("Informe um CNPJ valido para pesquisar distribuidores.");
+      return;
+    }
+
+    setSearchError("");
+    setSearched(true);
+  };
+
   const startNewDistribuidor = () => {
     const updated = { ...data, cnpj: formatCnpj(search) };
     setData(updated);
     onChange?.(updated);
     setOpen(true);
+    setShowSaveButton(true);
     closeModal();
+  };
+
+  const saveDistribuidor = () => {
+    setShowSaveButton(false);
   };
 
   return (
@@ -349,41 +422,41 @@ function DistribuidorSection({ onChange }) {
           <div className="form-row">
             <div className="form-group grow-2">
               <label>RAZAO SOCIAL</label>
-              <input name="razaoSocial" value={data.razaoSocial} onChange={handle} placeholder="Ex: Tech Solutions Ltda" />
+              <input name="razaoSocial" value={data.razaoSocial} onChange={handle} placeholder="Ex: Tech Solutions Ltda" {...readonlyInputProps} />
             </div>
             <div className="form-group grow-1">
               <label>CNPJ</label>
-              <input name="cnpj" value={data.cnpj} onChange={handle} placeholder="00.000.000/0000-00" />
+              <input name="cnpj" value={data.cnpj} onChange={handle} placeholder="00.000.000/0000-00" {...readonlyInputProps} />
             </div>
           </div>
 
           <div className="form-row">
             <div className="form-group w-160">
               <label>INSC. EST.</label>
-              <input name="inscEst" value={data.inscEst} onChange={handle} placeholder="Isento" />
+              <input name="inscEst" value={data.inscEst} onChange={handle} placeholder="Isento" {...readonlyInputProps} />
             </div>
             <div className="form-group grow-1">
               <label>FONE</label>
-              <input name="fone" value={data.fone} onChange={handle} placeholder="(00) 0000-0000" />
+              <input name="fone" value={data.fone} onChange={handle} placeholder="(00) 0000-0000" {...readonlyInputProps} />
             </div>
             <div className="form-group w-140">
               <label>CEP</label>
-              <input name="cep" value={data.cep} onChange={handle} placeholder="00000-000" />
+              <input name="cep" value={data.cep} onChange={handle} placeholder="00000-000" {...readonlyInputProps} />
             </div>
           </div>
 
           <div className="form-row">
             <div className="form-group grow-2">
               <label>ENDERECO</label>
-              <input name="endereco" value={data.endereco} onChange={handle} placeholder="Rua das Inovacoes, 123" />
+              <input name="endereco" value={data.endereco} onChange={handle} placeholder="Rua das Inovacoes, 123" {...readonlyInputProps} />
             </div>
             <div className="form-group grow-1">
               <label>CIDADE</label>
-              <input name="cidade" value={data.cidade} onChange={handle} placeholder="Centro" />
+              <input name="cidade" value={data.cidade} onChange={handle} placeholder="Centro" {...readonlyInputProps} />
             </div>
             <div className="form-group w-70">
               <label>UF</label>
-              <select name="uf" value={data.uf} onChange={handle}>
+              <select name="uf" value={data.uf} onChange={handle} disabled className="readonly">
                 <option value="">--</option>
                 {UF_LIST.map((s) => <option key={s}>{s}</option>)}
               </select>
@@ -393,13 +466,19 @@ function DistribuidorSection({ onChange }) {
           <div className="form-row">
             <div className="form-group grow-1">
               <label>CONTATO</label>
-              <input name="contato" value={data.contato} onChange={handle} placeholder="Nome do Responsavel" />
+              <input name="contato" value={data.contato} onChange={handle} placeholder="Nome do Responsavel" {...readonlyInputProps} />
             </div>
             <div className="form-group grow-1">
               <label>E-MAIL</label>
-              <input name="email" type="email" value={data.email} onChange={handle} placeholder="contato@empresa.com" />
+              <input name="email" type="email" value={data.email} onChange={handle} placeholder="contato@empresa.com" {...readonlyInputProps} />
             </div>
           </div>
+
+          {showSaveButton && (
+            <button type="button" className="btn-salvar-cadastro" onClick={saveDistribuidor}>
+              Salvar cadastro do distribuidor
+            </button>
+          )}
         </div>
       )}
 
@@ -414,11 +493,7 @@ function DistribuidorSection({ onChange }) {
                 type="text"
                 placeholder="00.000.000/0000-00"
                 value={search}
-                onChange={(e) => {
-                  setSearch(formatCnpj(e.target.value));
-                  setSearchError("");
-                  setSearched(false);
-                }}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="input-busca"
               />
               <button type="button" className="btn-modal-search" onClick={handleSearch}>
@@ -436,10 +511,12 @@ function DistribuidorSection({ onChange }) {
                   onClick={() => {
                     setData(distribuidor);
                     onChange?.(distribuidor);
+                    setShowSaveButton(false);
                     closeModal();
                   }}
                 >
                   <strong>{distribuidor.razaoSocial}</strong>
+                  <small>Nome associado ao CNPJ</small>
                   <span>{distribuidor.cnpj}</span>
                 </div>
               ))}
@@ -472,11 +549,11 @@ function ProdutoSection({ onChange }) {
   const [search, setSearch] = useState("");
   const [searchError, setSearchError] = useState("");
   const [searched, setSearched] = useState(false);
+  const [showSaveButton, setShowSaveButton] = useState(false);
 
   const produtosMock = [
     {
       id: 1,
-      cnpj: "12.345.678/0001-95",
       descricao: "Pacote Office 365 - 1 ano",
       pn: "00.000.000",
       valorUnitario: 100.00,
@@ -484,7 +561,9 @@ function ProdutoSection({ onChange }) {
   ];
 
   const produtosEncontrados = searched && !searchError
-    ? produtosMock.filter((produto) => onlyDigits(produto.cnpj) === onlyDigits(search))
+    ? produtosMock.filter((produto) =>
+        produto.descricao.toLowerCase().includes(search.trim().toLowerCase())
+      )
     : [];
 
   const handle = (e) => {
@@ -519,8 +598,8 @@ function ProdutoSection({ onChange }) {
   };
 
   const handleSearch = () => {
-    if (!isValidCnpj(search)) {
-      setSearchError("Informe um CNPJ valido para pesquisar produtos.");
+    if (!search.trim()) {
+      setSearchError("Informe o nome do produto para pesquisar.");
       setSearched(false);
       return;
     }
@@ -529,9 +608,23 @@ function ProdutoSection({ onChange }) {
     setSearched(true);
   };
 
+  const handleSearchChange = (value) => {
+    setSearch(value);
+    setSearchError("");
+    setSearched(Boolean(value.trim()));
+  };
+
   const startNewProduto = () => {
+    const updated = { ...data, descricao: search.trim() };
+    setData(updated);
+    onChange?.(updated);
     setOpen(true);
+    setShowSaveButton(true);
     closeModal();
+  };
+
+  const saveProduto = () => {
+    setShowSaveButton(false);
   };
 
   return (
@@ -548,7 +641,7 @@ function ProdutoSection({ onChange }) {
               setShowModal(true);
             }}
           >
-            Pesquisar produto por CNPJ
+            Pesquisar produto por nome
           </CnpjSearchButton>
           <span className={`chevron ${open ? "open" : ""}`}>v</span>
         </div>
@@ -596,6 +689,12 @@ function ProdutoSection({ onChange }) {
               <input value={fmt(data.totalFaturado)} readOnly className="readonly" />
             </div>
           </div>
+
+          {showSaveButton && (
+            <button type="button" className="btn-salvar-cadastro" onClick={saveProduto}>
+              Salvar cadastro do produto
+            </button>
+          )}
         </div>
       )}
 
@@ -603,18 +702,14 @@ function ProdutoSection({ onChange }) {
         <div className="modal-overlay">
           <div className="modal">
             <h3>Buscar Produto</h3>
-            <p className="modal-hint">A pesquisa deve ser feita pelo CNPJ.</p>
+            <p className="modal-hint">A pesquisa deve ser feita pelo nome do produto.</p>
 
             <div className="modal-search-row">
               <input
                 type="text"
-                placeholder="00.000.000/0000-00"
+                placeholder="Digite o nome do produto"
                 value={search}
-                onChange={(e) => {
-                  setSearch(formatCnpj(e.target.value));
-                  setSearchError("");
-                  setSearched(false);
-                }}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="input-busca"
               />
               <button type="button" className="btn-modal-search" onClick={handleSearch}>
@@ -638,18 +733,18 @@ function ProdutoSection({ onChange }) {
                     };
                     setData(updated);
                     onChange?.(updated);
+                    setShowSaveButton(false);
                     closeModal();
                   }}
                 >
                   <strong>{produto.descricao}</strong>
-                  <span>{produto.cnpj}</span>
                   <span>{produto.pn}</span>
                 </div>
               ))}
 
               {searched && !searchError && produtosEncontrados.length === 0 && (
                 <div className="modal-empty">
-                  <p>O CNPJ nao esta cadastrado no sistema.</p>
+                  <p>Nenhum produto com esse nome esta cadastrado no sistema.</p>
                   <button type="button" className="btn-cadastrar-novo" onClick={startNewProduto}>
                     Cadastrar novo produto
                   </button>

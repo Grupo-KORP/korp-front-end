@@ -62,18 +62,18 @@
 }
 
 .cnpj-search-trigger {
-  width: 230px;
-  height: 32px;
+  width: 218px;
+  height: 28px;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 11px;
+  gap: 7px;
+  padding: 0 10px;
   border: 1px solid var(--pedido-border, var(--app-input-border));
   border-radius: 999px;
   background: var(--pedido-field-bg, var(--app-input-bg));
   color: var(--pedido-text-soft, #6f8198);
   cursor: pointer;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.7px;
   text-align: left;
@@ -90,8 +90,8 @@
 }
 
 .cnpj-search-trigger svg {
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
   flex: 0 0 auto;
   fill: currentColor;
 }
@@ -191,10 +191,17 @@
   color: var(--pedido-placeholder, var(--app-input-placeholder));
 }
 
-.form-group input.readonly {
+.form-group input.readonly,
+.form-group select.readonly {
   background: var(--pedido-field-readonly-bg, var(--app-input-bg));
   color: var(--pedido-text-main, var(--app-input-text));
   cursor: default;
+}
+
+.form-group input.readonly:focus,
+.form-group select.readonly:focus {
+  border-color: var(--pedido-border, var(--app-input-border));
+  box-shadow: none;
 }
 
 .form-group select {
@@ -293,9 +300,27 @@
   cursor: pointer;
 }
 
+.btn-salvar-cadastro {
+  align-self: flex-end;
+  min-width: 178px;
+  height: 34px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--pedido-blue, #0a3490);
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.btn-salvar-cadastro:hover {
+  filter: brightness(1.08);
+}
+
 .input-busca {
   width: 100%;
-  height: 38px;
+  height: 32px;
   margin: 0;
   padding: 0 10px;
   border-radius: 8px;
@@ -310,13 +335,13 @@
 
 .modal-search-row {
   display: grid;
-  grid-template-columns: 1fr 42px;
+  grid-template-columns: 1fr 36px;
   gap: 8px;
   margin: 14px 0 10px;
 }
 
 .btn-modal-search {
-  height: 38px;
+  height: 32px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -332,8 +357,8 @@
 }
 
 .btn-modal-search svg {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   fill: currentColor;
 }
 
@@ -360,10 +385,18 @@
   cursor: pointer;
   display: flex;
   flex-direction: column;
+  gap: 2px;
 }
 
 .cliente-item:hover {
   background: var(--pedido-blue-soft, #f1f5f9);
+}
+
+.cliente-item small {
+  color: var(--pedido-text-soft, #8a96a7);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
 .modal-empty {
@@ -409,6 +442,6 @@
   }
 
   .cnpj-search-trigger {
-    width: min(230px, 52vw);
+    width: min(218px, 52vw);
   }
 }
