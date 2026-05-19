@@ -112,46 +112,65 @@ function TablePanel({ title, columns, rows, moreLabel }) {
   );
 }
 
-function FormField({ field }) {
-  const className = field.span === "full" ? "catalog-form-field is-full" : "catalog-form-field";
+function FormField({ field, onChange }) {
+  const isAuto      = field.readOnly;
+  const hasError    = !!field.error;
+  const className   = field.span === "full" ? "catalog-form-field is-full" : "catalog-form-field";
 
   return (
-    <label className={className}>
-      <span>{field.label}</span>
+    <label className={`${className}${isAuto ? " is-auto" : ""}${hasError ? " has-error" : ""}`}>
+      <span>
+        {field.label}
+        {field.loading && <span className="catalog-field-spinner" />}
+      </span>
+
       {field.type === "select" ? (
-        <select defaultValue={field.value || ""}>
-          {field.options.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
+        <select
+          name={field.name}
+          value={field.value || ""}
+          disabled={field.readOnly}
+          onChange={onChange}
+        >
+          {field.options.map((opt) => (
+            <option key={opt} value={opt}>{opt}</option>
           ))}
         </select>
       ) : (
-        <input type={field.type || "text"} placeholder={field.placeholder} />
+        <input
+          name={field.name}
+          type={field.type || "text"}
+          placeholder={field.placeholder}
+          value={field.value || ""}
+          readOnly={field.readOnly}
+          onChange={onChange}
+        />
       )}
+
+      {hasError && <span className="catalog-field-error">{field.error}</span>}
     </label>
   );
-}
+} 
 
-function FormPanel({ title, subtitle, fields, submitLabel }) {
+function FormPanel({ title, subtitle, fields, submitLabel, onFieldChange, onSubmit, submitDisabled }) {
   return (
     <aside className="catalog-card catalog-form-card">
       <div className="catalog-form-heading">
-        <div>
-          <RegisterIcon />
-          <h2>{title}</h2>
-        </div>
+        <div><RegisterIcon /><h2>{title}</h2></div>
         <p>{subtitle}</p>
       </div>
 
-      <form className="catalog-form">
+      <form className="catalog-form" onSubmit={(e) => { e.preventDefault(); onSubmit(); }}>
         <div className="catalog-form-fields">
           {fields.map((field) => (
-            <FormField field={field} key={`${field.label}-${field.placeholder || field.value || ""}`} />
+            <FormField
+              field={field}
+              onChange={onFieldChange}
+              key={field.name}
+            />
           ))}
         </div>
 
-        <button type="button" className="catalog-submit">
+        <button type="submit" className="catalog-submit" disabled={submitDisabled}>
           {submitLabel}
         </button>
       </form>
@@ -169,8 +188,11 @@ export default function CatalogPage({
   moreLabel,
   formTitle,
   formSubtitle = "Formul\u00e1rio de Cadastro",
-  formFields,
+  fields,
   submitLabel = "cadastrar",
+  onFieldChange,
+  onSubmit,
+  submitDisabled = false,
 }) {
   useEffect(() => {
     document.body.classList.add("catalog-body");
@@ -192,8 +214,11 @@ export default function CatalogPage({
         <FormPanel
           title={formTitle}
           subtitle={formSubtitle}
-          fields={formFields}
+          fields={fields}       
           submitLabel={submitLabel}
+          onFieldChange={onFieldChange}
+          onSubmit={onSubmit}
+          submitDisabled={submitDisabled}
         />
 
         <TablePanel
