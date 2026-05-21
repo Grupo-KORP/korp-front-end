@@ -1,16 +1,16 @@
 .pedido-page {
-  --pedido-bg: linear-gradient(120deg, #e0e7ff, #f8fafc);
+  --pedido-bg: linear-gradient(120deg, #f3f5ff, #f8fafc);
   --pedido-card-bg: #ffffff;
   --pedido-card-soft-bg: #f8fafc;
-  --pedido-field-bg: #e3e9f7;
-  --pedido-field-readonly-bg: #d6e2ff;
-  --pedido-border: #e2e8f0;
+  --pedido-field-bg: var(--app-input-bg);
+  --pedido-field-readonly-bg: var(--app-input-bg);
+  --pedido-border: var(--app-input-border);
   --pedido-border-soft: #f1f5f9;
   --pedido-text-strong: #111827;
-  --pedido-text-main: #1e293b;
+  --pedido-text-main: var(--app-input-text);
   --pedido-text-muted: #64748b;
   --pedido-text-soft: #8a96a7;
-  --pedido-placeholder: #acb6c3;
+  --pedido-placeholder: var(--app-input-placeholder);
   --pedido-blue: #0a3490;
   --pedido-blue-soft: #eff6ff;
   --pedido-scrollbar: rgba(100, 116, 139, 0.25);
@@ -31,15 +31,15 @@
   --pedido-bg: #111827;
   --pedido-card-bg: #1f2937;
   --pedido-card-soft-bg: #111827;
-  --pedido-field-bg: #374151;
-  --pedido-field-readonly-bg: #263449;
-  --pedido-border: #374151;
+  --pedido-field-bg: var(--app-input-bg);
+  --pedido-field-readonly-bg: var(--app-input-bg);
+  --pedido-border: var(--app-input-border);
   --pedido-border-soft: #334155;
   --pedido-text-strong: #ffffff;
-  --pedido-text-main: #d1d5db;
+  --pedido-text-main: var(--app-input-text);
   --pedido-text-muted: #9ca3af;
   --pedido-text-soft: #9ca3af;
-  --pedido-placeholder: #6b7280;
+  --pedido-placeholder: var(--app-input-placeholder);
   --pedido-blue: #60a5fa;
   --pedido-blue-soft: rgba(30, 58, 138, 0.28);
   --pedido-scrollbar: rgba(148, 163, 184, 0.35);
@@ -50,7 +50,7 @@
   --pedido-danger-text: #fca5a5;
 }
 
-.pedido-page-dark .modal-buttons button:last-child {
+.pedido-page-dark .modal-buttons button:first-child {
   background: #374151;
   color: #f9fafb;
   border: 1px solid #4b5563;
@@ -58,7 +58,7 @@
 
 .pedido-wrapper {
   margin: 0 22.2px;
-  padding: 6.5px 0 0;
+  padding: 18px 0 0;
 
   min-height: calc(100vh - 80px); /* respeita navbar real */
   display: flex;
@@ -66,18 +66,35 @@
 }
 
 .pedido-header {
-  margin-bottom: 12px;
+  margin-bottom: 18px;
   flex-shrink: 0;
 }
 
+.pedido-header p {
+  margin: 0 0 4px;
+  color: #00609e;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.8px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
 .pedido-header h1 {
-  font-size: 26px;
-  font-weight: 700;
+  margin: 0;
+  color: #173265;
+  font-size: 25px;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.1;
+}
+
+.pedido-page-dark .pedido-header h1 {
   color: var(--pedido-text-strong);
 }
 
-.pedido-header p {
-  color: var(--pedido-text-muted);
+.pedido-page-dark .pedido-header p {
+  color: #7dd3fc;
 }
 
 .pedido-content {

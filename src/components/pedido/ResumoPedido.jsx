@@ -4,16 +4,22 @@ import "./ResumoPedido.css";
 import dinheiroIcon from "../../assets/dinheiro.png";
 import perfilDistribuidor from "../../assets/distribuidor.png";
 
-export default function ResumoPedido({ formData, onEntregaChange }) {
+export default function ResumoPedido({ formData }) {
   const cliente = formData?.cliente || {};
   const distribuidor = formData?.distribuidor || {};
   const produtos = formData?.produtos || [];
-  const entrega = formData?.entrega || { endereco: "", cidade: "", cep: "" };
+  const entregaData = formData?.entrega || {};
+  const entrega = {
+    endereco: entregaData.endereco || cliente.endereco || "",
+    cidade: entregaData.cidade || cliente.cidade || "",
+    cep: entregaData.cep || cliente.cep || "",
+  };
 
   // Estado local para campos de entrega editáveis
   const [localEntrega, setLocalEntrega] = useState(entrega.endereco);
   const [cidadeEntrega, setCidadeEntrega] = useState(entrega.cidade);
   const [cepEntrega, setCepEntrega] = useState(entrega.cep);
+  const [showEnviarPdfModal, setShowEnviarPdfModal] = useState(false);
 
   // Sincronizar com formData quando entrega mudar
   useEffect(() => {
@@ -22,15 +28,9 @@ export default function ResumoPedido({ formData, onEntregaChange }) {
     setCepEntrega(entrega.cep || "");
   }, [entrega.endereco, entrega.cidade, entrega.cep]);
 
-  const handleEntregaChange = (field, value) => {
-    if (field === "endereco") setLocalEntrega(value);
-    if (field === "cidade") setCidadeEntrega(value);
-    if (field === "cep") setCepEntrega(value);
-    onEntregaChange?.({ [field]: value });
-  };
-
   const clienteFaturado = cliente.razaoSocial;
   const distribuidorName = distribuidor.razaoSocial;
+  const distribuidorEmail = distribuidor.email || "";
 
   const valorCompra = produtos.reduce(
     (acc, p) => acc + (parseFloat(p.valorTotal) || 0),
@@ -297,7 +297,7 @@ export default function ResumoPedido({ formData, onEntregaChange }) {
 
   const navigate = useNavigate();
 
-  const adicionarPedido = () => {
+  const salvarPedido = () => {
     const novoId = `V${Date.now().toString().slice(-6)}`;
     const clienteLabel = clienteFaturado || cliente.nome || "Cliente";
     const nomeVenda = `VENDA ${novoId}`;
@@ -323,6 +323,20 @@ export default function ResumoPedido({ formData, onEntregaChange }) {
     navigate("/vendedores/home");
   };
 
+  const adicionarPedido = () => {
+    setShowEnviarPdfModal(true);
+  };
+
+  const finalizarPedido = async (enviarPdf) => {
+    setShowEnviarPdfModal(false);
+
+    if (enviarPdf) {
+      await gerarPDF();
+    }
+
+    salvarPedido();
+  };
+
   return (
     <div className="resumo-wrapper">
       {/* ── Resumo do Pedido ── */}
@@ -336,45 +350,27 @@ export default function ResumoPedido({ formData, onEntregaChange }) {
 
           <div className="resumo-field">
             <span className="resumo-label">DISTRIBUIDOR RESPONSÁVEL</span>
-            <span className="resumo-plain-value">{distribuidorName}</span>
+            <span className="resumo-plain-value">{distribuidorName || "-"}</span>
           </div>
 
           <div className="resumo-field">
             <span className="resumo-label">CLIENTE FATURADO</span>
-            <span className="resumo-plain-value">{clienteFaturado}</span>
+            <span className="resumo-plain-value">{clienteFaturado || "-"}</span>
           </div>
 
           <div className="resumo-field">
             <span className="resumo-label">LOCAL DE ENTREGA</span>
-            <input
-              type="text"
-              value={localEntrega}
-              onChange={(e) => handleEntregaChange("endereco", e.target.value)}
-              className="resumo-input"
-              placeholder="Digite o local de entrega"
-            />
+            <span className="resumo-plain-value">{localEntrega || "-"}</span>
           </div>
 
           <div className="resumo-row-2col">
             <div className="resumo-field">
               <span className="resumo-label">CIDADE</span>
-              <input
-                type="text"
-                value={cidadeEntrega}
-                onChange={(e) => handleEntregaChange("cidade", e.target.value)}
-                className="resumo-input"
-                placeholder="Digite a cidade"
-              />
+              <span className="resumo-plain-value">{cidadeEntrega || "-"}</span>
             </div>
             <div className="resumo-field">
               <span className="resumo-label">CEP</span>
-              <input
-                type="text"
-                value={cepEntrega}
-                onChange={(e) => handleEntregaChange("cep", e.target.value)}
-                className="resumo-input"
-                placeholder="00000-000"
-              />
+              <span className="resumo-plain-value">{cepEntrega || "-"}</span>
             </div>
           </div>
 
@@ -424,10 +420,42 @@ export default function ResumoPedido({ formData, onEntregaChange }) {
             Adicionar Pedido
           </button>
           <button className="btn-secondary" onClick={gerarPDF}>
-            ⬇ Baixar PDF
+            ⬇ Emitir PDF
           </button>
         </div>
       </div>
+
+      {showEnviarPdfModal && (
+        <div className="resumo-modal-overlay" role="dialog" aria-modal="true">
+          <div className="resumo-modal">
+            <h3>Enviar PDF ao distribuidor?</h3>
+            <p>
+              Deseja enviar o PDF deste pedido para o distribuidor no e-mail{" "}
+              <strong>{distribuidorEmail || "não informado"}</strong>?
+              <br />
+              Por enquanto, ao confirmar, o PDF será baixado.
+            </p>
+
+            <div className="resumo-modal-actions">
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => finalizarPedido(true)}
+                disabled={!distribuidorEmail}
+              >
+                Sim
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => finalizarPedido(false)}
+              >
+                Não
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 

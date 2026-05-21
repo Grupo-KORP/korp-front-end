@@ -21,14 +21,20 @@ export default function PedidoPage() {
     });
 
     const handleFormChange = (data) => {
-        setFormData(prev => ({ ...prev, ...data }));
-    };
+        setFormData(prev => {
+            const nextData = { ...prev, ...data };
 
-    const handleEntregaChange = (updates) => {
-        setFormData(prev => ({
-            ...prev,
-            entrega: { ...prev.entrega, ...updates }
-        }));
+            if (data.cliente) {
+                nextData.entrega = {
+                    ...prev.entrega,
+                    endereco: data.cliente.endereco || "",
+                    cidade: data.cliente.cidade || "",
+                    cep: data.cliente.cep || "",
+                };
+            }
+
+            return nextData;
+        });
     };
 
     return (
@@ -40,8 +46,8 @@ export default function PedidoPage() {
                     {/* ESQUERDA (SCROLL) */}
                     <div className="form-area" id="area-pdf">
                         <div className="pedido-header">
+                            <p>Pedidos</p>
                             <h1>Novo Pedido</h1>
-                            <p>Preencha os dados abaixo para gerar uma nova ordem de venda</p>
                         </div>
                         <PedidoForm
                             onFormChange={handleFormChange}
@@ -52,7 +58,6 @@ export default function PedidoPage() {
                     <div className="resumo-area">
                         <ResumoPedido
                             formData={formData}
-                            onEntregaChange={handleEntregaChange}
                         />                    </div>
                 </div>
             </div>
