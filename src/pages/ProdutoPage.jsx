@@ -40,8 +40,8 @@ const rows = [
 ];
 
 const fields = [
-  { label: "Descri\u00e7\u00e3o do Produto", placeholder: "Ex: Pacote Office 365", span: "full" },
-  { label: "Codigo P/N", placeholder: "#000000" },
+  { label: "Descrição do Produto", placeholder: "Ex: Pacote Office 365", span: "full" },
+  { label: "Código P/N", placeholder: "#000000" },
 
 ];
 
@@ -49,13 +49,13 @@ export default function ProdutoPage() {
   return (
     <CatalogPage
       eyebrow="Produtos Cadastrados"
-      title="Painel de Cat\u00e1logo"
+      title="Painel de Catálogo"
       searchPlaceholder="Pesquisar Produto"
       tableTitle="Base de Produtos"
       tableColumns={[
-        { label: "Identifica\u00e7\u00e3o dos Cadastros", width: "2fr" },
+        { label: "Identificação dos Cadastros", width: "2fr" },
         { label: "Distribuidor", width: "1.35fr" },
-        { label: "Valor Unit\u00e1rio", width: "1.3fr" },
+        { label: "Valor Unitário", width: "1.3fr" },
       ]}
       rows={rows}
       moreLabel="Ver Mais Produtos"

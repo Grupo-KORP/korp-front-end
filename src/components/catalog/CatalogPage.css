@@ -54,8 +54,9 @@ body.catalog-body {
   align-items: center;
   gap: 13px;
   padding: 0 15px;
+  border: 1px solid var(--app-input-border);
   border-radius: 999px;
-  background: #ffffff;
+  background: var(--app-input-bg);
   box-shadow: 0 1px 0 rgba(17, 43, 95, 0.03);
 }
 
@@ -72,7 +73,7 @@ body.catalog-body {
   border: 0;
   outline: 0;
   background: transparent;
-  color: #173265;
+  color: var(--app-input-text);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1.8px;
@@ -80,7 +81,7 @@ body.catalog-body {
 }
 
 .catalog-search input::placeholder {
-  color: #5394ba;
+  color: var(--app-input-placeholder);
   opacity: 1;
 }
 
@@ -345,11 +346,11 @@ body.catalog-body {
 .catalog-form-field select {
   width: 100%;
   height: 34px;
-  border: 0;
+  border: 1px solid var(--app-input-border);
   border-radius: 7px;
   outline: 0;
-  background: #eef1f5;
-  color: #657284;
+  background: var(--app-input-bg);
+  color: var(--app-input-text);
   padding: 0 10px;
   font-family: inherit;
   font-size: 11px;
@@ -357,7 +358,7 @@ body.catalog-body {
 }
 
 .catalog-form-field input::placeholder {
-  color: #657284;
+  color: var(--app-input-placeholder);
   opacity: 1;
 }
 
@@ -388,9 +389,11 @@ body.dark.catalog-body {
   background: #111827;
 }
 
-body.dark .catalog-card,
-body.dark .catalog-more,
-body.dark .catalog-search {
+body.dark .catalog-card {
+  background: #1f2937;
+}
+
+body.dark .catalog-more {
   background: #1f2937;
 }
 
@@ -403,8 +406,7 @@ body.dark .catalog-badge {
   color: #f8fafc;
 }
 
-body.dark .catalog-title-block p,
-body.dark .catalog-search input::placeholder {
+body.dark .catalog-title-block p {
   color: #7dd3fc;
 }
 
@@ -415,9 +417,7 @@ body.dark .catalog-form-field span {
   color: #a8b2c1;
 }
 
-body.dark .catalog-badge,
-body.dark .catalog-form-field input,
-body.dark .catalog-form-field select {
+body.dark .catalog-badge {
   background: #374151;
   color: #dbe4ef;
 }
