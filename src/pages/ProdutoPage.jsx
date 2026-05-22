@@ -79,7 +79,6 @@ export default function ProdutoPage() {
     <CatalogPage
       eyebrow="Produtos Cadastrados"
       title="Painel de Catálogo"
-      title="Painel de Catálogo"
       searchPlaceholder="Pesquisar Produto"
       tableTitle="Base de Produtos"
       tableColumns={[

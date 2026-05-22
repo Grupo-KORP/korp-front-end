@@ -229,7 +229,7 @@ export default function ClientePage() {
       contato: form.contato,
       email: form.email,
     };
-
+    console.log("Payload:", payload);
     setLoading(true);
     try {
       await api.post("/cliente", payload);
