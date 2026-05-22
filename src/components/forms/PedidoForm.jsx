@@ -11,11 +11,18 @@ const UF_LIST = [
 
 const onlyDigits = (value) => value.replace(/\D/g, "");
 
+const removeFormatting = (value) => String(value || "").replace(/[.\-\/]/g, "").toUpperCase();
+
 const sanitizeCnpj = (value) => onlyDigits(String(value || ""));
 
 const cnpjExists = (value, list) => {
   const digits = sanitizeCnpj(value);
-  return digits.length === 14 && list.some((item) => onlyDigits(item.cnpj) === digits);
+  const cleanedValue = removeFormatting(value);
+  return (digits.length === 14 || cleanedValue.length === 14) && list.some((item) => {
+    const itemDigits = onlyDigits(item.cnpj);
+    const itemCleaned = removeFormatting(item.cnpj);
+    return itemDigits === digits || itemCleaned === cleanedValue;
+  });
 };
 
 const formatCnpj = (value) => {
@@ -28,8 +35,41 @@ const formatCnpj = (value) => {
 };
 
 const isValidCnpj = (value) => {
-  const cnpj = sanitizeCnpj(value);
+  const cleanedValue = removeFormatting(value);
+  const digitsOnly = sanitizeCnpj(value);
 
+  // Validar CNPJ alfanumérico: exatamente 14 caracteres alfanuméricos
+  if (cleanedValue.length === 14 && /^[A-Z0-9]{14}$/.test(cleanedValue)) {
+    // Se for puro numérico, validar checksum; senão, apenas aceitar
+    if (/^\d{14}$/.test(cleanedValue)) {
+      // É numérico, aplicar validação de checksum
+      if (/^(\d)\1+$/.test(cleanedValue)) {
+        return false;
+      }
+
+      const calculateDigit = (base) => {
+        const weights = base.length === 12
+          ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+          : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+        const sum = base
+          .split("")
+          .reduce((total, digit, index) => total + Number(digit) * weights[index], 0);
+        const remainder = sum % 11;
+        return remainder < 2 ? "0" : String(11 - remainder);
+      };
+
+      const digit1 = calculateDigit(cleanedValue.slice(0, 12));
+      const digit2 = calculateDigit(`${cleanedValue.slice(0, 12)}${digit1}`);
+
+      return cleanedValue.endsWith(`${digit1}${digit2}`);
+    }
+
+    // É alfanumérico (contém letras), aceitar sem checksum
+    return true;
+  }
+
+  // Validação legada: apenas dígitos
+  const cnpj = digitsOnly;
   if (cnpj.length !== 14 || /^(\d)\1+$/.test(cnpj)) {
     return false;
   }
@@ -93,17 +133,13 @@ function ClienteSection({ onChange }) {
   const [searchError, setSearchError] = useState("");
   const [searched, setSearched] = useState(false);
   const [showSaveButton, setShowSaveButton] = useState(false);
-  const newCadastroCnpjDigits = sanitizeCnpj(newCadastroCnpj);
-  const canRegisterNewCliente = newCadastroCnpjDigits.length === 14
-    && isValidCnpj(newCadastroCnpj)
-    && !cnpjExists(newCadastroCnpj, clientesMock);
 
   const clientesMock = [
     {
       id: 1,
       nomeFantasia: "Tech Solutions",
       razaoSocial: "Tech Solutions Ltda",
-      cnpj: "11.222.333/0001-81",
+      cnpj: "34.028.316/0001-86",
       cidade: "Sao Paulo",
       uf: "SP",
       cep: "01000-000",
@@ -113,6 +149,12 @@ function ClienteSection({ onChange }) {
       contato: "Maria Silva",
     },
   ];
+
+  const newCadastroCnpjDigits = sanitizeCnpj(newCadastroCnpj);
+  const newCadastroCnpjCleaned = removeFormatting(newCadastroCnpj);
+  const canRegisterNewCliente = (newCadastroCnpjDigits.length === 14 || newCadastroCnpjCleaned.length === 14)
+    && isValidCnpj(newCadastroCnpj)
+    && !cnpjExists(newCadastroCnpj, clientesMock);
 
   const clientesEncontrados = searched && !searchError
     ? clientesMock.filter((cliente) => {
@@ -367,17 +409,13 @@ function DistribuidorSection({ onChange }) {
   const [searchError, setSearchError] = useState("");
   const [searched, setSearched] = useState(false);
   const [showSaveButton, setShowSaveButton] = useState(false);
-  const newCadastroCnpjDigits = sanitizeCnpj(newCadastroCnpj);
-  const canRegisterNewDistribuidor = newCadastroCnpjDigits.length === 14
-    && isValidCnpj(newCadastroCnpj)
-    && !cnpjExists(newCadastroCnpj, distribuidoresMock);
 
   const distribuidoresMock = [
     {
       id: 1,
       nomeFantasia: "Distribuidora XYZ",
       razaoSocial: "Distribuidora XYZ",
-      cnpj: "22.222.222/0001-91",
+      cnpj: "11.222.333/0001-81",
       cidade: "Sao Paulo",
       uf: "SP",
       email: "contato@distribuidora.com",
@@ -386,6 +424,12 @@ function DistribuidorSection({ onChange }) {
       contato: "Joao Oliveira",
     },
   ];
+
+  const newCadastroCnpjDigits = sanitizeCnpj(newCadastroCnpj);
+  const newCadastroCnpjCleaned = removeFormatting(newCadastroCnpj);
+  const canRegisterNewDistribuidor = (newCadastroCnpjDigits.length === 14 || newCadastroCnpjCleaned.length === 14)
+    && isValidCnpj(newCadastroCnpj)
+    && !cnpjExists(newCadastroCnpj, distribuidoresMock);
 
   const distribuidoresEncontrados = searched && !searchError
     ? distribuidoresMock.filter((distribuidor) => {
