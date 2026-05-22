@@ -229,7 +229,7 @@ export default function ClientePage() {
       contato: form.contato,
       email: form.email,
     };
-
+    console.log("Payload:", payload);
     setLoading(true);
     try {
       await api.post("/cliente", payload);
@@ -262,7 +262,7 @@ export default function ClientePage() {
     },
     {
       name: "inscEst", label: "Insc. Est.", placeholder: "110.042.490.114",
-      span: "half", value: form.inscEst, readOnly: true, loading: loadingCNPJ,
+      span: "half", value: form.inscEst, loading: loadingCNPJ,
     },
     {
       name: "razaoSocial", label: "Razão Social", placeholder: "Ex: Tech Solutions Ltda",

@@ -38,7 +38,6 @@ const emptyForm = {
   complemento: "",
   cidade: "",
   uf: "SP",
-  especialidade: "",
   contato: "",
   email: "",
 };
@@ -169,7 +168,6 @@ export default function DistribuidorPage() {
     if (!form.fone || form.fone.replace(/\D/g, "").length < 10) errs.fone = "Telefone inválido.";
     if (form.cep.replace(/\D/g, "").length < 8) errs.cep = "CEP inválido.";
     if (!form.numero.trim()) errs.numero = "Número obrigatório.";
-    if (!form.especialidade.trim()) errs.especialidade = "Especialidade obrigatória.";
     if (!form.contato.trim()) errs.contato = "Contato obrigatório.";
     if (!form.email || !form.email.includes("@")) errs.email = "E-mail inválido.";
     setErrors(errs);
@@ -192,7 +190,6 @@ export default function DistribuidorPage() {
       uf: form.uf,
       numero: form.numero,
       complemento: form.complemento,
-      especialidade: form.especialidade,
       contato: form.contato,
       email: form.email,
     };
@@ -226,7 +223,7 @@ export default function DistribuidorPage() {
     },
     {
       name: "inscEst", label: "Insc. Est.", placeholder: "isento",
-      span: "half", value: form.inscEst, readOnly: true, loading: loadingCNPJ,
+      span: "half", value: form.inscEst, loading: loadingCNPJ,
     },
     {
       name: "razaoSocial", label: "Razão Social", placeholder: "Ex: Tech Solutions Ltda",
@@ -264,10 +261,6 @@ export default function DistribuidorPage() {
       name: "uf", label: "UF", type: "select",
       span: "half", value: form.uf, readOnly: true,
       options: UF_OPTIONS,
-    },
-    {
-      name: "especialidade", label: "Especialidade", placeholder: "Software",
-      span: "full", value: form.especialidade, error: errors.especialidade,
     },
     {
       name: "contato", label: "Contato", placeholder: "Nome do Responsável",
