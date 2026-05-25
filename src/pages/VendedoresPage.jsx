@@ -356,7 +356,7 @@ export default function VendedoresPage() {
                     Vendas Realizadas
                   </span>
                   <span className={`text-[10px] font-bold tracking-widest uppercase text-center whitespace-nowrap ${textoS}`}>
-                    Comissões Pendentes
+                    Status do Colaborador
                   </span>
                   <span className={`text-[10px] font-bold tracking-widest uppercase text-center ${textoS}`}>
                     Ferramentas
@@ -391,8 +391,8 @@ export default function VendedoresPage() {
                       {/* Vendas */}
                       <span className={`text-sm font-bold text-center ${textoM}`}>{v.vendasEfetivadas ?? 0}</span>
 
-                      {/* Comissões pendentes */}
-                      <span className={`text-sm font-bold text-center ${textoM}`}>{v.comissoesPendentes ?? 0}</span>
+                      {/* Status do Colaborador */}
+                      <span className={`text-sm font-bold text-center ${textoM}`}>{v.status ?? "Ativo"}</span>
 
                       {/* Ferramentas */}
                       <div className="flex items-center justify-center gap-2">
@@ -492,11 +492,34 @@ export default function VendedoresPage() {
                   <label className={`text-[10px] font-bold tracking-widest uppercase block mb-1 ${textoS}`}>
                     Status do Colaborador
                   </label>
-                  <select name="status" value={form.status} onChange={handleFormChange}
-                    className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition appearance-none cursor-pointer ${inputBg}`}>
-                    <option>Ativo</option>
-                    <option>Inativo</option>
-                  </select>
+                  {editingId ? (
+                    <div className="relative">
+                      <select
+                        name="status"
+                        value={form.status}
+                        onChange={handleFormChange}
+                        className={`w-full px-3.5 py-2.5 pr-10 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition appearance-none cursor-pointer ${inputBg}`}
+                      >
+                        <option>Ativo</option>
+                        <option>Inativo</option>
+                      </select>
+                      <svg
+                        className={`pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 ${textoS}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  ) : (
+                    <input
+                      type="text"
+                      value="Ativo"
+                      readOnly
+                      className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none cursor-not-allowed ${inputBg}`}
+                    />
+                  )}
                 </div>
 
                 <div className="flex gap-2 mt-1">
