@@ -146,3 +146,74 @@
 .pdf-mode button {
   display: none !important; /* remove botões no PDF */
 }
+
+.pdf-mode .form-area {
+  padding: 0 !important;
+}
+
+.pdf-mode #area-pdf,
+.pdf-mode .pedido-wrapper,
+.pdf-mode .pedido-content,
+.pdf-mode .form-area,
+.pdf-mode .resumo-area,
+.pdf-mode .form-section,
+.pdf-mode .resumo-card,
+.pdf-mode table,
+.pdf-mode tr,
+.pdf-mode td,
+.pdf-mode th {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.pdf-mode .pedido-wrapper {
+  margin: 0;
+  padding: 0;
+  min-height: auto;
+}
+
+.pdf-mode .pedido-header,
+.pdf-mode .resumo-area {
+  display: none !important;
+}
+
+.pdf-mode .pedido-content {
+  display: block;
+}
+
+.pdf-mode .form-section {
+  margin-bottom: 6px !important;
+  padding: 8px !important;
+}
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 7mm;
+  }
+
+  html,
+  body,
+  #root {
+    width: 297mm;
+    min-height: 210mm;
+    overflow: visible !important;
+  }
+
+  .pedido-page {
+    min-height: auto;
+    overflow: visible !important;
+    background: #ffffff !important;
+  }
+
+  #area-pdf,
+  .form-section,
+  .resumo-card,
+  table,
+  tr,
+  td,
+  th {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}

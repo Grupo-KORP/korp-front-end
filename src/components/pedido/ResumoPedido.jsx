@@ -56,9 +56,12 @@ export default function ResumoPedido({ formData }) {
     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 12;
+    const margin = 7;
+    const footerHeight = 11;
+    const contentBottom = pageHeight - margin - footerHeight;
     const usableWidth = pageWidth - margin * 2;
-    let y = 14;
+    let y = 8;
+    const pedidoId = formData?.pedidoId || "{{pedidoId}}";
 
     const entregaAtual = {
       ...entrega,
@@ -67,175 +70,244 @@ export default function ResumoPedido({ formData }) {
       cep: cepEntrega,
     };
 
-    const ensureSpace = (height) => {
-      if (y + height > pageHeight - 18) {
-        doc.addPage();
-        y = 14;
-      }
-    };
+    const drawSectionBox = (title, x, topY, width, height) => {
+      doc.setDrawColor(220, 226, 235);
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(x, topY, width, height, 1.5, 1.5, "FD");
 
-    const sectionTitle = (title) => {
-      ensureSpace(14);
-      y += y > 18 ? 4 : 0;
+      doc.setFillColor(245, 248, 252);
+      doc.rect(x, topY, width, 7, "F");
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(13);
+      doc.setFontSize(8.2);
       doc.setTextColor(6, 29, 81);
-      doc.text(title, margin, y);
-      y += 3;
-      doc.setDrawColor(226, 232, 240);
-      doc.setLineWidth(0.5);
-      doc.line(margin, y, pageWidth - margin, y);
-      y += 7;
+      doc.text(title, x + 3, topY + 4.7);
+      doc.setDrawColor(220, 226, 235);
+      doc.line(x, topY + 7, x + width, topY + 7);
     };
 
-    const fieldGrid = (fields, columns = 2) => {
-      const gap = 5;
-      const colWidth = (usableWidth - gap * (columns - 1)) / columns;
+    const drawLabelValue = (label, value, x, topY, width, options = {}) => {
+      const labelSize = options.labelSize || 5.4;
+      const valueSize = options.valueSize || 6.7;
+      const maxLines = options.maxLines || 1;
+      const lineHeight = options.lineHeight || 2.8;
+      const text = pdfText(value);
+      let fontSize = valueSize;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(fontSize);
+      let lines = doc.splitTextToSize(text, width);
 
-      for (let i = 0; i < fields.length; i += columns) {
-        const rowFields = fields.slice(i, i + columns);
-        const rowData = rowFields.map((field) => {
-          const lines = doc.splitTextToSize(pdfText(field.value), colWidth - 6);
-          return { ...field, lines };
-        });
-        const rowHeight = Math.max(
-          18,
-          ...rowData.map((field) => 9 + field.lines.length * 4.2)
-        );
-
-        ensureSpace(rowHeight + 3);
-
-        rowData.forEach((field, index) => {
-          const x = margin + index * (colWidth + gap);
-          doc.setDrawColor(226, 232, 240);
-          doc.setFillColor(255, 255, 255);
-          doc.roundedRect(x, y, colWidth, rowHeight, 2, 2, "FD");
-          doc.setFont("helvetica", "bold");
-          doc.setFontSize(7);
-          doc.setTextColor(148, 163, 184);
-          doc.text(field.label.toUpperCase(), x + 3, y + 5);
-          doc.setFont("helvetica", "normal");
-          doc.setFontSize(9);
-          doc.setTextColor(30, 41, 59);
-          doc.text(field.lines, x + 3, y + 10);
-        });
-
-        y += rowHeight + 4;
+      while (lines.length > maxLines && fontSize > 4.5) {
+        fontSize -= 0.3;
+        doc.setFontSize(fontSize);
+        lines = doc.splitTextToSize(text, width);
       }
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(labelSize);
+      doc.setTextColor(117, 130, 150);
+      doc.text(label.toUpperCase(), x, topY);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(fontSize);
+      doc.setTextColor(30, 41, 59);
+      doc.text(lines.slice(0, maxLines), x, topY + 3.3, { maxWidth: width, lineHeightFactor: lineHeight / fontSize });
     };
 
-    const tableHeader = (columns) => {
-      ensureSpace(12);
-      doc.setFillColor(241, 245, 249);
-      doc.rect(margin, y, usableWidth, 9, "F");
+    const compactFieldPanel = (title, fields, x, topY, width, height) => {
+      drawSectionBox(title, x, topY, width, height);
+      const innerX = x + 3;
+      const innerY = topY + 12;
+      const gap = 3;
+      const colWidth = (width - 9) / 2;
+      const rowHeight = 6.4;
+
+      fields.forEach((field, index) => {
+        const col = index % 2;
+        const row = Math.floor(index / 2);
+        drawLabelValue(
+          field.label,
+          field.value,
+          innerX + col * (colWidth + gap),
+          innerY + row * rowHeight,
+          colWidth,
+          { maxLines: 1 }
+        );
+      });
+    };
+
+    const sectionTitle = (title, topY) => {
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(7);
-      doc.setTextColor(100, 116, 139);
+      doc.setFontSize(8.5);
+      doc.setTextColor(6, 29, 81);
+      doc.text(title, margin, topY);
+      doc.setDrawColor(220, 226, 235);
+      doc.line(margin, topY + 2, pageWidth - margin, topY + 2);
+    };
+
+    const fitTextLines = (value, width, maxLines) => {
+      let fontSize = doc.getFontSize();
+      const minFontSize = 3.8;
+      let lines = doc.splitTextToSize(pdfText(value), width);
+
+      while (lines.length > maxLines && fontSize > minFontSize) {
+        fontSize -= 0.25;
+        doc.setFontSize(fontSize);
+        lines = doc.splitTextToSize(pdfText(value), width);
+      }
+
+      return lines.slice(0, maxLines);
+    };
+
+    const tableHeader = (columns, topY, rowHeight) => {
+      doc.setFillColor(241, 245, 249);
+      doc.rect(margin, topY, usableWidth, rowHeight, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(5.8);
+      doc.setTextColor(85, 99, 118);
 
       let x = margin;
       columns.forEach((column) => {
-        doc.text(column.label, x + 1.5, y + 5.8, { maxWidth: column.width - 3 });
+        doc.text(column.label, x + 1, topY + rowHeight - 2.2, { maxWidth: column.width - 2 });
         x += column.width;
       });
-
-      y += 9;
     };
 
-    const productTable = () => {
-      const columns = [
-        { label: "#", width: 8, value: (_, index) => String(index + 1) },
-        { label: "Descricao", width: 60, value: (p) => pdfText(p.descricao) },
-        { label: "P/N", width: 24, value: (p) => pdfText(p.pn) },
-        { label: "Entrega", width: 28, value: (p) => pdfText(p.entrega) },
-        { label: "Qtd.", width: 16, value: (p) => pdfText(p.quantidade) },
-        { label: "Valor Unit.", width: 32, value: (p) => fmt(parseFloat(p.valorUnitario) || 0) },
-        { label: "Valor Total", width: 32, value: (p) => fmt(parseFloat(p.valorTotal) || 0) },
-        { label: "Valor Unit. Fat.", width: 36, value: (p) => fmt(parseFloat(p.unitFaturado) || 0) },
-        { label: "Total Fat.", width: 37, value: (p) => fmt(parseFloat(p.totalFaturado) || 0) },
-      ];
+    const productColumns = [
+      { label: "#", width: 7, value: (_, index) => String(index + 1), align: "left" },
+      { label: "Descricao", width: 67, value: (p) => pdfText(p.descricao), align: "left" },
+      { label: "P/N", width: 24, value: (p) => pdfText(p.pn), align: "left" },
+      { label: "Entrega", width: 26, value: (p) => pdfText(p.entrega), align: "left" },
+      { label: "Qtd.", width: 14, value: (p) => pdfText(p.quantidade), align: "right" },
+      { label: "Valor Unit.", width: 29, value: (p) => fmt(parseFloat(p.valorUnitario) || 0), align: "right" },
+      { label: "Valor Total", width: 31, value: (p) => fmt(parseFloat(p.valorTotal) || 0), align: "right" },
+      { label: "Unit. Fat.", width: 33, value: (p) => fmt(parseFloat(p.unitFaturado) || 0), align: "right" },
+      { label: "Total Fat.", width: usableWidth - 231, value: (p) => fmt(parseFloat(p.totalFaturado) || 0), align: "right" },
+    ];
 
-      tableHeader(columns);
+    const startProductTable = (topY, title = "Produtos") => {
+      sectionTitle(title, topY);
+      const headerY = topY + 5;
+      tableHeader(productColumns, headerY, 6);
+      return headerY + 6;
+    };
+
+    const productTable = (topY) => {
+      let tableY = startProductTable(topY);
+      const columns = productColumns;
 
       if (produtos.length === 0) {
-        ensureSpace(12);
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(9);
+        doc.setFontSize(7);
         doc.setTextColor(148, 163, 184);
-        doc.text("Nenhum produto informado", margin + usableWidth / 2, y + 7, { align: "center" });
-        y += 12;
-        return;
+        doc.text("Nenhum produto informado", margin + usableWidth / 2, tableY + 6, { align: "center" });
+        doc.setDrawColor(220, 226, 235);
+        doc.rect(margin, topY + 5, usableWidth, 14);
+        return tableY + 8;
       }
 
-      produtos.forEach((produto, index) => {
-        const cells = columns.map((column) => {
-          const value = column.value(produto, index);
-          const lines = doc.splitTextToSize(value, column.width - 3);
-          return { ...column, lines };
-        });
-        const rowHeight = Math.max(11, ...cells.map((cell) => 5 + cell.lines.length * 3.8));
+      const rowHeight = 6.2;
+      const bodyFontSize = 5.8;
+      const descriptionLines = 1;
 
-        if (y + rowHeight > pageHeight - 18) {
+      produtos.forEach((produto, index) => {
+        if (tableY + rowHeight > contentBottom) {
           doc.addPage();
-          y = 14;
-          tableHeader(columns);
+          tableY = startProductTable(8, "Produtos (continuação)");
         }
 
         let x = margin;
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(7.8);
+        doc.setFontSize(bodyFontSize);
         doc.setTextColor(30, 41, 59);
-        cells.forEach((cell) => {
-          doc.text(cell.lines, x + 1.5, y + 5, { maxWidth: cell.width - 3 });
+        columns.forEach((cell) => {
+          const maxLines = cell.label === "Descricao" ? descriptionLines : 1;
+          doc.setFontSize(bodyFontSize);
+          const lines = fitTextLines(cell.value(produto, index), cell.width - 2, maxLines);
+          const textX = cell.align === "right" ? x + cell.width - 1 : x + 1;
+          const cellFontSize = doc.getFontSize();
+          const textY = tableY + 3.9;
+          doc.text(lines, textX, textY, {
+            align: cell.align,
+            maxWidth: cell.width - 2,
+            lineHeightFactor: 0.9,
+          });
+          doc.setFontSize(cellFontSize);
           x += cell.width;
         });
         doc.setDrawColor(241, 245, 249);
-        doc.line(margin, y + rowHeight, pageWidth - margin, y + rowHeight);
-        y += rowHeight;
+        doc.line(margin, tableY + rowHeight, pageWidth - margin, tableY + rowHeight);
+        tableY += rowHeight;
       });
 
-      y += 4;
+      return tableY;
     };
 
-    const summaryBoxes = () => {
-      const gap = 5;
-      const boxWidth = (usableWidth - gap * 2) / 3;
+    const summaryFieldsPanel = (title, fields, x, topY, width, height) => {
+      drawSectionBox(title, x, topY, width, height);
+      const innerX = x + 3;
+      const innerY = topY + 12;
+      const rowHeight = 7;
+      let cursorY = innerY;
+
+      fields.forEach((field) => {
+        drawLabelValue(field.label, field.value, innerX, cursorY, width - 6, {
+          maxLines: field.maxLines || 1,
+          valueSize: 6.5,
+        });
+        cursorY += field.height || rowHeight;
+      });
+    };
+
+    const getSummaryHeight = () => {
+      const produtosResumo = produtos.map((p) => p.descricao).filter(Boolean).join(", ");
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(6.5);
+      const productLines = doc.splitTextToSize(pdfText(produtosResumo), halfWidth - 6);
+      return Math.max(42, 12 + 5 * 7 + productLines.length * 3.2 + 5);
+    };
+
+    const financialPanel = (title, x, topY, width, height) => {
+      drawSectionBox(title, x, topY, width, height);
+      const gap = 3;
+      const boxWidth = (width - 12 - gap * 2) / 3;
       const items = [
         { label: "Valor de Compra", value: fmt(valorCompra), highlight: false },
         { label: "Valor de Faturamento", value: fmt(valorFaturamento), highlight: false },
         { label: "Total de Comissao Bruta", value: fmt(comissao), highlight: true },
       ];
 
-      ensureSpace(25);
-
       items.forEach((item, index) => {
-        const x = margin + index * (boxWidth + gap);
+        const boxX = x + 3 + index * (boxWidth + gap);
+        const boxY = topY + 13;
         doc.setDrawColor(item.highlight ? 30 : 226, item.highlight ? 58 : 232, item.highlight ? 138 : 240);
         doc.setFillColor(item.highlight ? 30 : 255, item.highlight ? 58 : 255, item.highlight ? 138 : 255);
-        doc.roundedRect(x, y, boxWidth, 22, 2, 2, "FD");
+        doc.roundedRect(boxX, boxY, boxWidth, height - 17, 1.5, 1.5, "FD");
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(7);
+        doc.setFontSize(5.6);
         doc.setTextColor(item.highlight ? 255 : 148, item.highlight ? 255 : 163, item.highlight ? 255 : 184);
-        doc.text(item.label.toUpperCase(), x + 4, y + 6);
-        doc.setFontSize(13);
+        doc.text(item.label.toUpperCase(), boxX + 3, boxY + 5, { maxWidth: boxWidth - 6 });
+        doc.setFontSize(10.5);
         doc.setTextColor(item.highlight ? 255 : 30, item.highlight ? 255 : 41, item.highlight ? 255 : 59);
-        doc.text(item.value, x + 4, y + 15);
+        doc.text(item.value, boxX + 3, boxY + 14, { maxWidth: boxWidth - 6 });
       });
-
-      y += 26;
     };
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
+    doc.setFontSize(6.6);
     doc.setTextColor(59, 130, 246);
     doc.text("OPERACOES DE VENDA", margin, y);
-    y += 8;
-    doc.setFontSize(19);
+    y += 6;
+    doc.setFontSize(16);
     doc.setTextColor(26, 58, 122);
     doc.text("Novo Pedido", margin, y);
-    y += 10;
+    y += 6;
 
-    sectionTitle("Dados do Cliente");
-    fieldGrid([
+    const gap = 5;
+    const halfWidth = (usableWidth - gap) / 2;
+    const partyY = y;
+    const partyHeight = 50;
+
+    compactFieldPanel("Dados do Cliente", [
+      { label: "Nome Fantasia", value: cliente.nomeFantasia },
       { label: "Razao Social", value: cliente.razaoSocial },
       { label: "CNPJ", value: cliente.cnpj },
       { label: "Insc. Est.", value: cliente.inscEst },
@@ -246,10 +318,10 @@ export default function ResumoPedido({ formData }) {
       { label: "UF", value: cliente.uf },
       { label: "Contato", value: cliente.contato },
       { label: "E-mail", value: cliente.email },
-    ]);
+    ], margin, partyY, halfWidth, partyHeight);
 
-    sectionTitle("Dados do Distribuidor");
-    fieldGrid([
+    compactFieldPanel("Dados do Distribuidor", [
+      { label: "Nome Fantasia", value: distribuidor.nomeFantasia },
       { label: "Razao Social", value: distribuidor.razaoSocial },
       { label: "CNPJ", value: distribuidor.cnpj },
       { label: "Insc. Est.", value: distribuidor.inscEst },
@@ -260,36 +332,55 @@ export default function ResumoPedido({ formData }) {
       { label: "UF", value: distribuidor.uf },
       { label: "Contato", value: distribuidor.contato },
       { label: "E-mail", value: distribuidor.email },
-    ]);
+    ], margin + halfWidth + gap, partyY, halfWidth, partyHeight);
 
-    sectionTitle("Dados do Produto");
-    productTable();
+    const productsY = partyY + partyHeight + 7;
+    y = productTable(productsY) + 5;
 
-    sectionTitle("Resumo do Pedido");
-    fieldGrid([
+    const produtosResumo = produtos.map((p) => p.descricao).filter(Boolean).join(", ");
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6.5);
+    const productSummaryLines = doc.splitTextToSize(pdfText(produtosResumo), halfWidth - 6);
+    const summaryHeight = getSummaryHeight();
+    if (y + summaryHeight > contentBottom) {
+      doc.addPage();
+      y = 8;
+    }
+
+    summaryFieldsPanel("Resumo do Pedido", [
       { label: "Distribuidor Responsavel", value: distribuidorName },
       { label: "Cliente Faturado", value: clienteFaturado },
       { label: "Local de Entrega", value: entregaAtual.endereco },
       { label: "Cidade", value: entregaAtual.cidade },
       { label: "CEP", value: entregaAtual.cep },
-      { label: "Produtos", value: produtos.map((p) => p.descricao).filter(Boolean).join(", ") },
-    ], 3);
+      {
+        label: "Produtos",
+        value: produtosResumo,
+        maxLines: productSummaryLines.length,
+        height: Math.max(7, summaryHeight - 47),
+      },
+    ], margin, y, halfWidth, summaryHeight);
 
-    sectionTitle("Resumo Financeiro");
-    summaryBoxes();
+    financialPanel("Resumo Financeiro", margin + halfWidth + gap, y, halfWidth, summaryHeight);
 
     const totalPages = doc.getNumberOfPages();
     for (let page = 1; page <= totalPages; page += 1) {
       doc.setPage(page);
+      doc.setDrawColor(220, 226, 235);
+      doc.line(margin, pageHeight - footerHeight, pageWidth - margin, pageHeight - footerHeight);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(6.4);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Código do Pedido: ${pedidoId}`, margin, pageHeight - 7);
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(7);
+      doc.setFontSize(6);
       doc.setTextColor(148, 163, 184);
       doc.text(
         `Gerado em ${new Date().toLocaleDateString("pt-BR")} as ${new Date().toLocaleTimeString("pt-BR")} - TND Brasil`,
         margin,
-        pageHeight - 8
+        pageHeight - 3.5
       );
-      doc.text(`Pagina ${page} de ${totalPages}`, pageWidth - margin, pageHeight - 8, { align: "right" });
+      doc.text(`Pagina ${page} de ${totalPages}`, pageWidth - margin, pageHeight - 3.5, { align: "right" });
     }
 
     doc.save("pedido.pdf");
@@ -420,7 +511,7 @@ export default function ResumoPedido({ formData }) {
             Adicionar Pedido
           </button>
           <button className="btn-secondary" onClick={gerarPDF}>
-            ⬇ Emitir PDF
+            Pré visualizar PDF
           </button>
         </div>
       </div>
