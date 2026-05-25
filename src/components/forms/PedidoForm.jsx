@@ -11,6 +11,20 @@ const UF_LIST = [
 
 const onlyDigits = (value) => value.replace(/\D/g, "");
 
+const removeFormatting = (value) => String(value || "").replace(/[.\-\/]/g, "").toUpperCase();
+
+const sanitizeCnpj = (value) => onlyDigits(String(value || ""));
+
+const cnpjExists = (value, list) => {
+  const digits = sanitizeCnpj(value);
+  const cleanedValue = removeFormatting(value);
+  return (digits.length === 14 || cleanedValue.length === 14) && list.some((item) => {
+    const itemDigits = onlyDigits(item.cnpj);
+    const itemCleaned = removeFormatting(item.cnpj);
+    return itemDigits === digits || itemCleaned === cleanedValue;
+  });
+};
+
 const formatCnpj = (value) => {
   const digits = onlyDigits(value).slice(0, 14);
   return digits
@@ -21,8 +35,41 @@ const formatCnpj = (value) => {
 };
 
 const isValidCnpj = (value) => {
-  const cnpj = onlyDigits(value);
+  const cleanedValue = removeFormatting(value);
+  const digitsOnly = sanitizeCnpj(value);
 
+  // Validar CNPJ alfanumérico: exatamente 14 caracteres alfanuméricos
+  if (cleanedValue.length === 14 && /^[A-Z0-9]{14}$/.test(cleanedValue)) {
+    // Se for puro numérico, validar checksum; senão, apenas aceitar
+    if (/^\d{14}$/.test(cleanedValue)) {
+      // É numérico, aplicar validação de checksum
+      if (/^(\d)\1+$/.test(cleanedValue)) {
+        return false;
+      }
+
+      const calculateDigit = (base) => {
+        const weights = base.length === 12
+          ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+          : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+        const sum = base
+          .split("")
+          .reduce((total, digit, index) => total + Number(digit) * weights[index], 0);
+        const remainder = sum % 11;
+        return remainder < 2 ? "0" : String(11 - remainder);
+      };
+
+      const digit1 = calculateDigit(cleanedValue.slice(0, 12));
+      const digit2 = calculateDigit(`${cleanedValue.slice(0, 12)}${digit1}`);
+
+      return cleanedValue.endsWith(`${digit1}${digit2}`);
+    }
+
+    // É alfanumérico (contém letras), aceitar sem checksum
+    return true;
+  }
+
+  // Validação legada: apenas dígitos
+  const cnpj = digitsOnly;
   if (cnpj.length !== 14 || /^(\d)\1+$/.test(cnpj)) {
     return false;
   }
@@ -52,10 +99,18 @@ function SearchIcon() {
   );
 }
 
+function AddIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5Z" />
+    </svg>
+  );
+}
+
 function CnpjSearchButton({ children, onClick }) {
   return (
     <button type="button" className="cnpj-search-trigger" onClick={onClick}>
-      <SearchIcon />
+      <AddIcon />
       <span>{children}</span>
     </button>
   );
@@ -70,10 +125,11 @@ function ClienteSection({ onChange }) {
   const [open, setOpen] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [data, setData] = useState({
-    razaoSocial: "", cnpj: "", inscEst: "", fone: "", cep: "",
+    nomeFantasia: "", razaoSocial: "", cnpj: "", inscEst: "", fone: "", cep: "",
     endereco: "", cidade: "", uf: "", contato: "", email: "",
   });
   const [search, setSearch] = useState("");
+  const [newCadastroCnpj, setNewCadastroCnpj] = useState("");
   const [searchError, setSearchError] = useState("");
   const [searched, setSearched] = useState(false);
   const [showSaveButton, setShowSaveButton] = useState(false);
@@ -81,8 +137,9 @@ function ClienteSection({ onChange }) {
   const clientesMock = [
     {
       id: 1,
+      nomeFantasia: "Tech Solutions",
       razaoSocial: "Tech Solutions Ltda",
-      cnpj: "11.222.333/0001-81",
+      cnpj: "34.028.316/0001-86",
       cidade: "Sao Paulo",
       uf: "SP",
       cep: "01000-000",
@@ -93,8 +150,24 @@ function ClienteSection({ onChange }) {
     },
   ];
 
+  const newCadastroCnpjDigits = sanitizeCnpj(newCadastroCnpj);
+  const newCadastroCnpjCleaned = removeFormatting(newCadastroCnpj);
+  const canRegisterNewCliente = (newCadastroCnpjDigits.length === 14 || newCadastroCnpjCleaned.length === 14)
+    && isValidCnpj(newCadastroCnpj)
+    && !cnpjExists(newCadastroCnpj, clientesMock);
+
   const clientesEncontrados = searched && !searchError
-    ? clientesMock.filter((cliente) => onlyDigits(cliente.cnpj) === onlyDigits(search))
+    ? clientesMock.filter((cliente) => {
+        const normalizedSearch = String(search || "").trim().toLowerCase();
+        const digits = onlyDigits(String(search || ""));
+
+        if (digits.length === 14 && isValidCnpj(search)) {
+          return onlyDigits(String(cliente.cnpj || "")) === digits;
+        }
+
+        return String(cliente.nomeFantasia || "").toLowerCase().includes(normalizedSearch)
+          || String(cliente.razaoSocial || "").toLowerCase().includes(normalizedSearch);
+      })
     : [];
 
   const handle = (e) => {
@@ -112,8 +185,22 @@ function ClienteSection({ onChange }) {
   };
 
   const handleSearch = () => {
-    if (!isValidCnpj(search)) {
-      setSearchError("Informe um CNPJ valido para pesquisar clientes.");
+    const digits = onlyDigits(search);
+
+    if (digits.length === 14) {
+      if (!isValidCnpj(search)) {
+        setSearchError("Informe um CNPJ valido para pesquisar clientes.");
+        setSearched(false);
+        return;
+      }
+
+      setSearchError("");
+      setSearched(true);
+      return;
+    }
+
+    if (!search.trim()) {
+      setSearchError("Informe um nome fantasia ou CNPJ para pesquisar clientes.");
       setSearched(false);
       return;
     }
@@ -123,37 +210,22 @@ function ClienteSection({ onChange }) {
   };
 
   const handleSearchChange = (value) => {
-    const formatted = formatCnpj(value);
-    const digits = onlyDigits(formatted);
-
-    setSearch(formatted);
+    setSearch(value);
     setSearched(false);
-
-    if (!digits) {
-      setSearchError("");
-      return;
-    }
-
-    if (digits.length < 14) {
-      setSearchError("");
-      return;
-    }
-
-    if (!isValidCnpj(formatted)) {
-      setSearchError("Informe um CNPJ valido para pesquisar clientes.");
-      return;
-    }
-
     setSearchError("");
-    setSearched(true);
   };
 
   const startNewCliente = () => {
-    const updated = { ...data, cnpj: formatCnpj(search) };
+    const chosenCnpj = newCadastroCnpj && isValidCnpj(newCadastroCnpj)
+      ? sanitizeCnpj(newCadastroCnpj)
+      : sanitizeCnpj(search);
+
+    const updated = { ...data, cnpj: formatCnpj(chosenCnpj) };
     setData(updated);
     onChange?.(updated);
     setOpen(true);
     setShowSaveButton(true);
+    setNewCadastroCnpj("");
     closeModal();
   };
 
@@ -175,7 +247,7 @@ function ClienteSection({ onChange }) {
               setShowModal(true);
             }}
           >
-            Pesquisar cliente por CNPJ
+            Adicionar cliente
           </CnpjSearchButton>
           <span className={`chevron ${open ? "open" : ""}`}>v</span>
         </div>
@@ -184,13 +256,13 @@ function ClienteSection({ onChange }) {
       {open && (
         <div className="section-body">
           <div className="form-row">
-            <div className="form-group grow-2">
-              <label>RAZAO SOCIAL</label>
-              <input name="razaoSocial" value={data.razaoSocial} onChange={handle} placeholder="Ex: Tech Solutions Ltda" {...readonlyInputProps} />
+            <div className="form-group grow-1">
+              <label>NOME FANTASIA</label>
+              <input name="nomeFantasia" value={data.nomeFantasia} onChange={handle} placeholder="Ex: Tech Solutions" />
             </div>
             <div className="form-group grow-1">
-              <label>CNPJ</label>
-              <input name="cnpj" value={data.cnpj} onChange={handle} placeholder="00.000.000/0000-00" {...readonlyInputProps} />
+              <label>RAZAO SOCIAL</label>
+              <input name="razaoSocial" value={data.razaoSocial} onChange={handle} placeholder="Ex: Tech Solutions Ltda" {...readonlyInputProps} />
             </div>
           </div>
 
@@ -199,13 +271,17 @@ function ClienteSection({ onChange }) {
               <label>INSC. EST.</label>
               <input name="inscEst" value={data.inscEst} onChange={handle} placeholder="Isento" {...readonlyInputProps} />
             </div>
-            <div className="form-group grow-1">
+            <div className="form-group w-120">
               <label>FONE</label>
               <input name="fone" value={data.fone} onChange={handle} placeholder="(00) 0000-0000" {...readonlyInputProps} />
             </div>
             <div className="form-group w-140">
               <label>CEP</label>
               <input name="cep" value={data.cep} onChange={handle} placeholder="00000-000" {...readonlyInputProps} />
+            </div>
+            <div className="form-group w-180">
+              <label>CNPJ</label>
+              <input name="cnpj" value={data.cnpj} onChange={handle} placeholder="00.000.000/0000-00" {...readonlyInputProps} />
             </div>
           </div>
 
@@ -250,12 +326,12 @@ function ClienteSection({ onChange }) {
         <div className="modal-overlay">
           <div className="modal">
             <h3>Buscar Cliente</h3>
-            <p className="modal-hint">A pesquisa deve ser feita pelo CNPJ.</p>
+            <p className="modal-hint">A pesquisa pode ser feita por Nome Fantasia ou CNPJ.</p>
 
             <div className="modal-search-row">
               <input
                 type="text"
-                placeholder="00.000.000/0000-00"
+                placeholder="Nome fantasia ou CNPJ"
                 value={search}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="input-busca"
@@ -279,16 +355,34 @@ function ClienteSection({ onChange }) {
                     closeModal();
                   }}
                 >
-                  <strong>{cliente.razaoSocial}</strong>
-                  <small>Nome associado ao CNPJ</small>
+                  <strong>{cliente.nomeFantasia || cliente.razaoSocial}</strong>
+                  {cliente.razaoSocial && cliente.nomeFantasia !== cliente.razaoSocial && (
+                    <small>{cliente.razaoSocial}</small>
+                  )}
                   <span>{cliente.cnpj}</span>
                 </div>
               ))}
 
               {searched && !searchError && clientesEncontrados.length === 0 && (
                 <div className="modal-empty">
-                  <p>O CNPJ nao esta cadastrado no sistema.</p>
-                  <button type="button" className="btn-cadastrar-novo" onClick={startNewCliente}>
+                  <p>Cliente não encontrado.</p>
+                  <p>Para cadastrar um novo cliente, digite o CNPJ do cliente que deseja cadastrar.</p>
+                  <input
+                    type="text"
+                    placeholder="Digite o CNPJ para cadastro"
+                    value={newCadastroCnpj}
+                    onChange={(e) => setNewCadastroCnpj(e.target.value)}
+                    className="input-cnpj-cadastro"
+                  />
+                  {cnpjExists(newCadastroCnpj, clientesMock) && (
+                    <p className="modal-message is-error">Este CNPJ já existe como cliente.</p>
+                  )}
+                  <button
+                    type="button"
+                    className="btn-cadastrar-novo"
+                    onClick={startNewCliente}
+                    disabled={!canRegisterNewCliente}
+                  >
                     Cadastrar novo cliente
                   </button>
                 </div>
@@ -306,11 +400,12 @@ function ClienteSection({ onChange }) {
 function DistribuidorSection({ onChange }) {
   const [open, setOpen] = useState(true);
   const [data, setData] = useState({
-    razaoSocial: "", cnpj: "", inscEst: "", fone: "", cep: "",
+    nomeFantasia: "", razaoSocial: "", cnpj: "", inscEst: "", fone: "", cep: "",
     endereco: "", cidade: "", uf: "", contato: "", email: "",
   });
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState("");
+  const [newCadastroCnpj, setNewCadastroCnpj] = useState("");
   const [searchError, setSearchError] = useState("");
   const [searched, setSearched] = useState(false);
   const [showSaveButton, setShowSaveButton] = useState(false);
@@ -318,8 +413,9 @@ function DistribuidorSection({ onChange }) {
   const distribuidoresMock = [
     {
       id: 1,
+      nomeFantasia: "Distribuidora XYZ",
       razaoSocial: "Distribuidora XYZ",
-      cnpj: "22.222.222/0001-91",
+      cnpj: "11.222.333/0001-81",
       cidade: "Sao Paulo",
       uf: "SP",
       email: "contato@distribuidora.com",
@@ -329,8 +425,24 @@ function DistribuidorSection({ onChange }) {
     },
   ];
 
+  const newCadastroCnpjDigits = sanitizeCnpj(newCadastroCnpj);
+  const newCadastroCnpjCleaned = removeFormatting(newCadastroCnpj);
+  const canRegisterNewDistribuidor = (newCadastroCnpjDigits.length === 14 || newCadastroCnpjCleaned.length === 14)
+    && isValidCnpj(newCadastroCnpj)
+    && !cnpjExists(newCadastroCnpj, distribuidoresMock);
+
   const distribuidoresEncontrados = searched && !searchError
-    ? distribuidoresMock.filter((distribuidor) => onlyDigits(distribuidor.cnpj) === onlyDigits(search))
+    ? distribuidoresMock.filter((distribuidor) => {
+        const normalizedSearch = String(search || "").trim().toLowerCase();
+        const digits = onlyDigits(String(search || ""));
+
+        if (digits.length === 14 && isValidCnpj(search)) {
+          return onlyDigits(String(distribuidor.cnpj || "")) === digits;
+        }
+
+        return String(distribuidor.nomeFantasia || "").toLowerCase().includes(normalizedSearch)
+          || String(distribuidor.razaoSocial || "").toLowerCase().includes(normalizedSearch);
+      })
     : [];
 
   const handle = (e) => {
@@ -348,8 +460,22 @@ function DistribuidorSection({ onChange }) {
   };
 
   const handleSearch = () => {
-    if (!isValidCnpj(search)) {
-      setSearchError("Informe um CNPJ valido para pesquisar distribuidores.");
+    const digits = onlyDigits(search);
+
+    if (digits.length === 14) {
+      if (!isValidCnpj(search)) {
+        setSearchError("Informe um CNPJ valido para pesquisar distribuidores.");
+        setSearched(false);
+        return;
+      }
+
+      setSearchError("");
+      setSearched(true);
+      return;
+    }
+
+    if (!search.trim()) {
+      setSearchError("Informe um nome fantasia ou CNPJ para pesquisar distribuidores.");
       setSearched(false);
       return;
     }
@@ -359,37 +485,22 @@ function DistribuidorSection({ onChange }) {
   };
 
   const handleSearchChange = (value) => {
-    const formatted = formatCnpj(value);
-    const digits = onlyDigits(formatted);
-
-    setSearch(formatted);
+    setSearch(value);
     setSearched(false);
-
-    if (!digits) {
-      setSearchError("");
-      return;
-    }
-
-    if (digits.length < 14) {
-      setSearchError("");
-      return;
-    }
-
-    if (!isValidCnpj(formatted)) {
-      setSearchError("Informe um CNPJ valido para pesquisar distribuidores.");
-      return;
-    }
-
     setSearchError("");
-    setSearched(true);
   };
 
   const startNewDistribuidor = () => {
-    const updated = { ...data, cnpj: formatCnpj(search) };
+    const chosenCnpj = newCadastroCnpj && isValidCnpj(newCadastroCnpj)
+      ? sanitizeCnpj(newCadastroCnpj)
+      : sanitizeCnpj(search);
+
+    const updated = { ...data, cnpj: formatCnpj(chosenCnpj) };
     setData(updated);
     onChange?.(updated);
     setOpen(true);
     setShowSaveButton(true);
+    setNewCadastroCnpj("");
     closeModal();
   };
 
@@ -411,7 +522,7 @@ function DistribuidorSection({ onChange }) {
               setShowModal(true);
             }}
           >
-            Pesquisar distribuidor por CNPJ
+            Adicionar distribuidor
           </CnpjSearchButton>
           <span className={`chevron ${open ? "open" : ""}`}>v</span>
         </div>
@@ -420,13 +531,13 @@ function DistribuidorSection({ onChange }) {
       {open && (
         <div className="section-body">
           <div className="form-row">
-            <div className="form-group grow-2">
-              <label>RAZAO SOCIAL</label>
-              <input name="razaoSocial" value={data.razaoSocial} onChange={handle} placeholder="Ex: Tech Solutions Ltda" {...readonlyInputProps} />
+            <div className="form-group grow-1">
+              <label>NOME FANTASIA</label>
+              <input name="nomeFantasia" value={data.nomeFantasia} onChange={handle} placeholder="Ex: Tech Solutions" />
             </div>
             <div className="form-group grow-1">
-              <label>CNPJ</label>
-              <input name="cnpj" value={data.cnpj} onChange={handle} placeholder="00.000.000/0000-00" {...readonlyInputProps} />
+              <label>RAZAO SOCIAL</label>
+              <input name="razaoSocial" value={data.razaoSocial} onChange={handle} placeholder="Ex: Tech Solutions Ltda" {...readonlyInputProps} />
             </div>
           </div>
 
@@ -435,13 +546,17 @@ function DistribuidorSection({ onChange }) {
               <label>INSC. EST.</label>
               <input name="inscEst" value={data.inscEst} onChange={handle} placeholder="Isento" {...readonlyInputProps} />
             </div>
-            <div className="form-group grow-1">
+            <div className="form-group w-120">
               <label>FONE</label>
               <input name="fone" value={data.fone} onChange={handle} placeholder="(00) 0000-0000" {...readonlyInputProps} />
             </div>
             <div className="form-group w-140">
               <label>CEP</label>
               <input name="cep" value={data.cep} onChange={handle} placeholder="00000-000" {...readonlyInputProps} />
+            </div>
+            <div className="form-group w-180">
+              <label>CNPJ</label>
+              <input name="cnpj" value={data.cnpj} onChange={handle} placeholder="00.000.000/0000-00" {...readonlyInputProps} />
             </div>
           </div>
 
@@ -486,12 +601,12 @@ function DistribuidorSection({ onChange }) {
         <div className="modal-overlay">
           <div className="modal">
             <h3>Buscar Distribuidor</h3>
-            <p className="modal-hint">A pesquisa deve ser feita pelo CNPJ.</p>
+            <p className="modal-hint">A pesquisa pode ser feita por Nome Fantasia ou CNPJ.</p>
 
             <div className="modal-search-row">
               <input
                 type="text"
-                placeholder="00.000.000/0000-00"
+                placeholder="Nome fantasia ou CNPJ"
                 value={search}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="input-busca"
@@ -515,16 +630,34 @@ function DistribuidorSection({ onChange }) {
                     closeModal();
                   }}
                 >
-                  <strong>{distribuidor.razaoSocial}</strong>
-                  <small>Nome associado ao CNPJ</small>
+                  <strong>{distribuidor.nomeFantasia || distribuidor.razaoSocial}</strong>
+                  {distribuidor.razaoSocial && distribuidor.nomeFantasia !== distribuidor.razaoSocial && (
+                    <small>{distribuidor.razaoSocial}</small>
+                  )}
                   <span>{distribuidor.cnpj}</span>
                 </div>
               ))}
 
               {searched && !searchError && distribuidoresEncontrados.length === 0 && (
                 <div className="modal-empty">
-                  <p>O CNPJ nao esta cadastrado no sistema.</p>
-                  <button type="button" className="btn-cadastrar-novo" onClick={startNewDistribuidor}>
+                  <p>Distribuidor não encontrado.</p>
+                  <p>Para cadastrar um novo distribuidor, digite o CNPJ do distribuidor que deseja cadastrar.</p>
+                  <input
+                    type="text"
+                    placeholder="Digite o CNPJ para cadastro"
+                    value={newCadastroCnpj}
+                    onChange={(e) => setNewCadastroCnpj(e.target.value)}
+                    className="input-cnpj-cadastro"
+                  />
+                  {cnpjExists(newCadastroCnpj, distribuidoresMock) && (
+                    <p className="modal-message is-error">Este CNPJ já existe como distribuidor.</p>
+                  )}
+                  <button
+                    type="button"
+                    className="btn-cadastrar-novo"
+                    onClick={startNewDistribuidor}
+                    disabled={!canRegisterNewDistribuidor}
+                  >
                     Cadastrar novo distribuidor
                   </button>
                 </div>
@@ -641,7 +774,7 @@ function ProdutoSection({ onChange }) {
               setShowModal(true);
             }}
           >
-            Pesquisar produto por nome
+            Adicionar produto
           </CnpjSearchButton>
           <span className={`chevron ${open ? "open" : ""}`}>v</span>
         </div>
