@@ -4,6 +4,7 @@ import { useDarkMode } from "../hooks/useDarkMode";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { verificarSeVendedor, verificarToken } from "../services/api";
+import ModalDetalheVenda from "../components/modal/Modaldetalhevenda";
 
 /* ══════════════════════════════════════════
    DADOS MOCKADOS
@@ -14,38 +15,404 @@ const MESES = [
   "Setembro", "Outubro", "Novembro", "Dezembro",
 ];
 
+/* ── Detalhes completos por chave "Mês-ID" ── */
+const DETALHES_VENDA = {
+  "Março-V1": {
+    cliente: {
+      razaoSocial: "Microsoft Informática Ltda.",
+      cnpj: "60.316.817/0001-44",
+      inscricaoEstadual: "111.222.333.444",
+      telefone: "(11) 3456-7890",
+      cep: "04534-000",
+      endereco: "Av. das Nações Unidas, 12.901 – Cj. 2601",
+      cidade: "São Paulo",
+      uf: "SP",
+      contato: "Maria Silva",
+      email: "maria.silva@microsoft.com",
+    },
+    distribuidor: {
+      razaoSocial: "TND Brasil Distribuidora S.A.",
+      cnpj: "12.345.678/0001-90",
+      inscricaoEstadual: "987.654.321.000",
+      telefone: "(11) 4002-8922",
+      cep: "01310-100",
+      endereco: "Av. Paulista, 1374 – 12º andar",
+      cidade: "São Paulo",
+      uf: "SP",
+      contato: "Carlos Mendonça",
+      email: "carlos.mendonca@tndbrasil.com.br",
+    },
+    produto: {
+      descricao: "Licença Microsoft 365 Business Premium (pacote anual)",
+      pn: "CFQ7TTC0LCHC-0001",
+      entrega: "15/03/2026",
+      quantidade: 50,
+      valorUnitario: "R$ 89,90",
+      valorTotal: "R$ 4.495,00",
+      valorUnitarioFaturado: "R$ 85,00",
+      totalFaturado: "R$ 4.250,00",
+    },
+  },
+  "Março-V2": {
+    cliente: {
+      razaoSocial: "Tech Solutions Tecnologia S.A.",
+      cnpj: "23.456.789/0001-11",
+      inscricaoEstadual: "222.333.444.555",
+      telefone: "(11) 3333-4444",
+      cep: "04711-130",
+      endereco: "R. Verbo Divino, 1488 – Sala 801",
+      cidade: "São Paulo",
+      uf: "SP",
+      contato: "João Oliveira",
+      email: "joao.oliveira@techsolutions.com.br",
+    },
+    distribuidor: {
+      razaoSocial: "TND Brasil Distribuidora S.A.",
+      cnpj: "12.345.678/0001-90",
+      inscricaoEstadual: "987.654.321.000",
+      telefone: "(11) 4002-8922",
+      cep: "01310-100",
+      endereco: "Av. Paulista, 1374 – 12º andar",
+      cidade: "São Paulo",
+      uf: "SP",
+      contato: "Carlos Mendonça",
+      email: "carlos.mendonca@tndbrasil.com.br",
+    },
+    produto: {
+      descricao: "Switch Gerenciável 24 Portas PoE+ Layer 2",
+      pn: "SG350-28P-K9-BR",
+      entrega: "22/03/2026",
+      quantidade: 4,
+      valorUnitario: "R$ 2.890,00",
+      valorTotal: "R$ 11.560,00",
+      valorUnitarioFaturado: "R$ 2.750,00",
+      totalFaturado: "R$ 11.000,00",
+    },
+  },
+  "Março-V3": {
+    cliente: {
+      razaoSocial: "Global Corp Comércio Internacional Ltda.",
+      cnpj: "34.567.890/0001-22",
+      inscricaoEstadual: "333.444.555.666",
+      telefone: "(21) 2222-5555",
+      cep: "20040-020",
+      endereco: "Praça XV de Novembro, 20 – Sala 1101",
+      cidade: "Rio de Janeiro",
+      uf: "RJ",
+      contato: "Ana Costa",
+      email: "ana.costa@globalcorp.com.br",
+    },
+    distribuidor: {
+      razaoSocial: "TND Brasil Distribuidora S.A.",
+      cnpj: "12.345.678/0001-90",
+      inscricaoEstadual: "987.654.321.000",
+      telefone: "(11) 4002-8922",
+      cep: "01310-100",
+      endereco: "Av. Paulista, 1374 – 12º andar",
+      cidade: "São Paulo",
+      uf: "SP",
+      contato: "Ana Beatriz Freitas",
+      email: "ana.freitas@tndbrasil.com.br",
+    },
+    produto: {
+      descricao: "Servidor Dell PowerEdge R650xs – 2x Intel Xeon Silver",
+      pn: "DELL-R650XS-2X4314",
+      entrega: "28/03/2026",
+      quantidade: 2,
+      valorUnitario: "R$ 34.900,00",
+      valorTotal: "R$ 69.800,00",
+      valorUnitarioFaturado: "R$ 33.200,00",
+      totalFaturado: "R$ 66.400,00",
+    },
+  },
+  "Março-V4": {
+    cliente: {
+      razaoSocial: "Global Corp Comércio Internacional Ltda.",
+      cnpj: "34.567.890/0001-22",
+      inscricaoEstadual: "333.444.555.666",
+      telefone: "(21) 2222-5555",
+      cep: "20040-020",
+      endereco: "Praça XV de Novembro, 20 – Sala 1101",
+      cidade: "Rio de Janeiro",
+      uf: "RJ",
+      contato: "Rafa Santos",
+      email: "rafa.santos@globalcorp.com.br",
+    },
+    distribuidor: {
+      razaoSocial: "TND Brasil Distribuidora S.A.",
+      cnpj: "12.345.678/0001-90",
+      inscricaoEstadual: "987.654.321.000",
+      telefone: "(11) 4002-8922",
+      cep: "01310-100",
+      endereco: "Av. Paulista, 1374 – 12º andar",
+      cidade: "São Paulo",
+      uf: "SP",
+      contato: "Marcos Vinicius",
+      email: "marcos.vinicius@tndbrasil.com.br",
+    },
+    produto: {
+      descricao: "Firewall Fortinet FortiGate 100F",
+      pn: "FG-100F-BDL-950-12",
+      entrega: "10/04/2026",
+      quantidade: 1,
+      valorUnitario: "R$ 18.500,00",
+      valorTotal: "R$ 18.500,00",
+      valorUnitarioFaturado: "R$ 17.600,00",
+      totalFaturado: "R$ 17.600,00",
+    },
+  },
+  "Março-V5": {
+    cliente: {
+      razaoSocial: "Acme Corp Soluções Industriais Ltda.",
+      cnpj: "45.678.901/0001-33",
+      inscricaoEstadual: "444.555.666.777",
+      telefone: "(19) 3344-5566",
+      cep: "13010-111",
+      endereco: "Av. Barão de Itapura, 1900 – Bloco B",
+      cidade: "Campinas",
+      uf: "SP",
+      contato: "Bruno Lima",
+      email: "bruno.lima@acmecorp.com.br",
+    },
+    distribuidor: {
+      razaoSocial: "TND Brasil Distribuidora S.A.",
+      cnpj: "12.345.678/0001-90",
+      inscricaoEstadual: "987.654.321.000",
+      telefone: "(11) 4002-8922",
+      cep: "01310-100",
+      endereco: "Av. Paulista, 1374 – 12º andar",
+      cidade: "São Paulo",
+      uf: "SP",
+      contato: "Fernanda Lopes",
+      email: "fernanda.lopes@tndbrasil.com.br",
+    },
+    produto: {
+      descricao: "Access Point Wi-Fi 6 Ubiquiti UniFi U6 Pro (Kit 10un)",
+      pn: "U6-PRO-KIT10",
+      entrega: "18/04/2026",
+      quantidade: 10,
+      valorUnitario: "R$ 1.890,00",
+      valorTotal: "R$ 18.900,00",
+      valorUnitarioFaturado: "R$ 1.800,00",
+      totalFaturado: "R$ 18.000,00",
+    },
+  },
+  "Abril-V1": {
+    cliente: {
+      razaoSocial: "StartX Inovação Tecnológica S.A.",
+      cnpj: "56.789.012/0001-44",
+      inscricaoEstadual: "555.666.777.888",
+      telefone: "(11) 9988-7766",
+      cep: "05426-200",
+      endereco: "R. Funchal, 418 – 11º andar",
+      cidade: "São Paulo",
+      uf: "SP",
+      contato: "Lucas Mendes",
+      email: "lucas.mendes@startx.com.br",
+    },
+    distribuidor: {
+      razaoSocial: "TND Brasil Distribuidora S.A.",
+      cnpj: "12.345.678/0001-90",
+      inscricaoEstadual: "987.654.321.000",
+      telefone: "(11) 4002-8922",
+      cep: "01310-100",
+      endereco: "Av. Paulista, 1374 – 12º andar",
+      cidade: "São Paulo",
+      uf: "SP",
+      contato: "Ricardo Alves",
+      email: "ricardo.alves@tndbrasil.com.br",
+    },
+    produto: {
+      descricao: "Licença Zoom Business (pacote 50 usuários/ano)",
+      pn: "ZOOM-BIZ-50U-12M",
+      entrega: "01/04/2026",
+      quantidade: 50,
+      valorUnitario: "R$ 199,00",
+      valorTotal: "R$ 9.950,00",
+      valorUnitarioFaturado: "R$ 190,00",
+      totalFaturado: "R$ 9.500,00",
+    },
+  },
+  "Abril-V2": {
+    cliente: {
+      razaoSocial: "Nexus Consultoria em TI Ltda.",
+      cnpj: "67.890.123/0001-55",
+      inscricaoEstadual: "666.777.888.999",
+      telefone: "(11) 4567-8901",
+      cep: "01452-000",
+      endereco: "Al. Santos, 745 – Cj. 51",
+      cidade: "São Paulo",
+      uf: "SP",
+      contato: "Camila Rocha",
+      email: "camila.rocha@nexus.com.br",
+    },
+    distribuidor: {
+      razaoSocial: "TND Brasil Distribuidora S.A.",
+      cnpj: "12.345.678/0001-90",
+      inscricaoEstadual: "987.654.321.000",
+      telefone: "(11) 4002-8922",
+      cep: "01310-100",
+      endereco: "Av. Paulista, 1374 – 12º andar",
+      cidade: "São Paulo",
+      uf: "SP",
+      contato: "Juliana Costa",
+      email: "juliana.costa@tndbrasil.com.br",
+    },
+    produto: {
+      descricao: "Storage NAS Synology DS923+ (sem HDs)",
+      pn: "DS923PLUS",
+      entrega: "08/04/2026",
+      quantidade: 3,
+      valorUnitario: "R$ 4.200,00",
+      valorTotal: "R$ 12.600,00",
+      valorUnitarioFaturado: "R$ 4.000,00",
+      totalFaturado: "R$ 12.000,00",
+    },
+  },
+  "Abril-V3": {
+    cliente: {
+      razaoSocial: "Beta Corp Engenharia e Sistemas S.A.",
+      cnpj: "78.901.234/0001-66",
+      inscricaoEstadual: "777.888.999.000",
+      telefone: "(31) 3210-4567",
+      cep: "30130-110",
+      endereco: "Av. Afonso Pena, 867 – 5º andar",
+      cidade: "Belo Horizonte",
+      uf: "MG",
+      contato: "Pedro Alves",
+      email: "pedro.alves@betacorp.com.br",
+    },
+    distribuidor: {
+      razaoSocial: "TND Brasil Distribuidora S.A.",
+      cnpj: "12.345.678/0001-90",
+      inscricaoEstadual: "987.654.321.000",
+      telefone: "(11) 4002-8922",
+      cep: "01310-100",
+      endereco: "Av. Paulista, 1374 – 12º andar",
+      cidade: "São Paulo",
+      uf: "SP",
+      contato: "Roberto Faria",
+      email: "roberto.faria@tndbrasil.com.br",
+    },
+    produto: {
+      descricao: "Nobreak APC Smart-UPS 3000VA 230V",
+      pn: "SMT3000I",
+      entrega: "20/04/2026",
+      quantidade: 6,
+      valorUnitario: "R$ 5.600,00",
+      valorTotal: "R$ 33.600,00",
+      valorUnitarioFaturado: "R$ 5.300,00",
+      totalFaturado: "R$ 31.800,00",
+    },
+  },
+  "Fevereiro-V1": {
+    cliente: {
+      razaoSocial: "SoftHouse Desenvolvimento de Software Ltda.",
+      cnpj: "89.012.345/0001-77",
+      inscricaoEstadual: "888.999.000.111",
+      telefone: "(11) 5678-9012",
+      cep: "04543-011",
+      endereco: "R. Joaquim Floriano, 960 – Sala 31",
+      cidade: "São Paulo",
+      uf: "SP",
+      contato: "Fernanda Lima",
+      email: "fernanda.lima@softhouse.com.br",
+    },
+    distribuidor: {
+      razaoSocial: "TND Brasil Distribuidora S.A.",
+      cnpj: "12.345.678/0001-90",
+      inscricaoEstadual: "987.654.321.000",
+      telefone: "(11) 4002-8922",
+      cep: "01310-100",
+      endereco: "Av. Paulista, 1374 – 12º andar",
+      cidade: "São Paulo",
+      uf: "SP",
+      contato: "Patricia Gomes",
+      email: "patricia.gomes@tndbrasil.com.br",
+    },
+    produto: {
+      descricao: "Licença JetBrains All Products Pack (equipe 10 devs)",
+      pn: "JB-ALL-10U-12M",
+      entrega: "02/02/2026",
+      quantidade: 10,
+      valorUnitario: "R$ 890,00",
+      valorTotal: "R$ 8.900,00",
+      valorUnitarioFaturado: "R$ 850,00",
+      totalFaturado: "R$ 8.500,00",
+    },
+  },
+  "Fevereiro-V2": {
+    cliente: {
+      razaoSocial: "DataPlus Análise de Dados S.A.",
+      cnpj: "90.123.456/0001-88",
+      inscricaoEstadual: "999.000.111.222",
+      telefone: "(41) 3344-6677",
+      cep: "80010-010",
+      endereco: "R. XV de Novembro, 980 – 8º andar",
+      cidade: "Curitiba",
+      uf: "PR",
+      contato: "Thiago Nunes",
+      email: "thiago.nunes@dataplus.com.br",
+    },
+    distribuidor: {
+      razaoSocial: "TND Brasil Distribuidora S.A.",
+      cnpj: "12.345.678/0001-90",
+      inscricaoEstadual: "987.654.321.000",
+      telefone: "(11) 4002-8922",
+      cep: "01310-100",
+      endereco: "Av. Paulista, 1374 – 12º andar",
+      cidade: "São Paulo",
+      uf: "SP",
+      contato: "Eduardo Martins",
+      email: "eduardo.martins@tndbrasil.com.br",
+    },
+    produto: {
+      descricao: "Licença Tableau Creator (pacote anual – 5 usuários)",
+      pn: "TABLEAU-CRT-5U-12M",
+      entrega: "14/02/2026",
+      quantidade: 5,
+      valorUnitario: "R$ 5.200,00",
+      valorTotal: "R$ 26.000,00",
+      valorUnitarioFaturado: "R$ 4.950,00",
+      totalFaturado: "R$ 24.750,00",
+    },
+  },
+};
+
 const DADOS_POR_MES = {
   "Março": {
     totalVendas: 10, comissoesLiberadas: 10, pagamentosPendentes: 4,
     projecao: "R$ 1.350,00", parcelas: 8, tendencia: "+4%",
     vendas: [
-      { id: "V1", nome: "VENDA 1", cliente: "Maria Silva - Microsoft",        comissao: "1/3 – R$ 200,00", status: "PAGO 1ª PARCELA", tipo: "liberada", parcelas: [{ label: "Parcela 1/5", valor: "R$ 450,00" }, { label: "Parcela 2/5", valor: "R$ 1.900,00" }] },
-      { id: "V2", nome: "VENDA 2", cliente: "João Oliveira - Tech Solutions",  comissao: "R$ 200,00",        status: "PAGO 1ª PARCELA", tipo: "liberada", parcelas: [{ label: "Parcela 1/5", valor: "R$ 450,00" }, { label: "Parcela 2/5", valor: "R$ 1.900,00" }] },
-      { id: "V3", nome: "VENDA 3", cliente: "Ana Costa - Global Corp",         comissao: "R$ 200,00",        status: "PAGO 1ª PARCELA", tipo: "liberada", parcelas: [{ label: "Parcela 1/5", valor: "R$ 200,00" }] },
-      { id: "V4", nome: "VENDA 4", cliente: "Rafa Santos - Global Corp",       comissao: "R$ 200,00",        status: "AGUARDANDO",        tipo: "pendente", parcelas: [{ label: "Parcela 1/3", valor: "R$ 200,00" }] },
-      { id: "V5", nome: "VENDA 5", cliente: "Bruno Lima - Acme Corp",          comissao: "R$ 450,00",        status: "AGUARDANDO",        tipo: "pendente", parcelas: [{ label: "Parcela 1/2", valor: "R$ 450,00" }] },
+      { id: "V1", nome: "VENDA 1", cliente: "Maria Silva - Microsoft", comissao: "1/3 – R$ 200,00", status: "PAGO 1ª PARCELA", tipo: "liberada", parcelas: [{ label: "Parcela 1/5", valor: "R$ 450,00" }, { label: "Parcela 2/5", valor: "R$ 1.900,00" }] },
+      { id: "V2", nome: "VENDA 2", cliente: "João Oliveira - Tech Solutions", comissao: "R$ 200,00", status: "PAGO 1ª PARCELA", tipo: "liberada", parcelas: [{ label: "Parcela 1/5", valor: "R$ 450,00" }, { label: "Parcela 2/5", valor: "R$ 1.900,00" }] },
+      { id: "V3", nome: "VENDA 3", cliente: "Ana Costa - Global Corp", comissao: "R$ 200,00", status: "PAGO 1ª PARCELA", tipo: "liberada", parcelas: [{ label: "Parcela 1/5", valor: "R$ 200,00" }] },
+      { id: "V4", nome: "VENDA 4", cliente: "Rafa Santos - Global Corp", comissao: "R$ 200,00", status: "AGUARDANDO", tipo: "pendente", parcelas: [{ label: "Parcela 1/3", valor: "R$ 200,00" }] },
+      { id: "V5", nome: "VENDA 5", cliente: "Bruno Lima - Acme Corp", comissao: "R$ 450,00", status: "AGUARDANDO", tipo: "pendente", parcelas: [{ label: "Parcela 1/2", valor: "R$ 450,00" }] },
     ],
   },
   "Abril": {
     totalVendas: 7, comissoesLiberadas: 5, pagamentosPendentes: 2,
     projecao: "R$ 980,00", parcelas: 5, tendencia: "-2%",
     vendas: [
-      { id: "V1", nome: "VENDA 1", cliente: "Lucas Mendes - StartX",   comissao: "R$ 300,00", status: "PAGO 1ª PARCELA", tipo: "liberada", parcelas: [{ label: "Parcela 1/3", valor: "R$ 300,00" }] },
-      { id: "V2", nome: "VENDA 2", cliente: "Camila Rocha - Nexus",    comissao: "R$ 180,00", status: "PAGO 1ª PARCELA", tipo: "liberada", parcelas: [{ label: "Parcela 1/4", valor: "R$ 180,00" }] },
-      { id: "V3", nome: "VENDA 3", cliente: "Pedro Alves - Beta Corp", comissao: "R$ 500,00", status: "AGUARDANDO",       tipo: "pendente", parcelas: [{ label: "Parcela 1/2", valor: "R$ 500,00" }] },
+      { id: "V1", nome: "VENDA 1", cliente: "Lucas Mendes - StartX", comissao: "R$ 300,00", status: "PAGO 1ª PARCELA", tipo: "liberada", parcelas: [{ label: "Parcela 1/3", valor: "R$ 300,00" }] },
+      { id: "V2", nome: "VENDA 2", cliente: "Camila Rocha - Nexus", comissao: "R$ 180,00", status: "PAGO 1ª PARCELA", tipo: "liberada", parcelas: [{ label: "Parcela 1/4", valor: "R$ 180,00" }] },
+      { id: "V3", nome: "VENDA 3", cliente: "Pedro Alves - Beta Corp", comissao: "R$ 500,00", status: "AGUARDANDO", tipo: "pendente", parcelas: [{ label: "Parcela 1/2", valor: "R$ 500,00" }] },
     ],
   },
   "Fevereiro": {
     totalVendas: 12, comissoesLiberadas: 12, pagamentosPendentes: 0,
     projecao: "R$ 2.100,00", parcelas: 10, tendencia: "+8%",
     vendas: [
-      { id: "V1", nome: "VENDA 1", cliente: "Fernanda Lima - SoftHouse", comissao: "R$ 600,00",   status: "PAGO 1ª PARCELA", tipo: "liberada", parcelas: [{ label: "Parcela 1/5", valor: "R$ 600,00" }] },
-      { id: "V2", nome: "VENDA 2", cliente: "Thiago Nunes - DataPlus",   comissao: "R$ 1.500,00", status: "PAGO 1ª PARCELA", tipo: "liberada", parcelas: [{ label: "Parcela 1/3", valor: "R$ 1.500,00" }] },
+      { id: "V1", nome: "VENDA 1", cliente: "Fernanda Lima - SoftHouse", comissao: "R$ 600,00", status: "PAGO 1ª PARCELA", tipo: "liberada", parcelas: [{ label: "Parcela 1/5", valor: "R$ 600,00" }] },
+      { id: "V2", nome: "VENDA 2", cliente: "Thiago Nunes - DataPlus", comissao: "R$ 1.500,00", status: "PAGO 1ª PARCELA", tipo: "liberada", parcelas: [{ label: "Parcela 1/3", valor: "R$ 1.500,00" }] },
     ],
   },
 };
 
 const MES_ATUAL = "Março";
+
+
 
 /* ══════════════════════════════════════════
    ÍCONES
@@ -138,7 +505,7 @@ const IconSol = () => (
 );
 
 /* ══════════════════════════════════════════
-   CARD DE MÉTRICA (compacto e clicável)
+   CARD DE MÉTRICA
 ══════════════════════════════════════════ */
 function CardMetrica({ icone, rotulo, valor, badge, sub, ativo, aoClicar, dark }) {
   const estiloAtivo = { background: "linear-gradient(135deg, #0f2557 0%, #1a3a7a 60%, #1e4d9b 100%)" };
@@ -191,16 +558,16 @@ export default function HomeVendedor() {
   const { darkMode: modoEscuro } = useDarkMode();
   const navigate = useNavigate();
   const [mesSelecionado, setMesSelecionado] = useState(MES_ATUAL);
-  const [mostrarMeses, setMostrarMeses]     = useState(false);
-  const [cardAtivo, setCardAtivo]           = useState(null);
-  const [mostrarTodas, setMostrarTodas]     = useState(false);
+  const [mostrarMeses, setMostrarMeses] = useState(false);
+  const [cardAtivo, setCardAtivo] = useState(null);
+  const [mostrarTodas, setMostrarTodas] = useState(false);
   const [vendaExpandida, setVendaExpandida] = useState(null);
   const [ocultarProjecao, setOcultarProjecao] = useState(false);
+  const [vendaNoModal, setVendaNoModal] = useState(null);
 
   const refDropdown = useRef(null);
   const toastShown = useRef(false);
 
-  /* fecha dropdown ao clicar fora */
   useEffect(() => {
     function fecharAoClicarFora(e) {
       if (refDropdown.current && !refDropdown.current.contains(e.target)) {
@@ -212,32 +579,25 @@ export default function HomeVendedor() {
   }, []);
 
   useEffect(() => {
-  if (toastShown.current) return;
-
-  if (!verificarToken()) {
-    toastShown.current = true;
-    toast.error("Sessão expirada. Faça login novamente.");
-    navigate("/login");
-    return;
-  }
-
-  // Página exclusiva do vendedor — financeiro não tem acesso
-  if (!verificarSeVendedor()) {
-    toastShown.current = true;
-    toast.error("Acesso negado. Você não tem permissão para acessar esta página.");
-    navigate("/financeiro/vendedores");
-  }
-}, []);
-
+    if (toastShown.current) return;
+    if (!verificarToken()) {
+      toastShown.current = true;
+      toast.error("Sessão expirada. Faça login novamente.");
+      navigate("/login");
+      return;
+    }
+    if (!verificarSeVendedor()) {
+      toastShown.current = true;
+      toast.error("Acesso negado. Você não tem permissão para acessar esta página.");
+      navigate("/financeiro/vendedores");
+    }
+  }, []);
 
   const baseDados = DADOS_POR_MES[mesSelecionado] || DADOS_POR_MES[MES_ATUAL];
 
   const pedidosSalvos = (() => {
-    try {
-      return JSON.parse(localStorage.getItem("korp_pedidos") || "[]");
-    } catch (e) {
-      return [];
-    }
+    try { return JSON.parse(localStorage.getItem("korp_pedidos") || "[]"); }
+    catch (e) { return []; }
   })();
 
   const dados = {
@@ -254,8 +614,8 @@ export default function HomeVendedor() {
 
   const tituloTabela =
     cardAtivo === "liberadas" ? "Comissões Liberadas"
-    : cardAtivo === "pendentes" ? "Pagamentos Pendentes"
-    : "Todas as Vendas";
+      : cardAtivo === "pendentes" ? "Pagamentos Pendentes"
+        : "Todas as Vendas";
 
   const vendasExibidas = mostrarTodas ? vendasFiltradas : vendasFiltradas.slice(0, 3);
 
@@ -324,23 +684,19 @@ export default function HomeVendedor() {
 
     const { default: html2pdf } = await import("html2pdf.js");
     const iframe = document.createElement("iframe");
-
     iframe.style.position = "fixed";
     iframe.style.left = "-10000px";
     iframe.style.top = "0";
     iframe.style.width = "794px";
     iframe.style.height = "1123px";
     iframe.style.border = "0";
-
     document.body.appendChild(iframe);
-
     const iframeDocument = iframe.contentDocument || iframe.contentWindow.document;
     iframeDocument.open();
     iframeDocument.write(pdfHtml);
     iframeDocument.close();
     iframeDocument.body.style.width = "794px";
     const pdfElement = iframeDocument.querySelector(".pdf-document") || iframeDocument.body;
-
     const opt = {
       margin: 10,
       filename: `relatorio-comissoes-${mesSelecionado.toLowerCase()}-2026.pdf`,
@@ -349,16 +705,7 @@ export default function HomeVendedor() {
       pagebreak: { mode: ["css", "legacy"] },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
     };
-
-    html2pdf()
-      .set(opt)
-      .from(pdfElement)
-      .save()
-      .then(() => {
-        iframe.remove();
-      }, () => {
-        iframe.remove();
-      });
+    html2pdf().set(opt).from(pdfElement).save().then(() => { iframe.remove(); }, () => { iframe.remove(); });
   }
 
   async function gerarPDFRelatorio() {
@@ -370,54 +717,34 @@ export default function HomeVendedor() {
     const usableWidth = pageWidth - margin * 2;
     let y = 16;
 
-    const safeText = (value) => {
-      const valueText = String(value ?? "").trim();
-      return valueText || "-";
-    };
-
-    const ensureSpace = (height) => {
-      if (y + height > pageHeight - 18) {
-        doc.addPage();
-        y = 16;
-      }
-    };
+    const safeText = (value) => String(value ?? "").trim() || "-";
+    const ensureSpace = (h) => { if (y + h > pageHeight - 18) { doc.addPage(); y = 16; } };
 
     const sectionTitle = (title) => {
       ensureSpace(14);
       y += y > 18 ? 5 : 0;
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
-      doc.setTextColor(6, 29, 81);
-      doc.text(title, margin, y);
-      y += 3;
-      doc.setDrawColor(226, 232, 240);
-      doc.setLineWidth(0.45);
-      doc.line(margin, y, pageWidth - margin, y);
-      y += 7;
+      doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.setTextColor(6, 29, 81);
+      doc.text(title, margin, y); y += 3;
+      doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.45);
+      doc.line(margin, y, pageWidth - margin, y); y += 7;
     };
 
     const metricCards = () => {
-      const gap = 4;
-      const cardWidth = (usableWidth - gap * 3) / 4;
+      const gap = 4; const cardWidth = (usableWidth - gap * 3) / 4;
       const metrics = [
         { label: "Total de Vendas", value: dados.totalVendas, color: [30, 41, 59] },
         { label: "Comissoes Liberadas", value: dados.comissoesLiberadas, color: [22, 163, 74] },
         { label: "Pagamentos Pendentes", value: dados.pagamentosPendentes, color: [217, 119, 6] },
         { label: "Projecao Bruta", value: dados.projecao, color: [30, 58, 138] },
       ];
-
       ensureSpace(30);
       metrics.forEach((metric, index) => {
         const x = margin + index * (cardWidth + gap);
-        doc.setDrawColor(226, 232, 240);
-        doc.setFillColor(255, 255, 255);
+        doc.setDrawColor(226, 232, 240); doc.setFillColor(255, 255, 255);
         doc.roundedRect(x, y, cardWidth, 25, 2, 2, "FD");
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(6.8);
-        doc.setTextColor(148, 163, 184);
+        doc.setFont("helvetica", "bold"); doc.setFontSize(6.8); doc.setTextColor(148, 163, 184);
         doc.text(metric.label.toUpperCase(), x + 3, y + 6);
-        doc.setFontSize(16);
-        doc.setTextColor(...metric.color);
+        doc.setFontSize(16); doc.setTextColor(...metric.color);
         doc.text(String(metric.value), x + 3, y + 17);
       });
       y += 32;
@@ -425,17 +752,10 @@ export default function HomeVendedor() {
 
     const tableHeader = (columns) => {
       ensureSpace(10);
-      doc.setFillColor(241, 245, 249);
-      doc.rect(margin, y, usableWidth, 9, "F");
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(7);
-      doc.setTextColor(100, 116, 139);
-
+      doc.setFillColor(241, 245, 249); doc.rect(margin, y, usableWidth, 9, "F");
+      doc.setFont("helvetica", "bold"); doc.setFontSize(7); doc.setTextColor(100, 116, 139);
       let x = margin;
-      columns.forEach((column) => {
-        doc.text(column.label, x + 1.5, y + 5.8, { maxWidth: column.width - 3 });
-        x += column.width;
-      });
+      columns.forEach((col) => { doc.text(col.label, x + 1.5, y + 5.8, { maxWidth: col.width - 3 }); x += col.width; });
       y += 9;
     };
 
@@ -447,116 +767,54 @@ export default function HomeVendedor() {
         { label: "Comissao", width: 38, value: (v) => v.comissao },
         { label: "Status", width: 36, value: (v) => v.status },
       ];
-
       tableHeader(columns);
-
       dados.vendas.forEach((venda) => {
-        const cells = columns.map((column) => {
-          const lines = doc.splitTextToSize(safeText(column.value(venda)), column.width - 3);
-          return { ...column, lines };
-        });
-        const rowHeight = Math.max(12, ...cells.map((cell) => 5 + cell.lines.length * 4));
-
-        if (y + rowHeight > pageHeight - 18) {
-          doc.addPage();
-          y = 16;
-          tableHeader(columns);
-        }
-
+        const cells = columns.map((col) => ({ ...col, lines: doc.splitTextToSize(safeText(col.value(venda)), col.width - 3) }));
+        const rowHeight = Math.max(12, ...cells.map((c) => 5 + c.lines.length * 4));
+        if (y + rowHeight > pageHeight - 18) { doc.addPage(); y = 16; tableHeader(columns); }
         let x = margin;
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(8.5);
-        doc.setTextColor(30, 41, 59);
-
+        doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(30, 41, 59);
         cells.forEach((cell, index) => {
           if (index === 4) {
             const isLiberada = venda.tipo === "liberada";
             doc.setFillColor(isLiberada ? 240 : 255, isLiberada ? 253 : 247, isLiberada ? 244 : 237);
-            doc.setDrawColor(isLiberada ? 187 : 254, isLiberada ? 247 : 215, isLiberada ? 208 : 170);
-            doc.roundedRect(x + 1.5, y + 2.5, cell.width - 3, 6.5, 2, 2, "FD");
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(6.7);
+            const bW = Math.min(cell.width - 4, 34);
+            doc.roundedRect(x + 1, y + 2, bW, 6, 1.5, 1.5, "F");
+            doc.setFont("helvetica", "bold"); doc.setFontSize(6.5);
             doc.setTextColor(isLiberada ? 22 : 217, isLiberada ? 163 : 119, isLiberada ? 74 : 6);
-            doc.text(cell.lines, x + 3, y + 7, { maxWidth: cell.width - 6 });
+            doc.text(safeText(cell.value(venda)), x + 3, y + 6.2, { maxWidth: bW - 4 });
+            doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(30, 41, 59);
           } else {
-            doc.setFont("helvetica", index === 0 ? "bold" : "normal");
-            doc.setFontSize(8.5);
-            doc.setTextColor(30, 41, 59);
-            doc.text(cell.lines, x + 1.5, y + 6, { maxWidth: cell.width - 3 });
+            cell.lines.forEach((line, li) => { doc.text(line, x + 1.5, y + 5 + li * 4); });
           }
           x += cell.width;
         });
-
-        doc.setDrawColor(241, 245, 249);
+        doc.setDrawColor(241, 245, 249); doc.setLineWidth(0.3);
         doc.line(margin, y + rowHeight, pageWidth - margin, y + rowHeight);
         y += rowHeight;
       });
-
-      y += 4;
     };
 
-    const parcelSummary = () => {
-      if (todasParcelas.length === 0) return;
+    doc.setFillColor(15, 37, 87); doc.rect(0, 0, pageWidth, 22, "F");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(13); doc.setTextColor(255, 255, 255);
+    doc.text(`Painel do Consultor – ${mesSelecionado} 2026`, margin, 13);
+    doc.setFontSize(7.5); doc.setTextColor(147, 174, 219);
+    doc.text("OPERAÇÕES DE VENDA", pageWidth - margin, 13, { align: "right" });
+    y = 32;
 
-      sectionTitle("Parcelas Liberadas");
-      const gap = 4;
-      const columns = 2;
-      const boxWidth = (usableWidth - gap) / columns;
-
-      for (let i = 0; i < todasParcelas.length; i += columns) {
-        const row = todasParcelas.slice(i, i + columns);
-        ensureSpace(17);
-
-        row.forEach((parcela, index) => {
-          const x = margin + index * (boxWidth + gap);
-          doc.setDrawColor(226, 232, 240);
-          doc.setFillColor(255, 255, 255);
-          doc.roundedRect(x, y, boxWidth, 14, 2, 2, "FD");
-          doc.setFont("helvetica", "bold");
-          doc.setFontSize(7);
-          doc.setTextColor(148, 163, 184);
-          doc.text(safeText(parcela.label).toUpperCase(), x + 3, y + 5);
-          doc.setFontSize(10);
-          doc.setTextColor(30, 41, 59);
-          doc.text(safeText(parcela.valor), x + 3, y + 11);
-        });
-
-        y += 18;
-      }
-    };
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    doc.setTextColor(59, 130, 246);
-    doc.text("OPERACOES DE VENDA", margin, y);
-    y += 8;
-    doc.setFontSize(18);
-    doc.setTextColor(26, 58, 122);
-    doc.text(`Painel do Consultor - ${mesSelecionado} 2026`, margin, y);
-    y += 9;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(100, 116, 139);
-    doc.text("Relatorio mensal de comissoes e vendas", margin, y);
-    y += 10;
-
+    sectionTitle("Resumo do Mês");
     metricCards();
-    sectionTitle("Todas as Vendas");
+    sectionTitle("Transações do Período");
     salesTable();
-    parcelSummary();
 
-    const totalPages = doc.getNumberOfPages();
-    for (let page = 1; page <= totalPages; page += 1) {
-      doc.setPage(page);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(7);
-      doc.setTextColor(148, 163, 184);
-      doc.text(
-        `Gerado em ${new Date().toLocaleDateString("pt-BR")} as ${new Date().toLocaleTimeString("pt-BR")} - TND Brasil`,
-        margin,
-        pageHeight - 8
-      );
-      doc.text(`Pagina ${page} de ${totalPages}`, pageWidth - margin, pageHeight - 8, { align: "right" });
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.3);
+      doc.line(margin, pageHeight - 12, pageWidth - margin, pageHeight - 12);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(7); doc.setTextColor(148, 163, 184);
+      doc.text(`Gerado em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR")} • TND Brasil`, margin, pageHeight - 7);
+      doc.text(`Página ${i} de ${totalPages}`, pageWidth - margin, pageHeight - 7, { align: "right" });
     }
 
     doc.save(`relatorio-comissoes-${mesSelecionado.toLowerCase()}-2026.pdf`);
@@ -577,18 +835,28 @@ export default function HomeVendedor() {
   }
 
   /* classes de tema */
-  const bg       = modoEscuro ? "bg-gray-900"  : "bg-gray-100";
-  const cardBg   = modoEscuro ? "bg-gray-800"  : "bg-white";
-  const borda    = modoEscuro ? "border-gray-700" : "border-gray-100";
-  const textoP   = modoEscuro ? "text-white"   : "text-gray-900";
-  const textoS   = modoEscuro ? "text-gray-400" : "text-gray-400";
-  const textoM   = modoEscuro ? "text-gray-300" : "text-gray-800";
-  const hover    = modoEscuro ? "hover:bg-gray-700" : "hover:bg-gray-50";
-  const linhaBg  = modoEscuro ? "bg-gray-750"  : "";
+  const bg = modoEscuro ? "bg-gray-900" : "bg-gray-100";
+  const cardBg = modoEscuro ? "bg-gray-800" : "bg-white";
+  const borda = modoEscuro ? "border-gray-700" : "border-gray-100";
+  const textoP = modoEscuro ? "text-white" : "text-gray-900";
+  const textoS = modoEscuro ? "text-gray-400" : "text-gray-400";
+  const textoM = modoEscuro ? "text-gray-300" : "text-gray-800";
+  const hover = modoEscuro ? "hover:bg-gray-700" : "hover:bg-gray-50";
 
   return (
     <div className={`h-screen overflow-hidden flex flex-col ${bg} transition-colors duration-300`}>
       <Navbar />
+
+      {/* ── Modal de detalhe da venda ── */}
+      {vendaNoModal && (
+        <ModalDetalheVenda
+          venda={vendaNoModal}
+          mes={mesSelecionado}
+          detalhesVenda={DETALHES_VENDA}
+          aoFechar={() => setVendaNoModal(null)}
+          escuro={modoEscuro}
+        />
+      )}
 
       <div className="flex-1 overflow-y-auto w-full px-6 py-6">
 
@@ -602,7 +870,6 @@ export default function HomeVendedor() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Filtrar por mês */}
             <div className="relative" ref={refDropdown}>
               <button
                 onClick={() => setMostrarMeses((p) => !p)}
@@ -645,7 +912,7 @@ export default function HomeVendedor() {
           {/* ── Coluna esquerda ── */}
           <div className="flex-1 flex flex-col gap-4">
 
-            {/* Cards de métricas — compactos */}
+            {/* Cards de métricas */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <CardMetrica
                 icone={<IconCarrinho />}
@@ -699,75 +966,51 @@ export default function HomeVendedor() {
                 <span />
               </div>
 
-              {/* Linhas */}
+              {/* Linhas — clique abre o modal */}
               <div className="flex flex-col gap-0.5">
                 {vendasExibidas.length === 0 && (
                   <p className={`text-sm text-center py-6 ${textoS}`}>Nenhuma venda encontrada para este filtro.</p>
                 )}
 
                 {vendasExibidas.map((v) => (
-                  <div key={v.id}>
-                    <button
-                      onClick={() => setVendaExpandida(vendaExpandida === v.id ? null : v.id)}
-                      className={`w-full grid grid-cols-[2fr_2fr_2fr_auto] gap-4 items-center px-2 py-3 rounded-xl transition-colors text-left group
-                        ${vendaExpandida === v.id
-                          ? modoEscuro ? "bg-blue-900/30" : "bg-blue-50"
-                          : hover
-                        }`}
-                    >
-                      {/* Identificação */}
-                      <div className="flex items-center gap-2.5">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0
-                          ${vendaExpandida === v.id ? "bg-blue-600" : modoEscuro ? "bg-blue-900/50" : "bg-blue-50"}`}>
-                          <span className={`text-[10px] font-bold ${vendaExpandida === v.id ? "text-white" : "text-blue-700"}`}>
-                            {v.id}
-                          </span>
-                        </div>
-                        <div>
-                          <p className={`text-xs font-bold truncate ${textoM}`}>{v.nome}</p>
-                          <p className={`text-[10px] truncate ${textoS}`}>{v.cliente}</p>
-                        </div>
+                  <button
+                    key={v.id}
+                    onClick={() => setVendaNoModal(v)}
+                    className={`w-full grid grid-cols-[2fr_2fr_2fr_auto] gap-4 items-center px-2 py-3 rounded-xl transition-colors text-left group ${hover}`}
+                  >
+                    {/* Identificação */}
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0
+                        ${modoEscuro ? "bg-blue-900/50" : "bg-blue-50"}`}>
+                        <span className="text-[10px] font-bold text-blue-700">{v.id}</span>
                       </div>
+                      <div>
+                        <p className={`text-xs font-bold truncate ${textoM}`}>{v.nome}</p>
+                        <p className={`text-[10px] truncate ${textoS}`}>{v.cliente}</p>
+                      </div>
+                    </div>
 
-                      {/* Comissão */}
-                      <div className="text-center">
-                        <span className={`text-sm font-bold ${textoM}`}>{v.comissao}</span>
-                      </div>
+                    {/* Comissão */}
+                    <div className="text-center">
+                      <span className={`text-sm font-bold ${textoM}`}>{v.comissao}</span>
+                    </div>
 
-                      {/* Status */}
-                      <div className="flex justify-center">
-                        <span className={`text-[9px] font-bold tracking-wider px-2.5 py-0.5 rounded-full uppercase border
-                          ${v.tipo === "liberada"
-                            ? "bg-green-50 text-green-600 border-green-200"
-                            : "bg-orange-50 text-orange-500 border-orange-200"
-                          }`}>
-                          {v.status}
-                        </span>
-                      </div>
+                    {/* Status */}
+                    <div className="flex justify-center">
+                      <span className={`text-[9px] font-bold tracking-wider px-2.5 py-0.5 rounded-full uppercase border
+                        ${v.tipo === "liberada"
+                          ? "bg-green-50 text-green-600 border-green-200"
+                          : "bg-orange-50 text-orange-500 border-orange-200"
+                        }`}>
+                        {v.status}
+                      </span>
+                    </div>
 
-                      {/* Seta */}
-                      <div className={`transition-transform duration-200
-                        ${vendaExpandida === v.id ? "rotate-90 text-blue-500" : `${textoS} group-hover:text-blue-400`}`}>
-                        <IconSetaDireita />
-                      </div>
-                    </button>
-
-                    {/* Detalhe expandido */}
-                    {vendaExpandida === v.id && (
-                      <div className={`mx-2 mb-1.5 px-4 py-2.5 rounded-xl border
-                        ${modoEscuro ? "bg-blue-900/20 border-blue-800" : "bg-blue-50 border-blue-100"}`}>
-                        <p className="text-[9px] font-bold tracking-widest text-blue-400 uppercase mb-1.5">Parcelas desta venda</p>
-                        <div className="flex flex-col gap-1">
-                          {v.parcelas.map((p, i) => (
-                            <div key={i} className="flex justify-between">
-                              <span className={`text-xs ${textoS}`}>{p.label}</span>
-                              <span className={`text-xs font-bold ${textoM}`}>{p.valor}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                    {/* Seta */}
+                    <div className={`transition-transform duration-200 ${textoS} group-hover:text-blue-400`}>
+                      <IconSetaDireita />
+                    </div>
+                  </button>
                 ))}
               </div>
 
@@ -799,7 +1042,6 @@ export default function HomeVendedor() {
                 <p className={`text-[9px] tracking-wider uppercase ${textoS}`}>Relatório Mensal de Projeção</p>
               </div>
 
-              {/* Mês e tendência */}
               <div className="flex flex-col gap-0.5">
                 <div className="flex items-center gap-1.5">
                   <span className={tendenciaPositiva ? "text-green-500" : "text-red-400"}>
@@ -813,7 +1055,6 @@ export default function HomeVendedor() {
                 <p className={`text-sm font-extrabold ${textoP}`}>{mesSelecionado} de 2026</p>
               </div>
 
-              {/* Parcelas em aberto */}
               <div className={`flex items-center justify-between py-1.5 border-b ${borda}`}>
                 <span className={`text-xs ${textoS}`}>Parcelas em aberto</span>
                 <span className={`text-sm font-bold ${textoM}`}>
@@ -821,7 +1062,6 @@ export default function HomeVendedor() {
                 </span>
               </div>
 
-              {/* Barra de progresso */}
               <div className={`w-full h-1 rounded-full ${modoEscuro ? "bg-gray-700" : "bg-gray-100"}`}>
                 <div
                   className="h-1 rounded-full bg-blue-600 transition-all duration-500"
@@ -829,7 +1069,6 @@ export default function HomeVendedor() {
                 />
               </div>
 
-              {/* Lista de parcelas */}
               <div className="flex flex-col gap-2 max-h-36 overflow-y-auto pr-1">
                 {todasParcelas.length === 0 && (
                   <p className={`text-xs text-center py-2 ${textoS}`}>Sem parcelas liberadas.</p>

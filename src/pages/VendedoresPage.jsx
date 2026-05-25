@@ -61,7 +61,7 @@ function Pagination({ currentPage, totalPages, onPageChange, darkMode }) {
       </span>
 
       <div className="flex items-center gap-1.5">
-        {/* ◀◀ Primeira */}
+        {/* primeira */}
         <button onClick={() => onPageChange(1)} disabled={currentPage === 1}
           className={currentPage === 1 ? btnDisabled : btnBase} title="Primeira página">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -69,7 +69,7 @@ function Pagination({ currentPage, totalPages, onPageChange, darkMode }) {
           </svg>
         </button>
 
-        {/* ◀ Anterior */}
+        {/* Anterior */}
         <button onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1}
           className={currentPage === 1 ? btnDisabled : btnBase} title="Página anterior">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -110,7 +110,7 @@ function Pagination({ currentPage, totalPages, onPageChange, darkMode }) {
           </svg>
         </button>
 
-        {/* ▶▶ Última */}
+        {/* Última */}
         <button onClick={() => onPageChange(totalPages)} disabled={currentPage === totalPages}
           className={currentPage === totalPages ? btnDisabled : btnBase} title="Última página">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
