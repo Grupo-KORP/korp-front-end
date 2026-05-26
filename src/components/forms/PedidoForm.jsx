@@ -125,6 +125,15 @@ function AddIcon() {
   );
 }
 
+function ChevronIcon({ open }) {
+  return (
+    <svg className={`w-3 h-3 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+      fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+    </svg>
+  );
+}
+
 function CnpjSearchButton({ children, onClick }) {
   return (
     <button type="button" className="cnpj-search-trigger" onClick={onClick}>
@@ -375,7 +384,7 @@ function ClienteSection({ onChange }) {
           >
             Adicionar cliente
           </CnpjSearchButton>
-          <span className={`chevron ${open ? "open" : ""}`}>v</span>
+          <span className="chevron"><ChevronIcon open={open} /></span>
         </div>
       </div>
 
@@ -816,7 +825,7 @@ function DistribuidorSection({ onChange }) {
           >
             Adicionar distribuidor
           </CnpjSearchButton>
-          <span className={`chevron ${open ? "open" : ""}`}>v</span>
+          <span className="chevron"><ChevronIcon open={open} /></span>
         </div>
       </div>
 
@@ -1176,7 +1185,7 @@ function ProdutoSection({ onChange }) {
           >
             Adicionar produto
           </CnpjSearchButton>
-          <span className={`chevron ${open ? "open" : ""}`}>v</span>
+          <span className="chevron"><ChevronIcon open={open} /></span>
         </div>
       </div>
 

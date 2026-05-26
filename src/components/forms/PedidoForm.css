@@ -102,14 +102,13 @@
 }
 
 .chevron {
+  display: inline-flex;
+  align-items: center;
   color: var(--pedido-blue, #0a3490);
-  font-size: 16px;
-  transition: transform 0.2s;
-  display: inline-block;
 }
 
 .chevron.open {
-  transform: rotate(180deg);
+  color: var(--pedido-blue, #0a3490);
 }
 
 /* Body */
