@@ -42,83 +42,17 @@ function ChevronDownIcon() {
   );
 }
 
-function SearchBox({ placeholder }) {
-  return (
-    <label className="catalog-search" aria-label={placeholder}>
-      <SearchIcon />
-      <input type="search" placeholder={placeholder} />
-    </label>
-  );
-}
-
-function TablePanel({ title, columns, rows, moreLabel }) {
-  const gridTemplate = columns.map((column) => column.width || "1fr").join(" ");
-
-  return (
-    <section className="catalog-card catalog-table-card">
-      <div className="catalog-section-title">
-        <span />
-        <h2>{title}</h2>
-      </div>
-
-      <div
-        className="catalog-table-head"
-        style={{ "--catalog-table-columns": `${gridTemplate} 96px` }}
-      >
-        {columns.map((column) => (
-          <span key={column.label}>{column.label}</span>
-        ))}
-        <span>Ferramentas</span>
-      </div>
-
-      <div className="catalog-table-body">
-        {rows.map((row) => (
-          <article
-            className="catalog-row"
-            key={row.id}
-            style={{ "--catalog-table-columns": `${gridTemplate} 96px` }}
-          >
-            <div className="catalog-identity">
-              <span className="catalog-badge">{row.id}</span>
-              <div>
-                <strong>{row.title}</strong>
-                {row.subtitle && <small>{row.subtitle}</small>}
-              </div>
-            </div>
-
-            {row.cells.map((cell, index) => (
-              <span className={cell.className || ""} key={`${row.id}-${index}`}>
-                {cell.value}
-              </span>
-            ))}
-
-            <div className="catalog-tools">
-              <button type="button" aria-label={`Editar ${row.title}`}>
-                <EditIcon />
-              </button>
-              <button type="button" aria-label={`Excluir ${row.title}`}>
-                <DeleteIcon />
-              </button>
-            </div>
-          </article>
-        ))}
-      </div>
-
-      <button className="catalog-more" type="button">
-        {moreLabel}
-        <ChevronDownIcon />
-      </button>
-    </section>
-  );
-}
-
 function FormField({ field, onChange }) {
-  const isAuto      = field.readOnly;
-  const hasError    = !!field.error;
-  const className   = field.span === "full" ? "catalog-form-field is-full" : "catalog-form-field";
+  const isAuto   = field.readOnly;
+  const hasError = !!field.error;
+  const cls = [
+    "catalog-form-field",
+    isAuto   ? "is-auto"   : "",
+    hasError ? "has-error" : "",
+  ].filter(Boolean).join(" ");
 
   return (
-    <label className={`${className}${isAuto ? " is-auto" : ""}${hasError ? " has-error" : ""}`}>
+    <div className={cls}>
       <span>
         {field.label}
         {field.loading && <span className="catalog-field-spinner" />}
@@ -147,51 +81,53 @@ function FormField({ field, onChange }) {
       )}
 
       {hasError && <span className="catalog-field-error">{field.error}</span>}
-    </label>
+    </div>
   );
-} 
+}
 
-function FormPanel({ title, subtitle, fields, submitLabel, onFieldChange, onSubmit, submitDisabled }) {
-  return (
-    <aside className="catalog-card catalog-form-card">
-      <div className="catalog-form-heading">
-        <div><RegisterIcon /><h2>{title}</h2></div>
-        <p>{subtitle}</p>
-      </div>
-
-      <form className="catalog-form" onSubmit={(e) => { e.preventDefault(); onSubmit(); }}>
-        <div className="catalog-form-fields">
-          {fields.map((field) => (
-            <FormField
-              field={field}
-              onChange={onFieldChange}
-              key={field.name}
-            />
-          ))}
+// Agrupa campos com pair="start"/"end" em linhas de dois
+function renderFields(fields, onChange) {
+  const result = [];
+  let i = 0;
+  while (i < fields.length) {
+    const field = fields[i];
+    if (field.pair === "start" && fields[i + 1]?.pair === "end") {
+      result.push(
+        <div className="catalog-form-row" key={field.name}>
+          <FormField field={field}         onChange={onChange} />
+          <FormField field={fields[i + 1]} onChange={onChange} />
         </div>
-
-        <button type="submit" className="catalog-submit" disabled={submitDisabled}>
-          {submitLabel}
-        </button>
-      </form>
-    </aside>
-  );
+      );
+      i += 2;
+    } else {
+      result.push(<FormField key={field.name} field={field} onChange={onChange} />);
+      i++;
+    }
+  }
+  return result;
 }
 
 export default function CatalogPage({
   eyebrow,
   title,
   searchPlaceholder,
+  searchValue,
+  onSearchChange,
   tableTitle,
   tableColumns,
   rows,
+  loadingRows = false,
   moreLabel,
+  // form
   formTitle,
-  formSubtitle = "Formul\u00e1rio de Cadastro",
+  formTitleEdit,
+  formSubtitle = "Formulário de Cadastro",
   fields,
-  submitLabel = "cadastrar",
+  submitLabel = "Cadastrar",
   onFieldChange,
   onSubmit,
+  onCancel,          // se passado, mostra botão Cancelar
+  isEditing = false, // controla título e botão cancelar
   submitDisabled = false,
 }) {
   useEffect(() => {
@@ -199,35 +135,159 @@ export default function CatalogPage({
     return () => document.body.classList.remove("catalog-body");
   }, []);
 
+  const activeFormTitle = isEditing && formTitleEdit ? formTitleEdit : formTitle;
+
   return (
     <div className="catalog-shell">
       <NavbarVendedor />
 
-      <main className="catalog-page">
-        <div className="catalog-title-block">
-          <p>{eyebrow}</p>
-          <h1>{title}</h1>
+      <div className="catalog-page">
+
+        {/* ── Coluna esquerda ── */}
+        <div className="catalog-left">
+
+          {/* Título + Search */}
+          <div className="catalog-topbar">
+            <div className="catalog-title-block">
+              <p>{eyebrow}</p>
+              <h1>{title}</h1>
+            </div>
+
+            <label className="catalog-search" aria-label={searchPlaceholder}>
+              <SearchIcon />
+              <input
+                type="search"
+                placeholder={searchPlaceholder}
+                value={searchValue || ""}
+                onChange={onSearchChange}
+              />
+            </label>
+          </div>
+
+          {/* Tabela */}
+          <div className="catalog-table-card">
+            <div className="catalog-section-title">
+              <span />
+              <h2>{tableTitle}</h2>
+            </div>
+
+            {/* Cabeçalho */}
+            <div className="catalog-table-head">
+              {tableColumns.map((col) => (
+                <span key={col.label} style={{ flex: col.flex || "1" }}>
+                  {col.label}
+                </span>
+              ))}
+              <span style={{ flex: "0 0 100px", textAlign: "center" }}>
+                Ferramentas
+              </span>
+            </div>
+
+            {/* Linhas */}
+            <div className="catalog-table-body">
+              {loadingRows ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="catalog-row-skeleton" />
+                ))
+              ) : rows.length === 0 ? (
+                <p className="catalog-empty">Nenhum registro encontrado.</p>
+              ) : rows.map((row) => (
+                <div className="catalog-row" key={row.id}>
+                  {/* Identidade */}
+                  <div
+                    className="catalog-identity"
+                    style={{ flex: tableColumns[0]?.flex || "1" }}
+                  >
+                    <span className="catalog-badge">{row.badge ?? row.id}</span>
+                    <div>
+                      <strong>{row.title}</strong>
+                      {row.subtitle && <small>{row.subtitle}</small>}
+                    </div>
+                  </div>
+
+                  {/* Células */}
+                  {row.cells.map((cell, idx) => (
+                    <span
+                      key={idx}
+                      className={cell.className || "catalog-centered"}
+                      style={{ flex: tableColumns[idx + 1]?.flex || "1" }}
+                    >
+                      {cell.value}
+                    </span>
+                  ))}
+
+                  {/* Ferramentas */}
+                  <div className="catalog-tools">
+                    <button
+                      type="button"
+                      aria-label={`Editar ${row.title}`}
+                      onClick={() => row.onEdit?.(row)}
+                    >
+                      <EditIcon />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`Excluir ${row.title}`}
+                      onClick={() => row.onDelete?.(row)}
+                    >
+                      <DeleteIcon />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {moreLabel && (
+              <button className="catalog-more" type="button">
+                {moreLabel}
+                <ChevronDownIcon />
+              </button>
+            )}
+          </div>
         </div>
 
-        <SearchBox placeholder={searchPlaceholder} />
+        {/* ── Coluna direita: form ── */}
+        <div className="catalog-right">
+          <div className="catalog-form-card">
+            <div className="catalog-form-heading">
+              <div>
+                <RegisterIcon />
+                <h2>{activeFormTitle}</h2>
+              </div>
+              <p>{formSubtitle}</p>
+            </div>
 
-        <FormPanel
-          title={formTitle}
-          subtitle={formSubtitle}
-          fields={fields}       
-          submitLabel={submitLabel}
-          onFieldChange={onFieldChange}
-          onSubmit={onSubmit}
-          submitDisabled={submitDisabled}
-        />
+            <form
+              className="catalog-form"
+              onSubmit={(e) => { e.preventDefault(); onSubmit(); }}
+            >
+              <div className="catalog-form-fields">
+                {renderFields(fields, onFieldChange)}
+              </div>
 
-        <TablePanel
-          title={tableTitle}
-          columns={tableColumns}
-          rows={rows}
-          moreLabel={moreLabel}
-        />
-      </main>
+              <div className="catalog-form-actions">
+                {isEditing && onCancel && (
+                  <button
+                    type="button"
+                    className="catalog-cancel"
+                    onClick={onCancel}
+                  >
+                    Cancelar
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  className="catalog-submit"
+                  disabled={submitDisabled}
+                >
+                  {submitLabel}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }

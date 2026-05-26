@@ -251,30 +251,57 @@ export default function VendedoresPage() {
     e.preventDefault();
     if (!validate()) return;
 
-    const payload = {
-      nome: form.nome.toUpperCase(),
-      email: form.email,
-      senha: "",
-      telefone: form.fone,
-      role: 3, 
-      percentualComissao: parseFloat(form.comissao),
-    };
-
     setLoading(true);
     try {
-      const response = await api.post(`/usuario`, payload);
-      await fetchVendedores(currentPage, search);
-      toast.success(
-        "Vendedor cadastrado com sucesso! Verifique o e-mail para receber a senha de acesso da conta!.",
-        { duration: 7000 }
-      );
-      setForm(emptyForm);
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (error) {
-      if (error.status === 409) {
-        toast.error(error.message);
+      if (editingId) {
+        // ── EDIÇÃO → PUT /usuario/{id}
+        const payload = {
+          nome: form.nome,
+          email: form.email,
+          telefone: form.fone,
+          role: 3,
+          percentualComissao: parseFloat(form.comissao)
+        };
+        await api.put(`/usuario/${editingId}`, payload);
+        toast.success("Vendedor atualizado com sucesso!", { duration: 5000 });
+        setEditingId(null);
       } else {
-        toast.error("Erro ao cadastrar vendedor. Tente novamente.");
+        // ── CADASTRO → POST /usuario
+        const payload = {
+          nome: form.nome,
+          email: form.email,
+          senha: "",
+          telefone: form.fone,
+          role: 3,
+          percentualComissao: parseFloat(form.comissao),
+        };
+        await api.post(`/usuario`, payload);
+        toast.success(
+          "Vendedor cadastrado com sucesso! Verifique o e-mail para receber a senha de acesso da conta!",
+          { duration: 7000 }
+        );
+      }
+
+      await fetchVendedores(currentPage, search);
+      setForm(emptyForm);
+
+    } catch (error) {
+      if (editingId) {
+        if (error.status === 404) {
+          toast.error(error.message);
+        } else if (error.status === 400) {
+          toast.error(error.message);
+        } else {
+          toast.error(error.message);
+        }
+      } else {
+        if (error.status === 409) {
+          toast.error(error.message);
+        } else if (error.status === 400) {
+          toast.error(error.message);
+        } else {
+          toast.error("Erro ao cadastrar vendedor. Tente novamente.");
+        }
       }
     } finally {
       setLoading(false);
@@ -282,19 +309,37 @@ export default function VendedoresPage() {
   }
 
   function handleEdit(v) {
-    setEditingId(v.email);
+    setEditingId(v.idVendedor);
     setForm({
       nome: v.nome,
       email: v.email,
       fone: v.telefone ?? "",
       comissao: v.percentualComissao != null ? `${v.percentualComissao}%` : "30%",
-      status: "Ativo",
+      status: v.status === true ? "Ativo" : "Inativo",
     });
     setErrors({});
   }
 
-  function handleDelete(id) {
-    setVendedores((prev) => prev.filter((v) => v.id !== id));
+  async function handleDelete(id) {
+    setLoadingList(true);
+    try {
+      console.log("Deletando vendedor com ID:", id);
+      await api.delete(`/usuario/${id}`);
+      toast.success("Vendedor removido com sucesso!");
+      await fetchVendedores(currentPage, search);
+    } catch (error) {
+      if (error.status === 404) {
+        toast.error("Vendedor não encontrado.");
+      } else if (error.status === 400) {
+        toast.error("ID inválido.");
+      } else if (error.status === 409) {
+        toast.error("Este vendedor já foi removido.");
+      } else {
+        toast.error("Erro ao remover vendedor. Tente novamente.");
+      }
+    } finally {
+      setLoadingList(false);
+    }
   }
 
   function handleCancel() {
@@ -392,7 +437,12 @@ export default function VendedoresPage() {
                       <span className={`text-sm font-bold text-center ${textoM}`}>{v.vendasEfetivadas ?? 0}</span>
 
                       {/* Status do Colaborador */}
-                      <span className={`text-sm font-bold text-center ${textoM}`}>{v.status ?? "Ativo"}</span>
+                      <span className={`text-xs font-bold px-2.5 py-1 rounded-full text-center   ${v.status === true || v.status === "true"
+                        ? modoEscuro ? "bg-green-900/40 text-green-400" : "bg-green-100 text-green-700"
+                        : modoEscuro ? "bg-red-900/40 text-red-400" : "bg-red-100 text-red-600"
+                        }`}>
+                        {v.status === true || v.status === "true" ? "Ativo" : "Inativo"}
+                      </span>
 
                       {/* Ferramentas */}
                       <div className="flex items-center justify-center gap-2">
@@ -404,7 +454,7 @@ export default function VendedoresPage() {
                               d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a2 2 0 01-1.414.586H8v-2.414A2 2 0 018.586 12.5L15.232 5.232z" />
                           </svg>
                         </button>
-                        <button onClick={() => handleDelete(v.id)}
+                        <button onClick={() => handleDelete(v.idVendedor)}
                           className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${textoS} hover:text-red-500 ${modoEscuro ? "hover:bg-red-900/30" : "hover:bg-red-50"}`}
                           aria-label="Excluir">
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -488,38 +538,17 @@ export default function VendedoresPage() {
                   />
                 </div>
 
+                {/* Status do Colaborador */}
                 <div>
                   <label className={`text-[10px] font-bold tracking-widest uppercase block mb-1 ${textoS}`}>
                     Status do Colaborador
                   </label>
-                  {editingId ? (
-                    <div className="relative">
-                      <select
-                        name="status"
-                        value={form.status}
-                        onChange={handleFormChange}
-                        className={`w-full px-3.5 py-2.5 pr-10 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition appearance-none cursor-pointer ${inputBg}`}
-                      >
-                        <option>Ativo</option>
-                        <option>Inativo</option>
-                      </select>
-                      <svg
-                        className={`pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 ${textoS}`}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                  ) : (
-                    <input
-                      type="text"
-                      value="Ativo"
-                      readOnly
-                      className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none cursor-not-allowed ${inputBg}`}
-                    />
-                  )}
+                  <input
+                    type="text"
+                    value="Ativo"
+                    readOnly
+                    className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none cursor-not-allowed ${inputBg}`}
+                  />
                 </div>
 
                 <div className="flex gap-2 mt-1">
