@@ -15,6 +15,24 @@ const removeFormatting = (value) => String(value || "").replace(/[.\-\/]/g, "").
 
 const sanitizeCnpj = (value) => onlyDigits(String(value || ""));
 
+const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
+
+const getEntityContacts = (entity) => {
+  if (Array.isArray(entity?.contatos) && entity.contatos.length > 0) {
+    return entity.contatos;
+  }
+
+  if (entity?.contato || entity?.email) {
+    return [{
+      id: `${entity.id || entity.cnpj || "contato"}-principal`,
+      nome: entity.contato || "Contato principal",
+      email: entity.email || "",
+    }];
+  }
+
+  return [];
+};
+
 const cnpjExists = (value, list) => {
   const digits = sanitizeCnpj(value);
   const cleanedValue = removeFormatting(value);
@@ -133,6 +151,10 @@ function ClienteSection({ onChange }) {
   const [searchError, setSearchError] = useState("");
   const [searched, setSearched] = useState(false);
   const [showSaveButton, setShowSaveButton] = useState(false);
+  const [modalStep, setModalStep] = useState(1);
+  const [selectedCliente, setSelectedCliente] = useState(null);
+  const [contactSearch, setContactSearch] = useState("");
+  const [newContact, setNewContact] = useState({ nome: "", email: "" });
 
   const clientesMock = [
     {
@@ -147,6 +169,10 @@ function ClienteSection({ onChange }) {
       fone: "(11) 99999-9999",
       endereco: "Rua das Inovacoes, 123",
       contato: "Maria Silva",
+      contatos: [
+        { id: 1, nome: "Maria Silva", email: "contato@tech.com" },
+        { id: 2, nome: "Carlos Almeida", email: "compras@tech.com" },
+      ],
     },
     {
       id: 1,
@@ -160,6 +186,10 @@ function ClienteSection({ onChange }) {
       fone: "(11) 99999-9999",
       endereco: "Rua das Inovacoes, 123",
       contato: "Maria Silva",
+      contatos: [
+        { id: 1, nome: "Maria Silva", email: "contato@tech.com" },
+        { id: 2, nome: "Carlos Almeida", email: "compras@tech.com" },
+      ],
     },
     {
       id: 1,
@@ -173,6 +203,10 @@ function ClienteSection({ onChange }) {
       fone: "(11) 99999-9999",
       endereco: "Rua das Inovacoes, 123",
       contato: "Maria Silva",
+      contatos: [
+        { id: 1, nome: "Maria Silva", email: "contato@tech.com" },
+        { id: 2, nome: "Carlos Almeida", email: "compras@tech.com" },
+      ],
     },
     {
       id: 1,
@@ -186,6 +220,10 @@ function ClienteSection({ onChange }) {
       fone: "(11) 99999-9999",
       endereco: "Rua das Inovacoes, 123",
       contato: "Maria Silva",
+      contatos: [
+        { id: 1, nome: "Maria Silva", email: "contato@tech.com" },
+        { id: 2, nome: "Carlos Almeida", email: "compras@tech.com" },
+      ],
     },
   ];
 
@@ -194,6 +232,19 @@ function ClienteSection({ onChange }) {
   const canRegisterNewCliente = (newCadastroCnpjDigits.length === 14 || newCadastroCnpjCleaned.length === 14)
     && isValidCnpj(newCadastroCnpj)
     && !cnpjExists(newCadastroCnpj, clientesMock);
+  const canSaveClienteCadastro = Boolean(data.nomeFantasia.trim())
+    && Boolean(data.contato.trim())
+    && isValidEmail(data.email);
+  const clienteContacts = getEntityContacts(selectedCliente);
+  const filteredClienteContacts = clienteContacts.filter((contact) => {
+    const normalizedSearch = contactSearch.trim().toLowerCase();
+    if (!normalizedSearch) return true;
+
+    return String(contact.nome || "").toLowerCase().includes(normalizedSearch)
+      || String(contact.email || "").toLowerCase().includes(normalizedSearch);
+  });
+  const showClienteContactEmpty = selectedCliente && contactSearch.trim() && filteredClienteContacts.length === 0;
+  const canRegisterClienteContact = Boolean(newContact.nome.trim()) && isValidEmail(newContact.email);
 
   const clientesEncontrados = searched && !searchError
     ? clientesMock.filter((cliente) => {
@@ -221,6 +272,10 @@ function ClienteSection({ onChange }) {
     setSearch("");
     setSearchError("");
     setSearched(false);
+    setModalStep(1);
+    setSelectedCliente(null);
+    setContactSearch("");
+    setNewContact({ nome: "", email: "" });
   };
 
   const handleSearch = () => {
@@ -268,7 +323,39 @@ function ClienteSection({ onChange }) {
     closeModal();
   };
 
+  const selectClienteForContact = (cliente) => {
+    setSelectedCliente(cliente);
+    setContactSearch("");
+    setNewContact({ nome: "", email: "" });
+    setModalStep(2);
+  };
+
+  const selectClienteContact = (contact) => {
+    const updated = {
+      ...selectedCliente,
+      contato: contact.nome || "",
+      email: contact.email || "",
+    };
+
+    setData(updated);
+    onChange?.(updated);
+    setShowSaveButton(false);
+    setOpen(true);
+    closeModal();
+  };
+
+  const registerClienteContact = () => {
+    if (!canRegisterClienteContact) return;
+
+    selectClienteContact({
+      id: `novo-${Date.now()}`,
+      nome: newContact.nome.trim(),
+      email: newContact.email.trim(),
+    });
+  };
+
   const saveCliente = () => {
+    if (!canSaveClienteCadastro) return;
     setShowSaveButton(false);
   };
 
@@ -345,26 +432,69 @@ function ClienteSection({ onChange }) {
           <div className="form-row">
             <div className="form-group grow-1">
               <label>CONTATO</label>
-              <input name="contato" value={data.contato} onChange={handle} placeholder="Nome do Responsavel" {...readonlyInputProps} />
+              <input
+                name="contato"
+                value={data.contato}
+                onChange={handle}
+                placeholder="Nome do Responsavel"
+                {...(!showSaveButton ? readonlyInputProps : {})}
+              />
             </div>
             <div className="form-group grow-1">
               <label>E-MAIL</label>
-              <input name="email" type="email" value={data.email} onChange={handle} placeholder="contato@empresa.com" {...readonlyInputProps} />
+              <input
+                name="email"
+                type="email"
+                value={data.email}
+                onChange={handle}
+                placeholder="contato@empresa.com"
+                {...(!showSaveButton ? readonlyInputProps : {})}
+              />
             </div>
           </div>
 
           {showSaveButton && (
-            <button type="button" className="btn-salvar-cadastro" onClick={saveCliente}>
-              Salvar cadastro do cliente
-            </button>
+            <div className="cadastro-actions">
+              {!canSaveClienteCadastro && (
+                <p className="cadastro-required-message">
+                  Preencha nome fantasia, contato e e-mail valido para salvar o cadastro.
+                </p>
+              )}
+              <button
+                type="button"
+                className="btn-salvar-cadastro"
+                onClick={saveCliente}
+                disabled={!canSaveClienteCadastro}
+              >
+                Salvar cadastro do cliente
+              </button>
+            </div>
           )}
         </div>
       )}
 
       {showModal && (
         <div className="modal-overlay">
-          <div className="modal">
-            <h3>Buscar Cliente</h3>
+          <div className="modal" role="dialog" aria-modal="true" aria-labelledby="cliente-modal-title">
+            <div
+              className={`modal-steps ${modalStep === 2 ? "is-complete" : ""}`}
+              aria-label={`Etapa ${modalStep} de 2`}
+            >
+              <button type="button" className={`modal-step ${modalStep === 1 ? "active" : ""}`} onClick={() => setModalStep(1)}>
+                {modalStep}/2
+              </button>
+              <button
+                type="button"
+                className={`modal-step ${modalStep === 2 ? "active" : ""}`}
+                onClick={() => selectedCliente && setModalStep(2)}
+                disabled={!selectedCliente}
+              >
+                {modalStep === 1 ? "Cliente" : "Contato"}
+              </button>
+            </div>
+            {modalStep === 1 ? (
+              <>
+            <h3 id="cliente-modal-title">Buscar Cliente</h3>
             <p className="modal-hint">A pesquisa pode ser feita por Nome Fantasia ou CNPJ.</p>
 
             <div className="modal-search-row">
@@ -383,23 +513,19 @@ function ClienteSection({ onChange }) {
             {searchError && <p className="modal-message is-error">{searchError}</p>}
 
             <div className="lista-clientes">
-              {clientesEncontrados.map((cliente) => (
-                <div
-                  key={cliente.id}
+                  {clientesEncontrados.map((cliente, index) => (
+                    <button
+                      key={`${cliente.id}-${cliente.cnpj}-${index}`}
+                  type="button"
                   className="cliente-item"
-                  onClick={() => {
-                    setData(cliente);
-                    onChange?.(cliente);
-                    setShowSaveButton(false);
-                    closeModal();
-                  }}
+                  onClick={() => selectClienteForContact(cliente)}
                 >
                   <strong>{cliente.nomeFantasia || cliente.razaoSocial}</strong>
                   {cliente.razaoSocial && cliente.nomeFantasia !== cliente.razaoSocial && (
                     <small>{cliente.razaoSocial}</small>
                   )}
                   <span>{cliente.cnpj}</span>
-                </div>
+                </button>
               ))}
 
               {searched && !searchError && clientesEncontrados.length === 0 && (
@@ -428,6 +554,76 @@ function ClienteSection({ onChange }) {
               )}
             </div>
 
+              </>
+            ) : (
+              <>
+                <h3 id="cliente-modal-title">Selecionar Contato</h3>
+                <p className="modal-hint">
+                  Cliente selecionado: <strong>{selectedCliente?.nomeFantasia || selectedCliente?.razaoSocial}</strong>
+                </p>
+
+                <div className="modal-search-row single">
+                  <input
+                    type="text"
+                    placeholder="Buscar contato por nome ou e-mail"
+                    value={contactSearch}
+                    onChange={(e) => {
+                      setContactSearch(e.target.value);
+                      setNewContact({ nome: "", email: "" });
+                    }}
+                    className="input-busca"
+                  />
+                </div>
+
+                <div className="lista-clientes">
+                  {filteredClienteContacts.map((contact) => (
+                    <button
+                      key={contact.id || `${contact.nome}-${contact.email}`}
+                      type="button"
+                      className="cliente-item"
+                      onClick={() => selectClienteContact(contact)}
+                    >
+                      <strong>{contact.nome}</strong>
+                      <span>{contact.email}</span>
+                    </button>
+                  ))}
+
+                  {showClienteContactEmpty && (
+                    <div className="modal-empty">
+                      <p>Contato não encontrado.</p>
+                      <p>Cadastre um novo contato para este cliente.</p>
+                      <input
+                        type="text"
+                        placeholder="Nome"
+                        value={newContact.nome}
+                        onChange={(e) => setNewContact((prev) => ({ ...prev, nome: e.target.value }))}
+                        className="input-cnpj-cadastro"
+                      />
+                      <input
+                        type="email"
+                        placeholder="E-mail"
+                        value={newContact.email}
+                        onChange={(e) => setNewContact((prev) => ({ ...prev, email: e.target.value }))}
+                        className="input-cnpj-cadastro"
+                      />
+                      <button
+                        type="button"
+                        className="btn-cadastrar-novo"
+                        onClick={registerClienteContact}
+                        disabled={!canRegisterClienteContact}
+                      >
+                        Cadastrar contato
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <button type="button" className="btn-modal-back" onClick={() => setModalStep(1)}>
+                  Voltar para Cliente
+                </button>
+              </>
+            )}
+
             <button type="button" className="btn-modal-close" onClick={closeModal}>Fechar</button>
           </div>
         </div>
@@ -448,6 +644,10 @@ function DistribuidorSection({ onChange }) {
   const [searchError, setSearchError] = useState("");
   const [searched, setSearched] = useState(false);
   const [showSaveButton, setShowSaveButton] = useState(false);
+  const [modalStep, setModalStep] = useState(1);
+  const [selectedDistribuidor, setSelectedDistribuidor] = useState(null);
+  const [contactSearch, setContactSearch] = useState("");
+  const [newContact, setNewContact] = useState({ nome: "", email: "" });
 
   const distribuidoresMock = [
     {
@@ -461,6 +661,10 @@ function DistribuidorSection({ onChange }) {
       fone: "(11) 88888-8888",
       endereco: "Avenida Paulista, 456",
       contato: "Joao Oliveira",
+      contatos: [
+        { id: 1, nome: "Joao Oliveira", email: "contato@distribuidora.com" },
+        { id: 2, nome: "Ana Costa", email: "pedidos@distribuidora.com" },
+      ],
     },
   ];
 
@@ -469,6 +673,19 @@ function DistribuidorSection({ onChange }) {
   const canRegisterNewDistribuidor = (newCadastroCnpjDigits.length === 14 || newCadastroCnpjCleaned.length === 14)
     && isValidCnpj(newCadastroCnpj)
     && !cnpjExists(newCadastroCnpj, distribuidoresMock);
+  const canSaveDistribuidorCadastro = Boolean(data.nomeFantasia.trim())
+    && Boolean(data.contato.trim())
+    && isValidEmail(data.email);
+  const distribuidorContacts = getEntityContacts(selectedDistribuidor);
+  const filteredDistribuidorContacts = distribuidorContacts.filter((contact) => {
+    const normalizedSearch = contactSearch.trim().toLowerCase();
+    if (!normalizedSearch) return true;
+
+    return String(contact.nome || "").toLowerCase().includes(normalizedSearch)
+      || String(contact.email || "").toLowerCase().includes(normalizedSearch);
+  });
+  const showDistribuidorContactEmpty = selectedDistribuidor && contactSearch.trim() && filteredDistribuidorContacts.length === 0;
+  const canRegisterDistribuidorContact = Boolean(newContact.nome.trim()) && isValidEmail(newContact.email);
 
   const distribuidoresEncontrados = searched && !searchError
     ? distribuidoresMock.filter((distribuidor) => {
@@ -496,6 +713,10 @@ function DistribuidorSection({ onChange }) {
     setSearch("");
     setSearchError("");
     setSearched(false);
+    setModalStep(1);
+    setSelectedDistribuidor(null);
+    setContactSearch("");
+    setNewContact({ nome: "", email: "" });
   };
 
   const handleSearch = () => {
@@ -543,7 +764,39 @@ function DistribuidorSection({ onChange }) {
     closeModal();
   };
 
+  const selectDistribuidorForContact = (distribuidor) => {
+    setSelectedDistribuidor(distribuidor);
+    setContactSearch("");
+    setNewContact({ nome: "", email: "" });
+    setModalStep(2);
+  };
+
+  const selectDistribuidorContact = (contact) => {
+    const updated = {
+      ...selectedDistribuidor,
+      contato: contact.nome || "",
+      email: contact.email || "",
+    };
+
+    setData(updated);
+    onChange?.(updated);
+    setShowSaveButton(false);
+    setOpen(true);
+    closeModal();
+  };
+
+  const registerDistribuidorContact = () => {
+    if (!canRegisterDistribuidorContact) return;
+
+    selectDistribuidorContact({
+      id: `novo-${Date.now()}`,
+      nome: newContact.nome.trim(),
+      email: newContact.email.trim(),
+    });
+  };
+
   const saveDistribuidor = () => {
+    if (!canSaveDistribuidorCadastro) return;
     setShowSaveButton(false);
   };
 
@@ -620,26 +873,69 @@ function DistribuidorSection({ onChange }) {
           <div className="form-row">
             <div className="form-group grow-1">
               <label>CONTATO</label>
-              <input name="contato" value={data.contato} onChange={handle} placeholder="Nome do Responsavel" {...readonlyInputProps} />
+              <input
+                name="contato"
+                value={data.contato}
+                onChange={handle}
+                placeholder="Nome do Responsavel"
+                {...(!showSaveButton ? readonlyInputProps : {})}
+              />
             </div>
             <div className="form-group grow-1">
               <label>E-MAIL</label>
-              <input name="email" type="email" value={data.email} onChange={handle} placeholder="contato@empresa.com" {...readonlyInputProps} />
+              <input
+                name="email"
+                type="email"
+                value={data.email}
+                onChange={handle}
+                placeholder="contato@empresa.com"
+                {...(!showSaveButton ? readonlyInputProps : {})}
+              />
             </div>
           </div>
 
           {showSaveButton && (
-            <button type="button" className="btn-salvar-cadastro" onClick={saveDistribuidor}>
-              Salvar cadastro do distribuidor
-            </button>
+            <div className="cadastro-actions">
+              {!canSaveDistribuidorCadastro && (
+                <p className="cadastro-required-message">
+                  Preencha nome fantasia, contato e e-mail valido para salvar o cadastro.
+                </p>
+              )}
+              <button
+                type="button"
+                className="btn-salvar-cadastro"
+                onClick={saveDistribuidor}
+                disabled={!canSaveDistribuidorCadastro}
+              >
+                Salvar cadastro do distribuidor
+              </button>
+            </div>
           )}
         </div>
       )}
 
       {showModal && (
         <div className="modal-overlay">
-          <div className="modal">
-            <h3>Buscar Distribuidor</h3>
+          <div className="modal" role="dialog" aria-modal="true" aria-labelledby="distribuidor-modal-title">
+            <div
+              className={`modal-steps ${modalStep === 2 ? "is-complete" : ""}`}
+              aria-label={`Etapa ${modalStep} de 2`}
+            >
+              <button type="button" className={`modal-step ${modalStep === 1 ? "active" : ""}`} onClick={() => setModalStep(1)}>
+                {modalStep}/2
+              </button>
+              <button
+                type="button"
+                className={`modal-step ${modalStep === 2 ? "active" : ""}`}
+                onClick={() => selectedDistribuidor && setModalStep(2)}
+                disabled={!selectedDistribuidor}
+              >
+                {modalStep === 1 ? "Distribuidor" : "Contato"}
+              </button>
+            </div>
+            {modalStep === 1 ? (
+              <>
+            <h3 id="distribuidor-modal-title">Buscar Distribuidor</h3>
             <p className="modal-hint">A pesquisa pode ser feita por Nome Fantasia ou CNPJ.</p>
 
             <div className="modal-search-row">
@@ -659,22 +955,18 @@ function DistribuidorSection({ onChange }) {
 
             <div className="lista-clientes">
               {distribuidoresEncontrados.map((distribuidor) => (
-                <div
+                <button
                   key={distribuidor.id}
+                  type="button"
                   className="cliente-item"
-                  onClick={() => {
-                    setData(distribuidor);
-                    onChange?.(distribuidor);
-                    setShowSaveButton(false);
-                    closeModal();
-                  }}
+                  onClick={() => selectDistribuidorForContact(distribuidor)}
                 >
                   <strong>{distribuidor.nomeFantasia || distribuidor.razaoSocial}</strong>
                   {distribuidor.razaoSocial && distribuidor.nomeFantasia !== distribuidor.razaoSocial && (
                     <small>{distribuidor.razaoSocial}</small>
                   )}
                   <span>{distribuidor.cnpj}</span>
-                </div>
+                </button>
               ))}
 
               {searched && !searchError && distribuidoresEncontrados.length === 0 && (
@@ -702,6 +994,75 @@ function DistribuidorSection({ onChange }) {
                 </div>
               )}
             </div>
+              </>
+            ) : (
+              <>
+                <h3 id="distribuidor-modal-title">Selecionar Contato</h3>
+                <p className="modal-hint">
+                  Distribuidor selecionado: <strong>{selectedDistribuidor?.nomeFantasia || selectedDistribuidor?.razaoSocial}</strong>
+                </p>
+
+                <div className="modal-search-row single">
+                  <input
+                    type="text"
+                    placeholder="Buscar contato por nome ou e-mail"
+                    value={contactSearch}
+                    onChange={(e) => {
+                      setContactSearch(e.target.value);
+                      setNewContact({ nome: "", email: "" });
+                    }}
+                    className="input-busca"
+                  />
+                </div>
+
+                <div className="lista-clientes">
+                  {filteredDistribuidorContacts.map((contact) => (
+                    <button
+                      key={contact.id || `${contact.nome}-${contact.email}`}
+                      type="button"
+                      className="cliente-item"
+                      onClick={() => selectDistribuidorContact(contact)}
+                    >
+                      <strong>{contact.nome}</strong>
+                      <span>{contact.email}</span>
+                    </button>
+                  ))}
+
+                  {showDistribuidorContactEmpty && (
+                    <div className="modal-empty">
+                      <p>Contato não encontrado.</p>
+                      <p>Cadastre um novo contato para este distribuidor.</p>
+                      <input
+                        type="text"
+                        placeholder="Nome"
+                        value={newContact.nome}
+                        onChange={(e) => setNewContact((prev) => ({ ...prev, nome: e.target.value }))}
+                        className="input-cnpj-cadastro"
+                      />
+                      <input
+                        type="email"
+                        placeholder="E-mail"
+                        value={newContact.email}
+                        onChange={(e) => setNewContact((prev) => ({ ...prev, email: e.target.value }))}
+                        className="input-cnpj-cadastro"
+                      />
+                      <button
+                        type="button"
+                        className="btn-cadastrar-novo"
+                        onClick={registerDistribuidorContact}
+                        disabled={!canRegisterDistribuidorContact}
+                      >
+                        Cadastrar contato
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <button type="button" className="btn-modal-back" onClick={() => setModalStep(1)}>
+                  Voltar para Distribuidor
+                </button>
+              </>
+            )}
 
             <button type="button" className="btn-modal-close" onClick={closeModal}>Fechar</button>
           </div>
