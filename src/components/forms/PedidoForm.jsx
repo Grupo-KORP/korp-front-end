@@ -19,18 +19,11 @@ const sanitizeCnpj = (value) => onlyDigits(String(value || ""));
 const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
 
 const getEntityContacts = (entity) => {
-  if (Array.isArray(entity?.contatos) && entity.contatos.length > 0) {
-    return entity.contatos;
-  }
+  const contactsList = entity?.contatos;
 
-  if (entity?.contato || entity?.email) {
-    return [{
-      id: `${entity.id || entity.cnpj || "contato"}-principal`,
-      nome: entity.contato || "Contato principal",
-      email: entity.email || "",
-    }];
+  if (contactsList && contactsList.length > 0) {
+    return contactsList;
   }
-
   return [];
 };
 
@@ -532,7 +525,7 @@ function ClienteSection({ onChange }) {
                 <div className="lista-clientes">
                   {filteredClienteContacts.map((contact) => (
                     <button
-                      key={contact.id || `${contact.nome}-${contact.email}`}
+                      key={contact.idContato || `${contact.nome}-${contact.email}`}
                       type="button"
                       className="cliente-item"
                       onClick={() => selectClienteContact(contact)}
