@@ -91,8 +91,6 @@ function mapClienteToRow(cliente) {
   };
 }
 
-// ─── Dados mock da tabela (remover ao integrar GET /cliente) ──────────────────
-
 // ─── Página ───────────────────────────────────────────────────────────────────
 export default function ClientePage() {
   const [form, setForm] = useState(emptyForm);
