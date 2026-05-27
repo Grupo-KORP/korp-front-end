@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./PedidoForm.css";
 import distribuidorIcon from "../../assets/distribuidor.png";
 import perfilCliente from "../../assets/perfil_cliente.png";
 import carrinho from "../../assets/produto_carrinho.png";
+import { fetchClientesPedido } from "../../services/api";
 
 const UF_LIST = [
   "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS",
@@ -133,70 +134,29 @@ function ClienteSection({ onChange }) {
   const [searchError, setSearchError] = useState("");
   const [searched, setSearched] = useState(false);
   const [showSaveButton, setShowSaveButton] = useState(false);
+  const [clientes, setClientes] = useState([]);
 
-  const clientesMock = [
-    {
-      id: 1,
-      nomeFantasia: "Tech Solutions",
-      razaoSocial: "Tech Solutions Ltda",
-      cnpj: "34.028.316/0001-86",
-      cidade: "Sao Paulo",
-      uf: "SP",
-      cep: "01000-000",
-      email: "contato@tech.com",
-      fone: "(11) 99999-9999",
-      endereco: "Rua das Inovacoes, 123",
-      contato: "Maria Silva",
-    },
-    {
-      id: 1,
-      nomeFantasia: "Tech Solutions",
-      razaoSocial: "Tech Solutions Ltda",
-      cnpj: "34.028.316/0001-86",
-      cidade: "Sao Paulo",
-      uf: "SP",
-      cep: "01000-000",
-      email: "contato@tech.com",
-      fone: "(11) 99999-9999",
-      endereco: "Rua das Inovacoes, 123",
-      contato: "Maria Silva",
-    },
-    {
-      id: 1,
-      nomeFantasia: "Tech Solutions",
-      razaoSocial: "Tech Solutions Ltda",
-      cnpj: "34.028.316/0001-86",
-      cidade: "Sao Paulo",
-      uf: "SP",
-      cep: "01000-000",
-      email: "contato@tech.com",
-      fone: "(11) 99999-9999",
-      endereco: "Rua das Inovacoes, 123",
-      contato: "Maria Silva",
-    },
-    {
-      id: 1,
-      nomeFantasia: "Tech Solutions",
-      razaoSocial: "Tech Solutions Ltda",
-      cnpj: "34.028.316/0001-86",
-      cidade: "Sao Paulo",
-      uf: "SP",
-      cep: "01000-000",
-      email: "contato@tech.com",
-      fone: "(11) 99999-9999",
-      endereco: "Rua das Inovacoes, 123",
-      contato: "Maria Silva",
-    },
-  ];
+  useEffect(() => {
+    const carregarClientes = async () => {
+      try {
+        const dados = await fetchClientesPedido();
+        setClientes(dados);
+      } catch (error) {
+        console.error("Erro ao carregar clientes:", error);
+        setClientes([]);
+      }
+    };
+    carregarClientes();
+  }, []);
 
   const newCadastroCnpjDigits = sanitizeCnpj(newCadastroCnpj);
   const newCadastroCnpjCleaned = removeFormatting(newCadastroCnpj);
   const canRegisterNewCliente = (newCadastroCnpjDigits.length === 14 || newCadastroCnpjCleaned.length === 14)
     && isValidCnpj(newCadastroCnpj)
-    && !cnpjExists(newCadastroCnpj, clientesMock);
+    && !cnpjExists(newCadastroCnpj, clientes);
 
   const clientesEncontrados = searched && !searchError
-    ? clientesMock.filter((cliente) => {
+    ? clientes.filter((cliente) => {
         const normalizedSearch = String(search || "").trim().toLowerCase();
         const digits = onlyDigits(String(search || ""));
 
@@ -413,7 +373,7 @@ function ClienteSection({ onChange }) {
                     onChange={(e) => setNewCadastroCnpj(e.target.value)}
                     className="input-cnpj-cadastro"
                   />
-                  {cnpjExists(newCadastroCnpj, clientesMock) && (
+                  {cnpjExists(newCadastroCnpj, clientes) && (
                     <p className="modal-message is-error">Este CNPJ já existe como cliente.</p>
                   )}
                   <button

@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { api } from "../services/api.js";
 import { toast } from "sonner";
 import CatalogPage from "../components/catalog/CatalogPage";
@@ -71,6 +71,19 @@ async function fetchCEP(cepRaw) {
   return { endereco: data.logradouro, cidade: data.localidade, uf: data.uf };
 }
 
+// ─── Mapeia ClienteResponseDTO para formato de linha da tabela ─────────────────
+function mapClienteToRow(cliente) {
+  return {
+    id: String(cliente.idCliente),
+    title: cliente.nomeFantasia,
+    subtitle: cliente.nomeContato,
+    cells: [
+      { value: cliente.email, className: "catalog-link" },
+      { value: String(cliente.comprasRealizadas || 0), className: "catalog-centered" },
+    ],
+  };
+}
+
 // ─── Dados mock da tabela (remover ao integrar GET /cliente) ──────────────────
 const mockRows = [
   {
@@ -116,11 +129,28 @@ export default function ClientePage() {
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [rows, setRows] = useState(mockRows);
+  const [rows, setRows] = useState([]);
+  const [loadingRows, setLoadingRows] = useState(true);
 
   // estados de loading por campo auto
   const [loadingCNPJ, setLoadingCNPJ] = useState(false);
   const [loadingCEP, setLoadingCEP] = useState(false);
+
+  // Carrega clientes da API ao montar o componente
+  useEffect(() => {
+    (async () => {
+      setLoadingRows(true);
+      try {
+        const { data } = await api.get("/cliente");
+        setRows(data.map(mapClienteToRow));
+      } catch (err) {
+        console.error("Erro ao carregar clientes:", err);
+        toast.error("Erro ao carregar clientes.");
+      } finally {
+        setLoadingRows(false);
+      }
+    })();
+  }, []);
 
   // ── Atualiza campo individual ──
   const setField = (name, value) => {
@@ -226,7 +256,7 @@ export default function ClientePage() {
       complemento: form.complemento,
       cidade: form.cidade,
       uf: form.uf,
-      contato: form.contato,
+      nomeContato: form.contato,
       email: form.email,
     };
     console.log("Payload:", payload);
@@ -238,10 +268,9 @@ export default function ClientePage() {
       setForm(emptyForm);
       setErrors({});
 
-      // Recarrega a lista — substituir por fetchClientes() quando o GET existir
-      // const { data } = await api.get("/cliente");
-      // setRows(data.content.map(mapClienteToRow));
-      // ── Submit ── (só o catch muda)
+      // Recarrega a lista de clientes
+      const { data } = await api.get("/cliente");
+      setRows(data.map(mapClienteToRow));
     } catch (err) {
       if (err?.status === 409) {
         toast.error(err.message); 
