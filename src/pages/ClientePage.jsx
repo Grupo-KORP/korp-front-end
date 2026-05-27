@@ -73,56 +73,25 @@ async function fetchCEP(cepRaw) {
 
 // ─── Mapeia ClienteResponseDTO para formato de linha da tabela ─────────────────
 function mapClienteToRow(cliente) {
+  const primeiroContato = cliente.contato?.[0] || { nome: "—", email: "—" };
+
   return {
     id: String(cliente.idCliente),
     title: cliente.nomeFantasia,
-    subtitle: cliente.nomeContato,
+    subtitle: cliente.cnpj,
     cells: [
       { value: cliente.email, className: "catalog-link" },
+      {
+        type: "identity",
+        title: primeiroContato.nome,
+        subtitle: primeiroContato.email,
+      },
       { value: String(cliente.comprasRealizadas || 0), className: "catalog-centered" },
     ],
   };
 }
 
 // ─── Dados mock da tabela (remover ao integrar GET /cliente) ──────────────────
-const mockRows = [
-  {
-    id: "C1",
-    title: "CLIENTE 1",
-    subtitle: "Maria Silva - Microsoft",
-    cells: [
-      { value: "maria.silva@microsoft", className: "catalog-link" },
-      { value: "5", className: "catalog-centered" },
-    ],
-  },
-  {
-    id: "C2",
-    title: "CLIENTE 2",
-    subtitle: "Joao Oliveira - Tech Solutions",
-    cells: [
-      { value: "joao.oliveira@techsolutions", className: "catalog-link" },
-      { value: "2", className: "catalog-centered" },
-    ],
-  },
-  {
-    id: "C3",
-    title: "CLIENTE 3",
-    subtitle: "Ana Costa - Global Corp",
-    cells: [
-      { value: "ana.costa@global.corp", className: "catalog-link" },
-      { value: "4", className: "catalog-centered" },
-    ],
-  },
-  {
-    id: "C4",
-    title: "CLIENTE 4",
-    subtitle: "Rafael Santos - Globan",
-    cells: [
-      { value: "rafa.santos@globan", className: "catalog-link" },
-      { value: "1", className: "catalog-centered" },
-    ],
-  },
-];
 
 // ─── Página ───────────────────────────────────────────────────────────────────
 export default function ClientePage() {
@@ -331,12 +300,12 @@ export default function ClientePage() {
       options: UF_OPTIONS,
     },
     {
-      name: "contato", label: "Contato", placeholder: "Nome do Contato",
-      span: "full", value: form.contato, error: errors.contato,
-    },
-    {
       name: "email", label: "E-mail", placeholder: "contato@empresa.com", type: "email",
       span: "full", value: form.email, error: errors.email,
+    },
+    {
+      name: "contato", label: "Contato", placeholder: "Nome do Contato",
+      span: "full", value: form.contato, error: errors.contato,
     },
   ];
 
@@ -349,6 +318,7 @@ export default function ClientePage() {
       tableColumns={[
         { label: "Identificação dos Cadastros", width: "2fr" },
         { label: "E-mail", width: "1.7fr" },
+        { label: "Contato", width: "2fr" },
         { label: "Compras Realizadas", width: "1.4fr" },
       ]}
       rows={rows}

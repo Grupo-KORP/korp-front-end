@@ -86,11 +86,23 @@ function TablePanel({ title, columns, rows, moreLabel }) {
               </div>
             </div>
 
-            {row.cells.map((cell, index) => (
-              <span className={cell.className || ""} key={`${row.id}-${index}`}>
-                {cell.value}
-              </span>
-            ))}
+            {row.cells.map((cell, index) => {
+              if (cell.type === "identity") {
+                return (
+                  <div className="catalog-identity" key={`${row.id}-${index}`}>
+                    <div>
+                      <strong>{cell.title}</strong>
+                      {cell.subtitle && <small>{cell.subtitle}</small>}
+                    </div>
+                  </div>
+                );
+              }
+              return (
+                <span className={cell.className || ""} key={`${row.id}-${index}`}>
+                  {cell.value}
+                </span>
+              );
+            })}
 
             <div className="catalog-tools">
               <button type="button" aria-label={`Editar ${row.title}`}>
