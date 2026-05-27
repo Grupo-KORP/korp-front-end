@@ -158,7 +158,7 @@ export default function ProdutoPage() {
           <div className="catalog-topbar produto-topbar-with-action">
             <div className="catalog-title-block">
               <p>Produtos Cadastrados</p>
-              <h1>Painel de Catálogo</h1>
+              <h1>Painel de Produtos</h1>
             </div>
 
             <div className="produto-topbar-actions">
