@@ -1,7 +1,10 @@
 import { useState, useCallback, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../services/api.js";
 import { toast } from "sonner";
 import CatalogPage from "../components/catalog/CatalogPage";
+
+const PAGE_SIZE = 8;
 
 // ─── Máscaras ─────────────────────────────────────────────────────────────────
 function maskCNPJ(raw) {
@@ -54,60 +57,89 @@ async function fetchCEP(cepRaw) {
 // ─── Helper: mapeia cliente da API para row da tabela ─────────────────────────
 function mapClienteToRow(c, onEdit, onDelete) {
   return {
-    id:       c.id,
+    id:       c.idCliente,
     badge:    c.nomeFantasia?.slice(0, 2).toUpperCase() ?? "CL",
-    title:    c.razaoSocial,
-    subtitle: `${c.contato} - ${c.nomeFantasia}`,
+    title:    c.nomeFantasia,
+    subtitle: `${c.cnpj} - ${c.razaoSocial}`,
     cells: [
-      { value: c.email,             className: "catalog-link"    },
+      { value: c.email,                  className: "catalog-centered catalog-link" },
       { value: c.comprasRealizadas ?? 0, className: "catalog-centered" },
     ],
     onEdit:   () => onEdit(c),
-    onDelete: () => onDelete(c.id),
+    onDelete: () => onDelete(c.idCliente),
   };
 }
 
 // ─── Página ───────────────────────────────────────────────────────────────────
 export default function ClientePage() {
-  const [form,       setForm]       = useState(emptyForm);
-  const [errors,     setErrors]     = useState({});
-  const [loading,    setLoading]    = useState(false);
-  const [loadingRows,setLoadingRows]= useState(false);
-  const [rows,       setRows]       = useState([]);
-  const [editingId,  setEditingId]  = useState(null);
-  const [search,     setSearch]     = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // ── Lê URL na montagem ──
+  const pageFromUrl   = parseInt(searchParams.get("pagina") || "1", 10);
+  const buscaFromUrl  = searchParams.get("busca") || "";
+
+  const [form,        setForm]        = useState(emptyForm);
+  const [errors,      setErrors]      = useState({});
+  const [loading,     setLoading]     = useState(false);
+  const [loadingRows, setLoadingRows] = useState(false);
+  const [rows,        setRows]        = useState([]);
+  const [totalPages,  setTotalPages]  = useState(1);
+  const [editingId,   setEditingId]   = useState(null);
+  const [search,      setSearch]      = useState(buscaFromUrl);
+  const [currentPage, setCurrentPage] = useState(
+    isNaN(pageFromUrl) || pageFromUrl < 1 ? 1 : pageFromUrl
+  );
 
   const [loadingCNPJ, setLoadingCNPJ] = useState(false);
-  const [loadingCEP, setLoadingCEP] = useState(false);
+  const [loadingCEP,  setLoadingCEP]  = useState(false);
 
-  // Carrega clientes da API ao montar o componente
-  useEffect(() => {
-    (async () => {
-      setLoadingRows(true);
-      try {
-        const { data } = await api.get("/cliente");
-        setRows(data.map(mapClienteToRow));
-      } catch (err) {
-        console.error("Erro ao carregar clientes:", err);
-        toast.error("Erro ao carregar clientes.");
-      } finally {
-        setLoadingRows(false);
-      }
-    })();
-  }, []);
+  // ── Sincroniza URL ──
+  const syncUrl = useCallback((page, busca) => {
+    const params = {};
+    if (page > 1)  params.pagina = String(page);
+    if (busca)     params.busca  = busca;
+    setSearchParams(params, { replace: true });
+  }, [setSearchParams]);
 
-  // ── Fetch lista ──
-  const fetchClientes = useCallback(async (busca = "") => {
+  // ── Fetch lista (paginado + busca) ──
+  const fetchClientes = useCallback(async (page, busca) => {
     setLoadingRows(true);
     try {
-      const { data } = await api.get("/cliente", { params: busca ? { busca } : {} });
-      setRows(data.map((c) => mapClienteToRow(c, handleEdit, handleDelete)));
+      const { data } = await api.get("/cliente/listarFiltro", {
+        params: {
+          page: page - 1,   // Spring 0-based
+          size: PAGE_SIZE,
+          sort: "nomeFantasia",
+          ...(busca ? { busca } : {}),
+        },
+      });
+      // Suporta resposta paginada { content, totalPages } ou array simples
+      if (data.content !== undefined) {
+        setRows(data.content.map((c) => mapClienteToRow(c, handleEdit, handleDelete)));
+        setTotalPages(data.totalPages ?? 1);
+      } else {
+        // fallback: API ainda retorna lista plana
+        setRows(data.map((c) => mapClienteToRow(c, handleEdit, handleDelete)));
+        setTotalPages(1);
+      }
     } catch {
       toast.error("Erro ao carregar clientes.");
     } finally {
       setLoadingRows(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Carrega ao montar e sempre que página/busca mudarem
+  useEffect(() => {
+    fetchClientes(currentPage, search);
+  }, [currentPage, search, fetchClientes]);
+
+  // ── Troca de página ──
+  function handlePageChange(page) {
+    setCurrentPage(page);
+    syncUrl(page, search);
+  }
 
   // ── Mudança de campo ──
   const handleChange = useCallback(async (e) => {
@@ -156,21 +188,22 @@ export default function ClientePage() {
 
   // ── Editar ──
   function handleEdit(c) {
-    setEditingId(c.id);
+    setEditingId(c.idCliente);
+    console.log("Payload para edição:", c);
     setForm({
-      razaoSocial:  c.razaoSocial  ?? "",
-      nomeFantasia: c.nomeFantasia ?? "",
-      cnpj:         maskCNPJ(c.cnpj ?? ""),
-      inscEst:      c.inscricaoEstadual ?? "",
-      fone:         maskPhone(c.telefone ?? ""),
-      cep:          maskCEP(c.cep ?? ""),
-      endereco:     c.endereco     ?? "",
-      numero:       c.numero       ?? "",
-      complemento:  c.complemento  ?? "",
-      cidade:       c.cidade       ?? "",
-      uf:           c.uf           ?? "SP",
-      contato:      c.contato      ?? "",
-      email:        c.email        ?? "",
+      razaoSocial:  c.razaoSocial        ?? "",
+      nomeFantasia: c.nomeFantasia       ?? "",
+      cnpj:         maskCNPJ(c.cnpj      ?? ""),
+      inscEst:      c.inscricaoEstadual  ?? "",
+      fone:         maskPhone(c.contato ?? ""),
+      cep:          maskCEP(c.cep        ?? ""),
+      endereco:     c.logradouro           ?? "",
+      numero:       c.numero             ?? "",
+      complemento:  c.complemento        ?? "",
+      cidade:       c.cidade             ?? "",
+      uf:           c.uf                 ?? "SP",
+      contato:      c.nomeContato        ?? "",
+      email:        c.email              ?? "",
     });
     setErrors({});
   }
@@ -188,7 +221,7 @@ export default function ClientePage() {
     try {
       await api.delete(`/cliente/${id}`);
       toast.success("Cliente removido com sucesso!");
-      await fetchClientes(search);
+      await fetchClientes(currentPage, search);
     } catch (err) {
       if (err?.status === 404) toast.error("Cliente não encontrado.");
       else toast.error("Erro ao remover cliente. Tente novamente.");
@@ -200,14 +233,14 @@ export default function ClientePage() {
   // ── Validação ──
   function validate() {
     const errs = {};
-    if (!form.razaoSocial.trim())                         errs.razaoSocial  = "Razão social obrigatória.";
-    if (!form.nomeFantasia.trim())                        errs.nomeFantasia = "Nome fantasia obrigatório.";
-    if (form.cnpj.replace(/\D/g, "").length < 14)        errs.cnpj         = "CNPJ inválido.";
-    if (!form.fone || form.fone.replace(/\D/g,"").length < 10) errs.fone   = "Telefone inválido.";
-    if (form.cep.replace(/\D/g, "").length < 8)          errs.cep          = "CEP inválido.";
-    if (!form.numero.trim())                              errs.numero       = "Número obrigatório.";
-    if (!form.email || !form.email.includes("@"))         errs.email        = "E-mail inválido.";
-    if (!form.contato.trim())                             errs.contato      = "Contato obrigatório.";
+    if (!form.razaoSocial.trim())                              errs.razaoSocial  = "Razão social obrigatória.";
+    if (!form.nomeFantasia.trim())                             errs.nomeFantasia = "Nome fantasia obrigatório.";
+    if (form.cnpj.replace(/\D/g, "").length < 14)             errs.cnpj         = "CNPJ inválido.";
+    if (!form.fone || form.fone.replace(/\D/g,"").length < 10) errs.fone        = "Telefone inválido.";
+    if (form.cep.replace(/\D/g, "").length < 8)               errs.cep          = "CEP inválido.";
+    if (!form.numero.trim())                                   errs.numero       = "Número obrigatório.";
+    if (!form.email || !form.email.includes("@"))              errs.email        = "E-mail inválido.";
+    if (!form.contato.trim())                                  errs.contato      = "Contato obrigatório.";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -217,19 +250,19 @@ export default function ClientePage() {
     if (!validate()) return;
 
     const payload = {
-      razaoSocial:         form.razaoSocial,
-      nomeFantasia:        form.nomeFantasia,
-      cnpj:                form.cnpj.replace(/\D/g, ""),
-      inscricaoEstadual:   form.inscEst,
-      telefone:            form.fone.replace(/\D/g, ""),
-      cep:                 form.cep.replace(/\D/g, ""),
-      endereco:            form.endereco,
-      numero:              form.numero,
-      complemento:         form.complemento,
-      cidade:              form.cidade,
-      uf:                  form.uf,
-      contato:             form.contato,
-      email:               form.email,
+      razaoSocial:       form.razaoSocial,
+      nomeFantasia:      form.nomeFantasia,
+      cnpj:              form.cnpj.replace(/\D/g, ""),
+      inscricaoEstadual: form.inscEst,
+      telefone:          form.fone.replace(/\D/g, ""),
+      cep:               form.cep.replace(/\D/g, ""),
+      endereco:          form.endereco,
+      numero:            form.numero,
+      complemento:       form.complemento,
+      cidade:            form.cidade,
+      uf:                form.uf,
+      nomeContato:       form.contato,
+      email:             form.email,
     };
 
     setLoading(true);
@@ -244,10 +277,7 @@ export default function ClientePage() {
       }
       setForm(emptyForm);
       setErrors({});
-
-      // Recarrega a lista de clientes
-      const { data } = await api.get("/cliente");
-      setRows(data.map(mapClienteToRow));
+      await fetchClientes(currentPage, search);
     } catch (err) {
       if (err?.status === 409)      toast.error(err.message);
       else if (err?.status === 404) toast.error("Cliente não encontrado.");
@@ -262,24 +292,25 @@ export default function ClientePage() {
   function handleSearchChange(e) {
     const val = e.target.value;
     setSearch(val);
-    fetchClientes(val);
+    setCurrentPage(1);
+    syncUrl(1, val);
   }
 
   // ── Fields ──
   const fields = [
-    { name: "cnpj",        label: "CNPJ",          pair: "start", placeholder: "00.000.000/0000-00", value: form.cnpj,        loading: loadingCNPJ, error: errors.cnpj },
-    { name: "inscEst",     label: "Insc. Est.",     pair: "end",   placeholder: "110.042.490.114",    value: form.inscEst,     loading: loadingCNPJ },
-    { name: "razaoSocial", label: "Razão Social",   placeholder: "Ex: Tech Solutions Ltda",          value: form.razaoSocial, readOnly: true, loading: loadingCNPJ, error: errors.razaoSocial },
-    { name: "nomeFantasia",label: "Nome Fantasia",  placeholder: "Ex: Tech Solutions",               value: form.nomeFantasia,loading: loadingCNPJ, error: errors.nomeFantasia },
-    { name: "fone",        label: "Fone",           pair: "start", placeholder: "(00) 0000-0000",     value: form.fone,        error: errors.fone },
-    { name: "cep",         label: "CEP",            pair: "end",   placeholder: "00000-000",          value: form.cep,         loading: loadingCEP, error: errors.cep },
-    { name: "endereco",    label: "Endereço",       placeholder: "Rua das Inovações",                value: form.endereco,    readOnly: true, loading: loadingCEP },
-    { name: "numero",      label: "Número",         pair: "start", placeholder: "104",                value: form.numero,      error: errors.numero },
-    { name: "complemento", label: "Complemento",    pair: "end",   placeholder: "Sala 104",           value: form.complemento },
-    { name: "cidade",      label: "Cidade",         pair: "start", placeholder: "São Paulo",          value: form.cidade,      readOnly: true, loading: loadingCEP },
-    { name: "uf",          label: "UF",             pair: "end",   type: "select", value: form.uf,    readOnly: true, options: UF_OPTIONS },
-    { name: "contato",     label: "Contato",        placeholder: "Nome do Contato",                  value: form.contato,     error: errors.contato },
-    { name: "email",       label: "E-mail",         type: "email", placeholder: "contato@empresa.com",value: form.email,      error: errors.email },
+    { name: "cnpj",        label: "CNPJ",          pair: "start", placeholder: "00.000.000/0000-00", value: form.cnpj,         loading: loadingCNPJ, error: errors.cnpj },
+    { name: "inscEst",     label: "Insc. Est.",     pair: "end",   placeholder: "110.042.490.114",    value: form.inscEst,      loading: loadingCNPJ },
+    { name: "razaoSocial", label: "Razão Social",   placeholder: "Ex: Tech Solutions Ltda",           value: form.razaoSocial,  readOnly: true, loading: loadingCNPJ, error: errors.razaoSocial },
+    { name: "nomeFantasia",label: "Nome Fantasia",  placeholder: "Ex: Tech Solutions",                value: form.nomeFantasia, loading: loadingCNPJ, error: errors.nomeFantasia },
+    { name: "fone",        label: "Fone",           pair: "start", placeholder: "(00) 0000-0000",      value: form.fone,         error: errors.fone },
+    { name: "cep",         label: "CEP",            pair: "end",   placeholder: "00000-000",           value: form.cep,          loading: loadingCEP, error: errors.cep },
+    { name: "endereco",    label: "Endereço",       placeholder: "Rua das Inovações",                 value: form.endereco,     readOnly: true, loading: loadingCEP },
+    { name: "numero",      label: "Número",         pair: "start", placeholder: "104",                 value: form.numero,       error: errors.numero },
+    { name: "complemento", label: "Complemento",    pair: "end",   placeholder: "Sala 104",            value: form.complemento },
+    { name: "cidade",      label: "Cidade",         pair: "start", placeholder: "São Paulo",           value: form.cidade,       readOnly: true, loading: loadingCEP },
+    { name: "uf",          label: "UF",             pair: "end",   type: "select", value: form.uf,     readOnly: true, options: UF_OPTIONS },
+    { name: "contato",     label: "Contato",        placeholder: "Nome do Contato",                   value: form.contato,      error: errors.contato },
+    { name: "email",       label: "E-mail",         type: "email", placeholder: "contato@empresa.com", value: form.email,       error: errors.email },
   ];
 
   return (
@@ -291,13 +322,16 @@ export default function ClientePage() {
       onSearchChange={handleSearchChange}
       tableTitle="Base de Clientes"
       tableColumns={[
-        { label: "Identificação dos Cadastros", flex: "2" },
+        { label: "Identificação dos Cadastros", flex: "2"   },
         { label: "E-mail",                      flex: "1.7" },
         { label: "Compras Realizadas",          flex: "1.4" },
       ]}
       rows={rows}
       loadingRows={loadingRows}
-      moreLabel="Ver Mais Clientes"
+      pageSize={PAGE_SIZE}
+      currentPage={currentPage}
+      totalPages={totalPages}
+      onPageChange={handlePageChange}
       formTitle="Cadastrar Novo Cliente"
       formTitleEdit="Editar Cliente"
       isEditing={!!editingId}

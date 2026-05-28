@@ -1,7 +1,10 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../services/api.js";
 import { toast } from "sonner";
 import CatalogPage from "../components/catalog/CatalogPage";
+
+const PAGE_SIZE = 8;
 
 // ─── Máscaras ─────────────────────────────────────────────────────────────────
 function maskCNPJ(raw) {
@@ -26,6 +29,7 @@ function maskPhone(raw) {
   return raw;
 }
 
+// ─── Estado inicial ───────────────────────────────────────────────────────────
 const emptyForm = {
   razaoSocial: "", nomeFantasia: "", cnpj: "", inscEst: "",
   fone: "", cep: "", endereco: "", numero: "", complemento: "",
@@ -50,49 +54,96 @@ async function fetchCEP(cepRaw) {
   return { endereco: data.logradouro, cidade: data.localidade, uf: data.uf };
 }
 
+// ─── Helper: mapeia distribuidor da API para row da tabela ────────────────────
 function mapDistribuidorToRow(d, onEdit, onDelete) {
   return {
-    id:       d.id,
+    id:       d.idDistribuidor,
     badge:    d.nomeFantasia?.slice(0, 2).toUpperCase() ?? "DT",
-    title:    d.razaoSocial,
-    subtitle: `${d.contato} - ${d.nomeFantasia}`,
+    title:    d.nomeFantasia,
+    subtitle: `${d.cnpj} - ${d.razaoSocial}`,
     cells: [
-      { value: d.email,        className: "catalog-link"    },
+      { value: d.email,              className: "catalog-centered catalog-link"},
       { value: d.especialidade ?? "-", className: "catalog-centered" },
     ],
     onEdit:   () => onEdit(d),
-    onDelete: () => onDelete(d.id),
+    onDelete: () => onDelete(d.idDistribuidor),
   };
 }
 
+// ─── Página ───────────────────────────────────────────────────────────────────
 export default function DistribuidorPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // ── Lê URL na montagem ──
+  const pageFromUrl  = parseInt(searchParams.get("pagina") || "1", 10);
+  const buscaFromUrl = searchParams.get("busca") || "";
+
   const [form,        setForm]        = useState(emptyForm);
   const [errors,      setErrors]      = useState({});
   const [loading,     setLoading]     = useState(false);
   const [loadingRows, setLoadingRows] = useState(false);
   const [rows,        setRows]        = useState([]);
+  const [totalPages,  setTotalPages]  = useState(1);
   const [editingId,   setEditingId]   = useState(null);
-  const [search,      setSearch]      = useState("");
+  const [search,      setSearch]      = useState(buscaFromUrl);
+  const [currentPage, setCurrentPage] = useState(
+    isNaN(pageFromUrl) || pageFromUrl < 1 ? 1 : pageFromUrl
+  );
 
   const [loadingCNPJ, setLoadingCNPJ] = useState(false);
   const [loadingCEP,  setLoadingCEP]  = useState(false);
 
-  
+  // ── Sincroniza URL ──
+  const syncUrl = useCallback((page, busca) => {
+    const params = {};
+    if (page > 1)  params.pagina = String(page);
+    if (busca)     params.busca  = busca;
+    setSearchParams(params, { replace: true });
+  }, [setSearchParams]);
 
-  const fetchDistribuidores = useCallback(async (busca = "") => {
+  // ── Fetch lista (paginado + busca) ──
+  const fetchDistribuidores = useCallback(async (page, busca) => {
     setLoadingRows(true);
     try {
-      const { data } = await api.get("/distribuidor/listarFiltro", { params: busca ? { busca } : {} });
-      setRows(data.map((d) => mapDistribuidorToRow(d, handleEdit, handleDelete)));
+      const { data } = await api.get("/distribuidor/listarFiltro", {
+        params: {
+          page: page - 1,   // Spring 0-based
+          size: PAGE_SIZE,
+          sort: "nomeFantasia",
+          ...(busca ? { busca } : {}),
+        },
+      });
+      // Suporta resposta paginada { content, totalPages } ou array simples
+      if (data.content !== undefined) {
+        setRows(data.content.map((d) => mapDistribuidorToRow(d, handleEdit, handleDelete)));
+        setTotalPages(data.totalPages ?? 1);
+      } else {
+        setRows(data.map((d) => mapDistribuidorToRow(d, handleEdit, handleDelete)));
+        setTotalPages(1);
+      }
     } catch {
       toast.error("Erro ao carregar distribuidores.");
     } finally {
       setLoadingRows(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Carrega ao montar e sempre que página/busca mudarem
+  useEffect(() => {
+    fetchDistribuidores(currentPage, search);
+  }, [currentPage, search, fetchDistribuidores]);
+
+  // ── Troca de página ──
+  function handlePageChange(page) {
+    setCurrentPage(page);
+    syncUrl(page, search);
+  }
+
+  // ── Mudança de campo ──
   const handleChange = useCallback(async (e) => {
     const { name, value } = e.target;
+
     const updateField = (n, v) => {
       setForm((prev) => ({ ...prev, [n]: v }));
       setErrors((prev) => { const next = { ...prev }; delete next[n]; return next; });
@@ -134,38 +185,42 @@ export default function DistribuidorPage() {
     updateField(name, value);
   }, []);
 
+  // ── Editar ──
   function handleEdit(d) {
-    setEditingId(d.id);
+    setEditingId(d.idDistribuidor);
+    console.log(d.cep);
     setForm({
-      razaoSocial:  d.razaoSocial  ?? "",
-      nomeFantasia: d.nomeFantasia ?? "",
-      cnpj:         maskCNPJ(d.cnpj ?? ""),
+      razaoSocial:  d.razaoSocial       ?? "",
+      nomeFantasia: d.nomeFantasia      ?? "",
+      cnpj:         maskCNPJ(d.cnpj     ?? ""),
       inscEst:      d.inscricaoEstadual ?? "",
-      fone:         maskPhone(d.telefone ?? ""),
-      cep:          maskCEP(d.cep ?? ""),
-      endereco:     d.endereco    ?? "",
-      numero:       d.numero      ?? "",
-      complemento:  d.complemento ?? "",
-      cidade:       d.cidade      ?? "",
-      uf:           d.uf          ?? "SP",
-      contato:      d.contato     ?? "",
-      email:        d.email       ?? "",
+      fone:         maskPhone(d.contato ?? ""),
+      cep:          maskCEP(d.cep       ?? ""),
+      endereco:     d.logradouro      ?? "",
+      numero:       d.numero            ?? "",
+      complemento:  d.complemento       ?? "",
+      cidade:       d.cidade            ?? "",
+      uf:           d.uf                ?? "SP",
+      contato:      d.contato           ?? "",
+      email:        d.email             ?? "",
     });
     setErrors({});
   }
 
+  // ── Cancelar edição ──
   function handleCancel() {
     setEditingId(null);
     setForm(emptyForm);
     setErrors({});
   }
 
+  // ── Deletar ──
   async function handleDelete(id) {
     setLoadingRows(true);
     try {
       await api.delete(`/distribuidor/${id}`);
       toast.success("Distribuidor removido com sucesso!");
-      await fetchDistribuidores(search);
+      await fetchDistribuidores(currentPage, search);
     } catch (err) {
       if (err?.status === 404) toast.error("Distribuidor não encontrado.");
       else toast.error("Erro ao remover distribuidor. Tente novamente.");
@@ -174,6 +229,7 @@ export default function DistribuidorPage() {
     }
   }
 
+  // ── Validação ──
   function validate() {
     const errs = {};
     if (!form.razaoSocial.trim())                              errs.razaoSocial  = "Razão social obrigatória.";
@@ -188,6 +244,7 @@ export default function DistribuidorPage() {
     return Object.keys(errs).length === 0;
   }
 
+  // ── Submit ──
   async function handleSubmit() {
     if (!validate()) return;
 
@@ -219,7 +276,7 @@ export default function DistribuidorPage() {
       }
       setForm(emptyForm);
       setErrors({});
-      await fetchDistribuidores(search);
+      await fetchDistribuidores(currentPage, search);
     } catch (err) {
       if (err?.status === 409)      toast.error(err.message);
       else if (err?.status === 404) toast.error("Distribuidor não encontrado.");
@@ -227,17 +284,18 @@ export default function DistribuidorPage() {
       else toast.error(editingId ? "Erro ao atualizar distribuidor." : "Erro ao cadastrar distribuidor.");
     } finally {
       setLoading(false);
-
-
     }
   }
 
+  // ── Search ──
   function handleSearchChange(e) {
     const val = e.target.value;
     setSearch(val);
-    fetchDistribuidores(val);
+    setCurrentPage(1);
+    syncUrl(1, val);
   }
 
+  // ── Fields ──
   const fields = [
     { name: "cnpj",        label: "CNPJ",         pair: "start", placeholder: "00.000.000/0000-00", value: form.cnpj,         loading: loadingCNPJ, error: errors.cnpj },
     { name: "inscEst",     label: "Insc. Est.",    pair: "end",   placeholder: "isento",             value: form.inscEst,      loading: loadingCNPJ },
@@ -269,7 +327,10 @@ export default function DistribuidorPage() {
       ]}
       rows={rows}
       loadingRows={loadingRows}
-      moreLabel="Ver Mais Fornecedores"
+      pageSize={PAGE_SIZE}
+      currentPage={currentPage}
+      totalPages={totalPages}
+      onPageChange={handlePageChange}
       formTitle="Cadastrar Novo Distribuidor"
       formTitleEdit="Editar Distribuidor"
       isEditing={!!editingId}
