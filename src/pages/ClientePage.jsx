@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { api } from "../services/api.js";
 import { toast } from "sonner";
 import CatalogPage from "../components/catalog/CatalogPage";
@@ -78,7 +78,23 @@ export default function ClientePage() {
   const [search,     setSearch]     = useState("");
 
   const [loadingCNPJ, setLoadingCNPJ] = useState(false);
-  const [loadingCEP,  setLoadingCEP]  = useState(false);
+  const [loadingCEP, setLoadingCEP] = useState(false);
+
+  // Carrega clientes da API ao montar o componente
+  useEffect(() => {
+    (async () => {
+      setLoadingRows(true);
+      try {
+        const { data } = await api.get("/cliente");
+        setRows(data.map(mapClienteToRow));
+      } catch (err) {
+        console.error("Erro ao carregar clientes:", err);
+        toast.error("Erro ao carregar clientes.");
+      } finally {
+        setLoadingRows(false);
+      }
+    })();
+  }, []);
 
   // ── Fetch lista ──
   const fetchClientes = useCallback(async (busca = "") => {
@@ -228,7 +244,10 @@ export default function ClientePage() {
       }
       setForm(emptyForm);
       setErrors({});
-      await fetchClientes(search);
+
+      // Recarrega a lista de clientes
+      const { data } = await api.get("/cliente");
+      setRows(data.map(mapClienteToRow));
     } catch (err) {
       if (err?.status === 409)      toast.error(err.message);
       else if (err?.status === 404) toast.error("Cliente não encontrado.");
