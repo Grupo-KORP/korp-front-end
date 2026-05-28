@@ -1,69 +1,52 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../services/api.js";
 import { toast } from "sonner";
 import CatalogPage from "../components/catalog/CatalogPage";
 
-// ─── Máscaras ────────────────────────────────────────────────────────────────
+const PAGE_SIZE = 8;
+
+// ─── Máscaras ─────────────────────────────────────────────────────────────────
 function maskCNPJ(raw) {
   raw = raw.replace(/\D/g, "").slice(0, 14);
-  if (raw.length > 12) return `${raw.slice(0, 2)}.${raw.slice(2, 5)}.${raw.slice(5, 8)}/${raw.slice(8, 12)}-${raw.slice(12)}`;
-  if (raw.length > 8) return `${raw.slice(0, 2)}.${raw.slice(2, 5)}.${raw.slice(5, 8)}/${raw.slice(8)}`;
-  if (raw.length > 5) return `${raw.slice(0, 2)}.${raw.slice(2, 5)}.${raw.slice(5)}`;
-  if (raw.length > 2) return `${raw.slice(0, 2)}.${raw.slice(2)}`;
+  if (raw.length > 12) return `${raw.slice(0,2)}.${raw.slice(2,5)}.${raw.slice(5,8)}/${raw.slice(8,12)}-${raw.slice(12)}`;
+  if (raw.length > 8)  return `${raw.slice(0,2)}.${raw.slice(2,5)}.${raw.slice(5,8)}/${raw.slice(8)}`;
+  if (raw.length > 5)  return `${raw.slice(0,2)}.${raw.slice(2,5)}.${raw.slice(5)}`;
+  if (raw.length > 2)  return `${raw.slice(0,2)}.${raw.slice(2)}`;
   return raw;
 }
 
 function maskCEP(raw) {
   raw = raw.replace(/\D/g, "").slice(0, 8);
-  if (raw.length > 5) return `${raw.slice(0, 5)}-${raw.slice(5)}`;
+  if (raw.length > 5) return `${raw.slice(0,5)}-${raw.slice(5)}`;
   return raw;
 }
 
 function maskPhone(raw) {
   raw = raw.replace(/\D/g, "").slice(0, 11);
-  if (raw.length > 7) return `(${raw.slice(0, 2)}) ${raw.slice(2, 7)}-${raw.slice(7)}`;
-  if (raw.length > 2) return `(${raw.slice(0, 2)}) ${raw.slice(2)}`;
+  if (raw.length > 7) return `(${raw.slice(0,2)}) ${raw.slice(2,7)}-${raw.slice(7)}`;
+  if (raw.length > 2) return `(${raw.slice(0,2)}) ${raw.slice(2)}`;
   return raw;
 }
 
-// ─── Estado inicial do formulário ─────────────────────────────────────────────
+// ─── Estado inicial ───────────────────────────────────────────────────────────
 const emptyForm = {
-  razaoSocial: "",
-  nomeFantasia: "",
-  cnpj: "",
-  inscEst: "",
-  fone: "",
-  cep: "",
-  endereco: "",
-  numero: "",
-  complemento: "",
-  cidade: "",
-  uf: "SP",
-  contato: "",
-  email: "",
+  razaoSocial: "", nomeFantasia: "", cnpj: "", inscEst: "",
+  fone: "", cep: "", endereco: "", numero: "", complemento: "",
+  cidade: "", uf: "SP", contato: "", email: "",
 };
 
-// Campos que vêm preenchidos por API externa (readOnly)
-const autoFields = new Set(["razaoSocial", "inscEst", "endereco", "cidade", "uf"]);
-
 const UF_OPTIONS = [
-  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS",
-  "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC",
-  "SP", "SE", "TO",
+  "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS",
+  "MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC",
+  "SP","SE","TO",
 ];
 
-// ─── Hook: busca CNPJ ─────────────────────────────────────────────────────────
-// Troque a URL pela API real quando disponível (ex: ReceitaWS, BrasilAPI, etc.)
 async function fetchEmpresa(cnpjRaw) {
-  // const { data } = await axios.get(`https://api-empresa.exemplo.com/cnpj/${cnpjRaw}`);
-  // return { razaoSocial: data.razao_social, inscEst: data.inscricao_estadual };
-
-  // ── MOCK até a API estar disponível ──
   await new Promise((r) => setTimeout(r, 600));
   return { razaoSocial: "EMPRESA MOCKADA LTDA", inscEst: "110.042.490.114", nomeFantasia: "Tech Solutions" };
 }
 
-// ─── Hook: busca CEP via ViaCEP ───────────────────────────────────────────────
 async function fetchCEP(cepRaw) {
   const res = await fetch(`https://viacep.com.br/ws/${cepRaw}/json/`);
   const data = await res.json();
@@ -71,98 +54,112 @@ async function fetchCEP(cepRaw) {
   return { endereco: data.logradouro, cidade: data.localidade, uf: data.uf };
 }
 
-// ─── Dados mock da tabela (remover ao integrar GET /cliente) ──────────────────
-const mockRows = [
-  {
-    id: "C1",
-    title: "CLIENTE 1",
-    subtitle: "Maria Silva - Microsoft",
+// ─── Helper: mapeia cliente da API para row da tabela ─────────────────────────
+function mapClienteToRow(c, onEdit, onDelete) {
+  return {
+    id:       c.idCliente,
+    badge:    c.nomeFantasia?.slice(0, 2).toUpperCase() ?? "CL",
+    title:    c.nomeFantasia,
+    subtitle: `${c.cnpj} - ${c.razaoSocial}`,
     cells: [
-      { value: "maria.silva@microsoft", className: "catalog-link" },
-      { value: "5", className: "catalog-centered" },
+      { value: c.email,                  className: "catalog-centered catalog-link" },
+      { value: c.comprasRealizadas ?? 0, className: "catalog-centered" },
     ],
-  },
-  {
-    id: "C2",
-    title: "CLIENTE 2",
-    subtitle: "Joao Oliveira - Tech Solutions",
-    cells: [
-      { value: "joao.oliveira@techsolutions", className: "catalog-link" },
-      { value: "2", className: "catalog-centered" },
-    ],
-  },
-  {
-    id: "C3",
-    title: "CLIENTE 3",
-    subtitle: "Ana Costa - Global Corp",
-    cells: [
-      { value: "ana.costa@global.corp", className: "catalog-link" },
-      { value: "4", className: "catalog-centered" },
-    ],
-  },
-  {
-    id: "C4",
-    title: "CLIENTE 4",
-    subtitle: "Rafael Santos - Globan",
-    cells: [
-      { value: "rafa.santos@globan", className: "catalog-link" },
-      { value: "1", className: "catalog-centered" },
-    ],
-  },
-];
+    onEdit:   () => onEdit(c),
+    onDelete: () => onDelete(c.idCliente),
+  };
+}
 
 // ─── Página ───────────────────────────────────────────────────────────────────
 export default function ClientePage() {
-  const [form, setForm] = useState(emptyForm);
-  const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [rows, setRows] = useState(mockRows);
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // estados de loading por campo auto
+  // ── Lê URL na montagem ──
+  const pageFromUrl   = parseInt(searchParams.get("pagina") || "1", 10);
+  const buscaFromUrl  = searchParams.get("busca") || "";
+
+  const [form,        setForm]        = useState(emptyForm);
+  const [errors,      setErrors]      = useState({});
+  const [loading,     setLoading]     = useState(false);
+  const [loadingRows, setLoadingRows] = useState(false);
+  const [rows,        setRows]        = useState([]);
+  const [totalPages,  setTotalPages]  = useState(1);
+  const [editingId,   setEditingId]   = useState(null);
+  const [search,      setSearch]      = useState(buscaFromUrl);
+  const [currentPage, setCurrentPage] = useState(
+    isNaN(pageFromUrl) || pageFromUrl < 1 ? 1 : pageFromUrl
+  );
+
   const [loadingCNPJ, setLoadingCNPJ] = useState(false);
-  const [loadingCEP, setLoadingCEP] = useState(false);
+  const [loadingCEP,  setLoadingCEP]  = useState(false);
 
-  // ── Atualiza campo individual ──
-  const setField = (name, value) => {
-    setForm((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: null }));
-  };
+  // ── Sincroniza URL ──
+  const syncUrl = useCallback((page, busca) => {
+    const params = {};
+    if (page > 1)  params.pagina = String(page);
+    if (busca)     params.busca  = busca;
+    setSearchParams(params, { replace: true });
+  }, [setSearchParams]);
 
-  // ── Handler genérico de mudança ──
+  // ── Fetch lista (paginado + busca) ──
+  const fetchClientes = useCallback(async (page, busca) => {
+    setLoadingRows(true);
+    try {
+      const { data } = await api.get("/cliente/listarFiltro", {
+        params: {
+          page: page - 1,   // Spring 0-based
+          size: PAGE_SIZE,
+          sort: "nomeFantasia",
+          ...(busca ? { busca } : {}),
+        },
+      });
+      // Suporta resposta paginada { content, totalPages } ou array simples
+      if (data.content !== undefined) {
+        setRows(data.content.map((c) => mapClienteToRow(c, handleEdit, handleDelete)));
+        setTotalPages(data.totalPages ?? 1);
+      } else {
+        // fallback: API ainda retorna lista plana
+        setRows(data.map((c) => mapClienteToRow(c, handleEdit, handleDelete)));
+        setTotalPages(1);
+      }
+    } catch {
+      toast.error("Erro ao carregar clientes.");
+    } finally {
+      setLoadingRows(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Carrega ao montar e sempre que página/busca mudarem
+  useEffect(() => {
+    fetchClientes(currentPage, search);
+  }, [currentPage, search, fetchClientes]);
+
+  // ── Troca de página ──
+  function handlePageChange(page) {
+    setCurrentPage(page);
+    syncUrl(page, search);
+  }
+
+  // ── Mudança de campo ──
   const handleChange = useCallback(async (e) => {
     const { name, value } = e.target;
 
-    // helper local para não depender de setField externo
     const updateField = (n, v) => {
       setForm((prev) => ({ ...prev, [n]: v }));
-      setErrors((prev) => {
-        if (!prev[n]) return prev;
-        const next = { ...prev };
-        delete next[n];
-        return next;
-      });
+      setErrors((prev) => { const next = { ...prev }; delete next[n]; return next; });
     };
 
     if (name === "cnpj") {
       const masked = maskCNPJ(value);
-      const rawOnly = masked.replace(/\D/g, "");
       updateField("cnpj", masked);
-
-      if (rawOnly.length === 14) {
+      if (masked.replace(/\D/g, "").length === 14) {
         setLoadingCNPJ(true);
         try {
-          const empresa = await fetchEmpresa(rawOnly);
-          setForm((prev) => ({
-            ...prev,
-            razaoSocial: empresa.razaoSocial,
-            inscEst: empresa.inscEst,
-            nomeFantasia: empresa.nomeFantasia || "",
-          }));
-        } catch {
-          toast.error("Não foi possível consultar o CNPJ.");
-        } finally {
-          setLoadingCNPJ(false);
-        }
+          const empresa = await fetchEmpresa(masked.replace(/\D/g, ""));
+          setForm((prev) => ({ ...prev, razaoSocial: empresa.razaoSocial, inscEst: empresa.inscEst, nomeFantasia: empresa.nomeFantasia || "" }));
+        } catch { toast.error("Não foi possível consultar o CNPJ."); }
+        finally { setLoadingCNPJ(false); }
       } else {
         setForm((prev) => ({ ...prev, razaoSocial: "", inscEst: "", nomeFantasia: "" }));
       }
@@ -171,19 +168,14 @@ export default function ClientePage() {
 
     if (name === "cep") {
       const masked = maskCEP(value);
-      const rawOnly = masked.replace(/\D/g, "");
       updateField("cep", masked);
-
-      if (rawOnly.length === 8) {
+      if (masked.replace(/\D/g, "").length === 8) {
         setLoadingCEP(true);
         try {
-          const endereco = await fetchCEP(rawOnly);
-          setForm((prev) => ({ ...prev, ...endereco }));
-        } catch {
-          toast.error("CEP não encontrado.");
-        } finally {
-          setLoadingCEP(false);
-        }
+          const end = await fetchCEP(masked.replace(/\D/g, ""));
+          setForm((prev) => ({ ...prev, ...end }));
+        } catch { toast.error("CEP não encontrado."); }
+        finally { setLoadingCEP(false); }
       } else {
         setForm((prev) => ({ ...prev, endereco: "", cidade: "", uf: "SP" }));
       }
@@ -191,21 +183,64 @@ export default function ClientePage() {
     }
 
     if (name === "fone") { updateField("fone", maskPhone(value)); return; }
-
     updateField(name, value);
-  }, []); // <-- array vazio agora é seguro porque tudo usa a forma funcional dos setters
+  }, []);
+
+  // ── Editar ──
+  function handleEdit(c) {
+    setEditingId(c.idCliente);
+    console.log("Payload para edição:", c);
+    setForm({
+      razaoSocial:  c.razaoSocial        ?? "",
+      nomeFantasia: c.nomeFantasia       ?? "",
+      cnpj:         maskCNPJ(c.cnpj      ?? ""),
+      inscEst:      c.inscricaoEstadual  ?? "",
+      fone:         maskPhone(c.contato ?? ""),
+      cep:          maskCEP(c.cep        ?? ""),
+      endereco:     c.logradouro           ?? "",
+      numero:       c.numero             ?? "",
+      complemento:  c.complemento        ?? "",
+      cidade:       c.cidade             ?? "",
+      uf:           c.uf                 ?? "SP",
+      contato:      c.nomeContato        ?? "",
+      email:        c.email              ?? "",
+    });
+    setErrors({});
+  }
+
+  // ── Cancelar edição ──
+  function handleCancel() {
+    setEditingId(null);
+    setForm(emptyForm);
+    setErrors({});
+  }
+
+  // ── Deletar ──
+  async function handleDelete(id) {
+    setLoadingRows(true);
+    try {
+      await api.delete(`/cliente/${id}`);
+      toast.success("Cliente removido com sucesso!");
+      await fetchClientes(currentPage, search);
+    } catch (err) {
+      if (err?.status === 404) toast.error("Cliente não encontrado.");
+      else toast.error("Erro ao remover cliente. Tente novamente.");
+    } finally {
+      setLoadingRows(false);
+    }
+  }
 
   // ── Validação ──
   function validate() {
     const errs = {};
-    if (!form.razaoSocial.trim()) errs.razaoSocial = "Razão social obrigatória.";
-    if (!form.nomeFantasia.trim()) errs.nomeFantasia = "Nome fantasia obrigatório.";
-    if (form.cnpj.replace(/\D/g, "").length < 14) errs.cnpj = "CNPJ inválido.";
-    if (!form.fone || form.fone.replace(/\D/g, "").length < 10) errs.fone = "Telefone inválido.";
-    if (form.cep.replace(/\D/g, "").length < 8) errs.cep = "CEP inválido.";
-    if (!form.numero.trim()) errs.numero = "Número obrigatório.";
-    if (!form.email || !form.email.includes("@")) errs.email = "E-mail inválido.";
-    if (!form.contato.trim()) errs.contato = "Contato obrigatório.";
+    if (!form.razaoSocial.trim())                              errs.razaoSocial  = "Razão social obrigatória.";
+    if (!form.nomeFantasia.trim())                             errs.nomeFantasia = "Nome fantasia obrigatório.";
+    if (form.cnpj.replace(/\D/g, "").length < 14)             errs.cnpj         = "CNPJ inválido.";
+    if (!form.fone || form.fone.replace(/\D/g,"").length < 10) errs.fone        = "Telefone inválido.";
+    if (form.cep.replace(/\D/g, "").length < 8)               errs.cep          = "CEP inválido.";
+    if (!form.numero.trim())                                   errs.numero       = "Número obrigatório.";
+    if (!form.email || !form.email.includes("@"))              errs.email        = "E-mail inválido.";
+    if (!form.contato.trim())                                  errs.contato      = "Contato obrigatório.";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -215,100 +250,67 @@ export default function ClientePage() {
     if (!validate()) return;
 
     const payload = {
-      razaoSocial: form.razaoSocial,
-      nomeFantasia: form.nomeFantasia,
-      cnpj: form.cnpj.replace(/\D/g, ""),
+      razaoSocial:       form.razaoSocial,
+      nomeFantasia:      form.nomeFantasia,
+      cnpj:              form.cnpj.replace(/\D/g, ""),
       inscricaoEstadual: form.inscEst,
-      telefone: form.fone.replace(/\D/g, ""),
-      cep: form.cep.replace(/\D/g, ""),
-      endereco: form.endereco,
-      numero: form.numero,
-      complemento: form.complemento,
-      cidade: form.cidade,
-      uf: form.uf,
-      contato: form.contato,
-      email: form.email,
+      telefone:          form.fone.replace(/\D/g, ""),
+      cep:               form.cep.replace(/\D/g, ""),
+      endereco:          form.endereco,
+      numero:            form.numero,
+      complemento:       form.complemento,
+      cidade:            form.cidade,
+      uf:                form.uf,
+      nomeContato:       form.contato,
+      email:             form.email,
     };
-    console.log("Payload:", payload);
+
     setLoading(true);
     try {
-      await api.post("/cliente", payload);
-      console.log("Payload enviado:", payload); // Log do payload para debug
-      toast.success("Cliente cadastrado com sucesso!");
+      if (editingId) {
+        await api.put(`/cliente/${editingId}`, payload);
+        toast.success("Cliente atualizado com sucesso!");
+        setEditingId(null);
+      } else {
+        await api.post("/cliente", payload);
+        toast.success("Cliente cadastrado com sucesso!");
+      }
       setForm(emptyForm);
       setErrors({});
-
-      // Recarrega a lista — substituir por fetchClientes() quando o GET existir
-      // const { data } = await api.get("/cliente");
-      // setRows(data.content.map(mapClienteToRow));
-      // ── Submit ── (só o catch muda)
+      await fetchClientes(currentPage, search);
     } catch (err) {
-      if (err?.status === 409) {
-        toast.error(err.message); 
-      } else {
-        toast.error("Erro ao cadastrar cliente. Tente novamente.");
-      }
+      if (err?.status === 409)      toast.error(err.message);
+      else if (err?.status === 404) toast.error("Cliente não encontrado.");
+      else if (err?.status === 400) toast.error(err.message ?? "Dados inválidos.");
+      else toast.error(editingId ? "Erro ao atualizar cliente." : "Erro ao cadastrar cliente.");
     } finally {
       setLoading(false);
     }
   }
 
-  // ── Monta os fields para o CatalogPage ──
-  // Passa metadados extras (readOnly, loading, error) via campo customizado
+  // ── Search ──
+  function handleSearchChange(e) {
+    const val = e.target.value;
+    setSearch(val);
+    setCurrentPage(1);
+    syncUrl(1, val);
+  }
+
+  // ── Fields ──
   const fields = [
-    {
-      name: "cnpj", label: "CNPJ", placeholder: "00.000.000/0000-00",
-      span: "half", value: form.cnpj, loading: loadingCNPJ, error: errors.cnpj,
-    },
-    {
-      name: "inscEst", label: "Insc. Est.", placeholder: "110.042.490.114",
-      span: "half", value: form.inscEst, loading: loadingCNPJ,
-    },
-    {
-      name: "razaoSocial", label: "Razão Social", placeholder: "Ex: Tech Solutions Ltda",
-      span: "full", value: form.razaoSocial, readOnly: true, loading: loadingCNPJ, error: errors.razaoSocial,
-    },
-    {
-      name: "nomeFantasia", label: "Nome Fantasia", placeholder: "Ex: Tech Solutions",
-      span: "full", value: form.nomeFantasia, loading: loadingCNPJ, error: errors.nomeFantasia,
-    },
-    {
-      name: "fone", label: "Fone", placeholder: "(00) 0000-0000",
-      span: "half", value: form.fone, error: errors.fone,
-    },
-    {
-      name: "cep", label: "CEP", placeholder: "00000-000",
-      span: "half", value: form.cep, loading: loadingCEP, error: errors.cep,
-    },
-    {
-      name: "endereco", label: "Endereço", placeholder: "Rua das Inovações",
-      span: "full", value: form.endereco, readOnly: true, loading: loadingCEP,
-    },
-    {
-      name: "numero", label: "Número", placeholder: "104",
-      span: "half", value: form.numero, error: errors.numero,
-    },
-    {
-      name: "complemento", label: "Complemento", placeholder: "Sala 104",
-      span: "half", value: form.complemento,
-    },
-    {
-      name: "cidade", label: "Cidade", placeholder: "São Paulo",
-      span: "half", value: form.cidade, readOnly: true, loading: loadingCEP,
-    },
-    {
-      name: "uf", label: "UF", type: "select",
-      span: "half", value: form.uf, readOnly: true,
-      options: UF_OPTIONS,
-    },
-    {
-      name: "contato", label: "Contato", placeholder: "Nome do Contato",
-      span: "full", value: form.contato, error: errors.contato,
-    },
-    {
-      name: "email", label: "E-mail", placeholder: "contato@empresa.com", type: "email",
-      span: "full", value: form.email, error: errors.email,
-    },
+    { name: "cnpj",        label: "CNPJ",          pair: "start", placeholder: "00.000.000/0000-00", value: form.cnpj,         loading: loadingCNPJ, error: errors.cnpj },
+    { name: "inscEst",     label: "Insc. Est.",     pair: "end",   placeholder: "110.042.490.114",    value: form.inscEst,      loading: loadingCNPJ },
+    { name: "razaoSocial", label: "Razão Social",   placeholder: "Ex: Tech Solutions Ltda",           value: form.razaoSocial,  readOnly: true, loading: loadingCNPJ, error: errors.razaoSocial },
+    { name: "nomeFantasia",label: "Nome Fantasia",  placeholder: "Ex: Tech Solutions",                value: form.nomeFantasia, loading: loadingCNPJ, error: errors.nomeFantasia },
+    { name: "fone",        label: "Fone",           pair: "start", placeholder: "(00) 0000-0000",      value: form.fone,         error: errors.fone },
+    { name: "cep",         label: "CEP",            pair: "end",   placeholder: "00000-000",           value: form.cep,          loading: loadingCEP, error: errors.cep },
+    { name: "endereco",    label: "Endereço",       placeholder: "Rua das Inovações",                 value: form.endereco,     readOnly: true, loading: loadingCEP },
+    { name: "numero",      label: "Número",         pair: "start", placeholder: "104",                 value: form.numero,       error: errors.numero },
+    { name: "complemento", label: "Complemento",    pair: "end",   placeholder: "Sala 104",            value: form.complemento },
+    { name: "cidade",      label: "Cidade",         pair: "start", placeholder: "São Paulo",           value: form.cidade,       readOnly: true, loading: loadingCEP },
+    { name: "uf",          label: "UF",             pair: "end",   type: "select", value: form.uf,     readOnly: true, options: UF_OPTIONS },
+    { name: "contato",     label: "Contato",        placeholder: "Nome do Contato",                   value: form.contato,      error: errors.contato },
+    { name: "email",       label: "E-mail",         type: "email", placeholder: "contato@empresa.com", value: form.email,       error: errors.email },
   ];
 
   return (
@@ -316,19 +318,28 @@ export default function ClientePage() {
       eyebrow="Clientes Cadastrados"
       title="Painel de Leads"
       searchPlaceholder="Pesquisar Clientes"
+      searchValue={search}
+      onSearchChange={handleSearchChange}
       tableTitle="Base de Clientes"
       tableColumns={[
-        { label: "Identificação dos Cadastros", width: "2fr" },
-        { label: "E-mail", width: "1.7fr" },
-        { label: "Compras Realizadas", width: "1.4fr" },
+        { label: "Identificação dos Cadastros", flex: "2"   },
+        { label: "E-mail",                      flex: "1.7" },
+        { label: "Compras Realizadas",          flex: "1.4" },
       ]}
       rows={rows}
-      moreLabel="Ver Mais Clientes"
+      loadingRows={loadingRows}
+      pageSize={PAGE_SIZE}
+      currentPage={currentPage}
+      totalPages={totalPages}
+      onPageChange={handlePageChange}
       formTitle="Cadastrar Novo Cliente"
+      formTitleEdit="Editar Cliente"
+      isEditing={!!editingId}
       fields={fields}
       onFieldChange={handleChange}
       onSubmit={handleSubmit}
-      submitLabel={loading ? "Aguarde..." : "Cadastrar"}
+      onCancel={handleCancel}
+      submitLabel={loading ? "Aguarde..." : editingId ? "Salvar" : "Cadastrar"}
       submitDisabled={loading}
     />
   );

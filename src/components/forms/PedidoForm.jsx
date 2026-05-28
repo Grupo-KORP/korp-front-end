@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./PedidoForm.css";
 import distribuidorIcon from "../../assets/distribuidor.png";
 import perfilCliente from "../../assets/perfil_cliente.png";
 import carrinho from "../../assets/produto_carrinho.png";
+import { fetchClientesPedido } from "../../services/api";
 
 const UF_LIST = [
   "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS",
@@ -18,18 +19,11 @@ const sanitizeCnpj = (value) => onlyDigits(String(value || ""));
 const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
 
 const getEntityContacts = (entity) => {
-  if (Array.isArray(entity?.contatos) && entity.contatos.length > 0) {
-    return entity.contatos;
-  }
+  const contactsList = entity?.contatos;
 
-  if (entity?.contato || entity?.email) {
-    return [{
-      id: `${entity.id || entity.cnpj || "contato"}-principal`,
-      nome: entity.contato || "Contato principal",
-      email: entity.email || "",
-    }];
+  if (contactsList && contactsList.length > 0) {
+    return contactsList;
   }
-
   return [];
 };
 
@@ -165,82 +159,26 @@ function ClienteSection({ onChange }) {
   const [contactSearch, setContactSearch] = useState("");
   const [newContact, setNewContact] = useState({ nome: "", email: "" });
 
-  const clientesMock = [
-    {
-      id: 1,
-      nomeFantasia: "Tech Solutions",
-      razaoSocial: "Tech Solutions Ltda",
-      cnpj: "34.028.316/0001-86",
-      cidade: "Sao Paulo",
-      uf: "SP",
-      cep: "01000-000",
-      email: "contato@tech.com",
-      fone: "(11) 99999-9999",
-      endereco: "Rua das Inovacoes, 123",
-      contato: "Maria Silva",
-      contatos: [
-        { id: 1, nome: "Maria Silva", email: "contato@tech.com" },
-        { id: 2, nome: "Carlos Almeida", email: "compras@tech.com" },
-      ],
-    },
-    {
-      id: 1,
-      nomeFantasia: "Tech Solutions",
-      razaoSocial: "Tech Solutions Ltda",
-      cnpj: "34.028.316/0001-86",
-      cidade: "Sao Paulo",
-      uf: "SP",
-      cep: "01000-000",
-      email: "contato@tech.com",
-      fone: "(11) 99999-9999",
-      endereco: "Rua das Inovacoes, 123",
-      contato: "Maria Silva",
-      contatos: [
-        { id: 1, nome: "Maria Silva", email: "contato@tech.com" },
-        { id: 2, nome: "Carlos Almeida", email: "compras@tech.com" },
-      ],
-    },
-    {
-      id: 1,
-      nomeFantasia: "Tech Solutions",
-      razaoSocial: "Tech Solutions Ltda",
-      cnpj: "34.028.316/0001-86",
-      cidade: "Sao Paulo",
-      uf: "SP",
-      cep: "01000-000",
-      email: "contato@tech.com",
-      fone: "(11) 99999-9999",
-      endereco: "Rua das Inovacoes, 123",
-      contato: "Maria Silva",
-      contatos: [
-        { id: 1, nome: "Maria Silva", email: "contato@tech.com" },
-        { id: 2, nome: "Carlos Almeida", email: "compras@tech.com" },
-      ],
-    },
-    {
-      id: 1,
-      nomeFantasia: "Tech Solutions",
-      razaoSocial: "Tech Solutions Ltda",
-      cnpj: "34.028.316/0001-86",
-      cidade: "Sao Paulo",
-      uf: "SP",
-      cep: "01000-000",
-      email: "contato@tech.com",
-      fone: "(11) 99999-9999",
-      endereco: "Rua das Inovacoes, 123",
-      contato: "Maria Silva",
-      contatos: [
-        { id: 1, nome: "Maria Silva", email: "contato@tech.com" },
-        { id: 2, nome: "Carlos Almeida", email: "compras@tech.com" },
-      ],
-    },
-  ];
+  const [clientes, setClientes] = useState([]);
+
+  useEffect(() => {
+    const carregarClientes = async () => {
+      try {
+        const dados = await fetchClientesPedido();
+        setClientes(dados);
+      } catch (error) {
+        console.error("Erro ao carregar clientes:", error);
+        setClientes([]);
+      }
+    };
+    carregarClientes();
+  }, []);
 
   const newCadastroCnpjDigits = sanitizeCnpj(newCadastroCnpj);
   const newCadastroCnpjCleaned = removeFormatting(newCadastroCnpj);
   const canRegisterNewCliente = (newCadastroCnpjDigits.length === 14 || newCadastroCnpjCleaned.length === 14)
     && isValidCnpj(newCadastroCnpj)
-    && !cnpjExists(newCadastroCnpj, clientesMock);
+    && !cnpjExists(newCadastroCnpj, clientes);
   const canSaveClienteCadastro = Boolean(data.nomeFantasia.trim())
     && Boolean(data.contato.trim())
     && isValidEmail(data.email);
@@ -256,7 +194,7 @@ function ClienteSection({ onChange }) {
   const canRegisterClienteContact = Boolean(newContact.nome.trim()) && isValidEmail(newContact.email);
 
   const clientesEncontrados = searched && !searchError
-    ? clientesMock.filter((cliente) => {
+    ? clientes.filter((cliente) => {
         const normalizedSearch = String(search || "").trim().toLowerCase();
         const digits = onlyDigits(String(search || ""));
 
@@ -548,7 +486,7 @@ function ClienteSection({ onChange }) {
                     onChange={(e) => setNewCadastroCnpj(e.target.value)}
                     className="input-cnpj-cadastro"
                   />
-                  {cnpjExists(newCadastroCnpj, clientesMock) && (
+                  {cnpjExists(newCadastroCnpj, clientes) && (
                     <p className="modal-message is-error">Este CNPJ já existe como cliente.</p>
                   )}
                   <button
@@ -587,7 +525,7 @@ function ClienteSection({ onChange }) {
                 <div className="lista-clientes">
                   {filteredClienteContacts.map((contact) => (
                     <button
-                      key={contact.id || `${contact.nome}-${contact.email}`}
+                      key={contact.idContato || `${contact.nome}-${contact.email}`}
                       type="button"
                       className="cliente-item"
                       onClick={() => selectClienteContact(contact)}
