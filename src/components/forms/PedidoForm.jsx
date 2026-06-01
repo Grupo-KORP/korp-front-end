@@ -6,17 +6,46 @@ import carrinho from "../../assets/produto_carrinho.png";
 import { fetchClientesPedido } from "../../services/api";
 
 const UF_LIST = [
-  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS",
-  "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO",
+  "AC",
+  "AL",
+  "AP",
+  "AM",
+  "BA",
+  "CE",
+  "DF",
+  "ES",
+  "GO",
+  "MA",
+  "MT",
+  "MS",
+  "MG",
+  "PA",
+  "PB",
+  "PR",
+  "PE",
+  "PI",
+  "RJ",
+  "RN",
+  "RS",
+  "RO",
+  "RR",
+  "SC",
+  "SP",
+  "SE",
+  "TO",
 ];
 
 const onlyDigits = (value) => value.replace(/\D/g, "");
 
-const removeFormatting = (value) => String(value || "").replace(/[.\-\/]/g, "").toUpperCase();
+const removeFormatting = (value) =>
+  String(value || "")
+    .replace(/[.\-\/]/g, "")
+    .toUpperCase();
 
 const sanitizeCnpj = (value) => onlyDigits(String(value || ""));
 
-const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
+const isValidEmail = (value) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
 
 const getEntityContacts = (entity) => {
   const contactsList = entity?.contatos;
@@ -30,11 +59,14 @@ const getEntityContacts = (entity) => {
 const cnpjExists = (value, list) => {
   const digits = sanitizeCnpj(value);
   const cleanedValue = removeFormatting(value);
-  return (digits.length === 14 || cleanedValue.length === 14) && list.some((item) => {
-    const itemDigits = onlyDigits(item.cnpj);
-    const itemCleaned = removeFormatting(item.cnpj);
-    return itemDigits === digits || itemCleaned === cleanedValue;
-  });
+  return (
+    (digits.length === 14 || cleanedValue.length === 14) &&
+    list.some((item) => {
+      const itemDigits = onlyDigits(item.cnpj);
+      const itemCleaned = removeFormatting(item.cnpj);
+      return itemDigits === digits || itemCleaned === cleanedValue;
+    })
+  );
 };
 
 const formatCnpj = (value) => {
@@ -60,12 +92,16 @@ const isValidCnpj = (value) => {
       }
 
       const calculateDigit = (base) => {
-        const weights = base.length === 12
-          ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
-          : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+        const weights =
+          base.length === 12
+            ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+            : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
         const sum = base
           .split("")
-          .reduce((total, digit, index) => total + Number(digit) * weights[index], 0);
+          .reduce(
+            (total, digit, index) => total + Number(digit) * weights[index],
+            0,
+          );
         const remainder = sum % 11;
         return remainder < 2 ? "0" : String(11 - remainder);
       };
@@ -87,12 +123,16 @@ const isValidCnpj = (value) => {
   }
 
   const calculateDigit = (base) => {
-    const weights = base.length === 12
-      ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
-      : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    const weights =
+      base.length === 12
+        ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+        : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
     const sum = base
       .split("")
-      .reduce((total, digit, index) => total + Number(digit) * weights[index], 0);
+      .reduce(
+        (total, digit, index) => total + Number(digit) * weights[index],
+        0,
+      );
     const remainder = sum % 11;
     return remainder < 2 ? "0" : String(11 - remainder);
   };
@@ -121,9 +161,18 @@ function AddIcon() {
 
 function ChevronIcon({ open }) {
   return (
-    <svg className={`w-3 h-3 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-      fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+    <svg
+      className={`w-3 h-3 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M19 9l-7 7-7-7"
+      />
     </svg>
   );
 }
@@ -146,8 +195,17 @@ function ClienteSection({ onChange }) {
   const [open, setOpen] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [data, setData] = useState({
-    nomeFantasia: "", razaoSocial: "", cnpj: "", inscricaoEstadual: "", fone: "", cep: "",
-    endereco: "", cidade: "", uf: "", contato: "", email: "",
+    nomeFantasia: "",
+    razaoSocial: "",
+    cnpj: "",
+    inscricaoEstadual: "",
+    fone: "",
+    cep: "",
+    endereco: "",
+    cidade: "",
+    uf: "",
+    contato: "",
+    email: "",
   });
   const [search, setSearch] = useState("");
   const [newCadastroCnpj, setNewCadastroCnpj] = useState("");
@@ -176,39 +234,62 @@ function ClienteSection({ onChange }) {
 
   const newCadastroCnpjDigits = sanitizeCnpj(newCadastroCnpj);
   const newCadastroCnpjCleaned = removeFormatting(newCadastroCnpj);
-  const canRegisterNewCliente = (newCadastroCnpjDigits.length === 14 || newCadastroCnpjCleaned.length === 14)
-    && isValidCnpj(newCadastroCnpj)
-    && !cnpjExists(newCadastroCnpj, clientes);
-  const canSaveClienteCadastro = Boolean(data.nomeFantasia.trim())
-    && Boolean(data.contato.trim())
-    && isValidEmail(data.email);
+  const canRegisterNewCliente =
+    (newCadastroCnpjDigits.length === 14 ||
+      newCadastroCnpjCleaned.length === 14) &&
+    isValidCnpj(newCadastroCnpj) &&
+    !cnpjExists(newCadastroCnpj, clientes);
+  const canSaveClienteCadastro =
+    Boolean(data.nomeFantasia.trim()) &&
+    Boolean(data.contato.trim()) &&
+    isValidEmail(data.email);
   const clienteContacts = getEntityContacts(selectedCliente);
   const filteredClienteContacts = clienteContacts.filter((contact) => {
     const normalizedSearch = contactSearch.trim().toLowerCase();
     if (!normalizedSearch) return true;
 
-    return String(contact.nome || "").toLowerCase().includes(normalizedSearch)
-      || String(contact.email || "").toLowerCase().includes(normalizedSearch);
+    return (
+      String(contact.nome || "")
+        .toLowerCase()
+        .includes(normalizedSearch) ||
+      String(contact.email || "")
+        .toLowerCase()
+        .includes(normalizedSearch)
+    );
   });
-  const showClienteContactEmpty = selectedCliente && contactSearch.trim() && filteredClienteContacts.length === 0;
-  const canRegisterClienteContact = Boolean(newContact.nome.trim()) && isValidEmail(newContact.email);
+  const showClienteContactEmpty =
+    selectedCliente &&
+    contactSearch.trim() &&
+    filteredClienteContacts.length === 0;
+  const canRegisterClienteContact =
+    Boolean(newContact.nome.trim()) && isValidEmail(newContact.email);
 
-  const clientesEncontrados = searched && !searchError
-    ? clientes.filter((cliente) => {
-        const normalizedSearch = String(search || "").trim().toLowerCase();
-        const digits = onlyDigits(String(search || ""));
+  const clientesEncontrados =
+    searched && !searchError
+      ? clientes.filter((cliente) => {
+          const normalizedSearch = String(search || "")
+            .trim()
+            .toLowerCase();
+          const digits = onlyDigits(String(search || ""));
 
-        if (digits.length === 14 && isValidCnpj(search)) {
-          return onlyDigits(String(cliente.cnpj || "")) === digits;
-        }
+          if (digits.length === 14 && isValidCnpj(search)) {
+            return onlyDigits(String(cliente.cnpj || "")) === digits;
+          }
 
-        return String(cliente.nomeFantasia || "").toLowerCase().includes(normalizedSearch)
-          || String(cliente.razaoSocial || "").toLowerCase().includes(normalizedSearch);
-      })
-    : [];
+          return (
+            String(cliente.nomeFantasia || "")
+              .toLowerCase()
+              .includes(normalizedSearch) ||
+            String(cliente.razaoSocial || "")
+              .toLowerCase()
+              .includes(normalizedSearch)
+          );
+        })
+      : [];
 
   const handle = (e) => {
-    const value = e.target.name === "cnpj" ? formatCnpj(e.target.value) : e.target.value;
+    const value =
+      e.target.name === "cnpj" ? formatCnpj(e.target.value) : e.target.value;
     const updated = { ...data, [e.target.name]: value };
     setData(updated);
     onChange?.(updated);
@@ -241,7 +322,9 @@ function ClienteSection({ onChange }) {
     }
 
     if (!search.trim()) {
-      setSearchError("Informe um nome fantasia ou CNPJ para pesquisar clientes.");
+      setSearchError(
+        "Informe um nome fantasia ou CNPJ para pesquisar clientes.",
+      );
       setSearched(false);
       return;
     }
@@ -257,9 +340,10 @@ function ClienteSection({ onChange }) {
   };
 
   const startNewCliente = () => {
-    const chosenCnpj = newCadastroCnpj && isValidCnpj(newCadastroCnpj)
-      ? sanitizeCnpj(newCadastroCnpj)
-      : sanitizeCnpj(search);
+    const chosenCnpj =
+      newCadastroCnpj && isValidCnpj(newCadastroCnpj)
+        ? sanitizeCnpj(newCadastroCnpj)
+        : sanitizeCnpj(search);
 
     const updated = { ...data, cnpj: formatCnpj(chosenCnpj) };
     setData(updated);
@@ -310,7 +394,9 @@ function ClienteSection({ onChange }) {
     <div className="form-section">
       <div className="section-header" onClick={() => setOpen(!open)}>
         <div className="section-title">
-          <span className="section-icon"><img src={perfilCliente} alt="Perfil do Cliente" /></span>
+          <span className="section-icon">
+            <img src={perfilCliente} alt="Perfil do Cliente" />
+          </span>
           Dados do Cliente
         </div>
         <div className="section-header-right">
@@ -322,7 +408,9 @@ function ClienteSection({ onChange }) {
           >
             Adicionar cliente
           </CnpjSearchButton>
-          <span className="chevron"><ChevronIcon open={open} /></span>
+          <span className="chevron">
+            <ChevronIcon open={open} />
+          </span>
         </div>
       </div>
 
@@ -331,47 +419,102 @@ function ClienteSection({ onChange }) {
           <div className="form-row">
             <div className="form-group grow-1">
               <label>NOME FANTASIA</label>
-              <input name="nomeFantasia" value={data.nomeFantasia} onChange={handle} placeholder="Ex: Tech Solutions" />
+              <input
+                name="nomeFantasia"
+                value={data.nomeFantasia}
+                onChange={handle}
+                placeholder="Ex: Tech Solutions"
+              />
             </div>
             <div className="form-group grow-1">
               <label>RAZAO SOCIAL</label>
-              <input name="razaoSocial" value={data.razaoSocial} onChange={handle} placeholder="Ex: Tech Solutions Ltda" {...readonlyInputProps} />
+              <input
+                name="razaoSocial"
+                value={data.razaoSocial}
+                onChange={handle}
+                placeholder="Ex: Tech Solutions Ltda"
+                {...readonlyInputProps}
+              />
             </div>
           </div>
 
           <div className="form-row">
             <div className="form-group w-160">
               <label>INSC. EST.</label>
-              <input name="inscricaoEstadual" value={data.inscricaoEstadual} onChange={handle} placeholder="Isento" {...readonlyInputProps} />
+              <input
+                name="inscricaoEstadual"
+                value={data.inscricaoEstadual}
+                onChange={handle}
+                placeholder="Isento"
+                {...readonlyInputProps}
+              />
             </div>
             <div className="form-group w-120">
               <label>FONE</label>
-              <input name="fone" value={data.fone} onChange={handle} placeholder="(00) 0000-0000" {...readonlyInputProps} />
+              <input
+                name="fone"
+                value={data.fone}
+                onChange={handle}
+                placeholder="(00) 0000-0000"
+                {...readonlyInputProps}
+              />
             </div>
             <div className="form-group w-140">
               <label>CEP</label>
-              <input name="cep" value={data.cep} onChange={handle} placeholder="00000-000" {...readonlyInputProps} />
+              <input
+                name="cep"
+                value={data.cep}
+                onChange={handle}
+                placeholder="00000-000"
+                {...readonlyInputProps}
+              />
             </div>
             <div className="form-group w-180">
               <label>CNPJ</label>
-              <input name="cnpj" value={data.cnpj} onChange={handle} placeholder="00.000.000/0000-00" {...readonlyInputProps} />
+              <input
+                name="cnpj"
+                value={data.cnpj}
+                onChange={handle}
+                placeholder="00.000.000/0000-00"
+                {...readonlyInputProps}
+              />
             </div>
           </div>
 
           <div className="form-row">
             <div className="form-group grow-2">
               <label>ENDERECO</label>
-              <input name="endereco" value={data.endereco} onChange={handle} placeholder="Rua das Inovacoes, 123" {...readonlyInputProps} />
+              <input
+                name="endereco"
+                value={data.endereco}
+                onChange={handle}
+                placeholder="Rua das Inovacoes, 123"
+                {...readonlyInputProps}
+              />
             </div>
             <div className="form-group grow-1">
               <label>CIDADE</label>
-              <input name="cidade" value={data.cidade} onChange={handle} placeholder="Centro" {...readonlyInputProps} />
+              <input
+                name="cidade"
+                value={data.cidade}
+                onChange={handle}
+                placeholder="Centro"
+                {...readonlyInputProps}
+              />
             </div>
             <div className="form-group w-70">
               <label>UF</label>
-              <select name="uf" value={data.uf} onChange={handle} disabled className="readonly">
+              <select
+                name="uf"
+                value={data.uf}
+                onChange={handle}
+                disabled
+                className="readonly"
+              >
                 <option value="">--</option>
-                {UF_LIST.map((s) => <option key={s}>{s}</option>)}
+                {UF_LIST.map((s) => (
+                  <option key={s}>{s}</option>
+                ))}
               </select>
             </div>
           </div>
@@ -404,7 +547,8 @@ function ClienteSection({ onChange }) {
             <div className="cadastro-actions">
               {!canSaveClienteCadastro && (
                 <p className="cadastro-required-message">
-                  Preencha nome fantasia, contato e e-mail valido para salvar o cadastro.
+                  Preencha nome fantasia, contato e e-mail valido para salvar o
+                  cadastro.
                 </p>
               )}
               <button
@@ -422,12 +566,21 @@ function ClienteSection({ onChange }) {
 
       {showModal && (
         <div className="modal-overlay">
-          <div className="modal" role="dialog" aria-modal="true" aria-labelledby="cliente-modal-title">
+          <div
+            className="modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cliente-modal-title"
+          >
             <div
               className={`modal-steps ${modalStep === 2 ? "is-complete" : ""}`}
               aria-label={`Etapa ${modalStep} de 2`}
             >
-              <button type="button" className={`modal-step ${modalStep === 1 ? "active" : ""}`} onClick={() => setModalStep(1)}>
+              <button
+                type="button"
+                className={`modal-step ${modalStep === 1 ? "active" : ""}`}
+                onClick={() => setModalStep(1)}
+              >
                 {modalStep}/2
               </button>
               <button
@@ -441,72 +594,93 @@ function ClienteSection({ onChange }) {
             </div>
             {modalStep === 1 ? (
               <>
-            <h3 id="cliente-modal-title">Buscar Cliente</h3>
-            <p className="modal-hint">A pesquisa pode ser feita por Nome Fantasia ou CNPJ.</p>
+                <h3 id="cliente-modal-title">Buscar Cliente</h3>
+                <p className="modal-hint">
+                  A pesquisa pode ser feita por Nome Fantasia ou CNPJ.
+                </p>
 
-            <div className="modal-search-row">
-              <input
-                type="text"
-                placeholder="Nome fantasia ou CNPJ"
-                value={search}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className="input-busca"
-              />
-              <button type="button" className="btn-modal-search" onClick={handleSearch}>
-                <SearchIcon />
-              </button>
-            </div>
+                <div className="modal-search-row">
+                  <input
+                    type="text"
+                    placeholder="Nome fantasia ou CNPJ"
+                    value={search}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    className="input-busca"
+                  />
+                  <button
+                    type="button"
+                    className="btn-modal-search"
+                    onClick={handleSearch}
+                  >
+                    <SearchIcon />
+                  </button>
+                </div>
 
-            {searchError && <p className="modal-message is-error">{searchError}</p>}
+                {searchError && (
+                  <p className="modal-message is-error">{searchError}</p>
+                )}
 
-            <div className="lista-clientes">
+                <div className="lista-clientes">
                   {clientesEncontrados.map((cliente, index) => (
                     <button
                       key={`${cliente.id}-${cliente.cnpj}-${index}`}
-                  type="button"
-                  className="cliente-item"
-                  onClick={() => selectClienteForContact(cliente)}
-                >
-                  <strong>{cliente.nomeFantasia || cliente.razaoSocial}</strong>
-                  {cliente.razaoSocial && cliente.nomeFantasia !== cliente.razaoSocial && (
-                    <small>{cliente.razaoSocial}</small>
-                  )}
-                  <span>{cliente.cnpj}</span>
-                </button>
-              ))}
+                      type="button"
+                      className="cliente-item"
+                      onClick={() => selectClienteForContact(cliente)}
+                    >
+                      <strong>
+                        {cliente.nomeFantasia || cliente.razaoSocial}
+                      </strong>
+                      {cliente.razaoSocial &&
+                        cliente.nomeFantasia !== cliente.razaoSocial && (
+                          <small>{cliente.razaoSocial}</small>
+                        )}
+                      <span>{cliente.cnpj}</span>
+                    </button>
+                  ))}
 
-              {searched && !searchError && clientesEncontrados.length === 0 && (
-                <div className="modal-empty">
-                  <p>Cliente não encontrado.</p>
-                  <p>Para cadastrar um novo cliente, digite o CNPJ do cliente que deseja cadastrar.</p>
-                  <input
-                    type="text"
-                    placeholder="Digite o CNPJ para cadastro"
-                    value={newCadastroCnpj}
-                    onChange={(e) => setNewCadastroCnpj(e.target.value)}
-                    className="input-cnpj-cadastro"
-                  />
-                  {cnpjExists(newCadastroCnpj, clientes) && (
-                    <p className="modal-message is-error">Este CNPJ já existe como cliente.</p>
-                  )}
-                  <button
-                    type="button"
-                    className="btn-cadastrar-novo"
-                    onClick={startNewCliente}
-                    disabled={!canRegisterNewCliente}
-                  >
-                    Cadastrar novo cliente
-                  </button>
+                  {searched &&
+                    !searchError &&
+                    clientesEncontrados.length === 0 && (
+                      <div className="modal-empty">
+                        <p>Cliente não encontrado.</p>
+                        <p>
+                          Para cadastrar um novo cliente, digite o CNPJ do
+                          cliente que deseja cadastrar.
+                        </p>
+                        <input
+                          type="text"
+                          placeholder="Digite o CNPJ para cadastro"
+                          value={newCadastroCnpj}
+                          onChange={(e) => setNewCadastroCnpj(e.target.value)}
+                          className="input-cnpj-cadastro"
+                        />
+                        {cnpjExists(newCadastroCnpj, clientes) && (
+                          <p className="modal-message is-error">
+                            Este CNPJ já existe como cliente.
+                          </p>
+                        )}
+                        <button
+                          type="button"
+                          className="btn-cadastrar-novo"
+                          onClick={startNewCliente}
+                          disabled={!canRegisterNewCliente}
+                        >
+                          Cadastrar novo cliente
+                        </button>
+                      </div>
+                    )}
                 </div>
-              )}
-            </div>
-
               </>
             ) : (
               <>
                 <h3 id="cliente-modal-title">Selecionar Contato</h3>
                 <p className="modal-hint">
-                  Cliente selecionado: <strong>{selectedCliente?.nomeFantasia || selectedCliente?.razaoSocial}</strong>
+                  Cliente selecionado:{" "}
+                  <strong>
+                    {selectedCliente?.nomeFantasia ||
+                      selectedCliente?.razaoSocial}
+                  </strong>
                 </p>
 
                 <div className="modal-search-row single">
@@ -525,7 +699,9 @@ function ClienteSection({ onChange }) {
                 <div className="lista-clientes">
                   {filteredClienteContacts.map((contact) => (
                     <button
-                      key={contact.idContato || `${contact.nome}-${contact.email}`}
+                      key={
+                        contact.idContato || `${contact.nome}-${contact.email}`
+                      }
                       type="button"
                       className="cliente-item"
                       onClick={() => selectClienteContact(contact)}
@@ -543,14 +719,24 @@ function ClienteSection({ onChange }) {
                         type="text"
                         placeholder="Nome"
                         value={newContact.nome}
-                        onChange={(e) => setNewContact((prev) => ({ ...prev, nome: e.target.value }))}
+                        onChange={(e) =>
+                          setNewContact((prev) => ({
+                            ...prev,
+                            nome: e.target.value,
+                          }))
+                        }
                         className="input-cnpj-cadastro"
                       />
                       <input
                         type="email"
                         placeholder="E-mail"
                         value={newContact.email}
-                        onChange={(e) => setNewContact((prev) => ({ ...prev, email: e.target.value }))}
+                        onChange={(e) =>
+                          setNewContact((prev) => ({
+                            ...prev,
+                            email: e.target.value,
+                          }))
+                        }
                         className="input-cnpj-cadastro"
                       />
                       <button
@@ -565,13 +751,23 @@ function ClienteSection({ onChange }) {
                   )}
                 </div>
 
-                <button type="button" className="btn-modal-back" onClick={() => setModalStep(1)}>
+                <button
+                  type="button"
+                  className="btn-modal-back"
+                  onClick={() => setModalStep(1)}
+                >
                   Voltar para Cliente
                 </button>
               </>
             )}
 
-            <button type="button" className="btn-modal-close" onClick={closeModal}>Fechar</button>
+            <button
+              type="button"
+              className="btn-modal-close"
+              onClick={closeModal}
+            >
+              Fechar
+            </button>
           </div>
         </div>
       )}
@@ -582,8 +778,17 @@ function ClienteSection({ onChange }) {
 function DistribuidorSection({ onChange }) {
   const [open, setOpen] = useState(true);
   const [data, setData] = useState({
-    nomeFantasia: "", razaoSocial: "", cnpj: "", inscEst: "", fone: "", cep: "",
-    endereco: "", cidade: "", uf: "", contato: "", email: "",
+    nomeFantasia: "",
+    razaoSocial: "",
+    cnpj: "",
+    inscEst: "",
+    fone: "",
+    cep: "",
+    endereco: "",
+    cidade: "",
+    uf: "",
+    contato: "",
+    email: "",
   });
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState("");
@@ -617,39 +822,64 @@ function DistribuidorSection({ onChange }) {
 
   const newCadastroCnpjDigits = sanitizeCnpj(newCadastroCnpj);
   const newCadastroCnpjCleaned = removeFormatting(newCadastroCnpj);
-  const canRegisterNewDistribuidor = (newCadastroCnpjDigits.length === 14 || newCadastroCnpjCleaned.length === 14)
-    && isValidCnpj(newCadastroCnpj)
-    && !cnpjExists(newCadastroCnpj, distribuidoresMock);
-  const canSaveDistribuidorCadastro = Boolean(data.nomeFantasia.trim())
-    && Boolean(data.contato.trim())
-    && isValidEmail(data.email);
+  const canRegisterNewDistribuidor =
+    (newCadastroCnpjDigits.length === 14 ||
+      newCadastroCnpjCleaned.length === 14) &&
+    isValidCnpj(newCadastroCnpj) &&
+    !cnpjExists(newCadastroCnpj, distribuidoresMock);
+  const canSaveDistribuidorCadastro =
+    Boolean(data.nomeFantasia.trim()) &&
+    Boolean(data.contato.trim()) &&
+    isValidEmail(data.email);
   const distribuidorContacts = getEntityContacts(selectedDistribuidor);
-  const filteredDistribuidorContacts = distribuidorContacts.filter((contact) => {
-    const normalizedSearch = contactSearch.trim().toLowerCase();
-    if (!normalizedSearch) return true;
+  const filteredDistribuidorContacts = distribuidorContacts.filter(
+    (contact) => {
+      const normalizedSearch = contactSearch.trim().toLowerCase();
+      if (!normalizedSearch) return true;
 
-    return String(contact.nome || "").toLowerCase().includes(normalizedSearch)
-      || String(contact.email || "").toLowerCase().includes(normalizedSearch);
-  });
-  const showDistribuidorContactEmpty = selectedDistribuidor && contactSearch.trim() && filteredDistribuidorContacts.length === 0;
-  const canRegisterDistribuidorContact = Boolean(newContact.nome.trim()) && isValidEmail(newContact.email);
+      return (
+        String(contact.nome || "")
+          .toLowerCase()
+          .includes(normalizedSearch) ||
+        String(contact.email || "")
+          .toLowerCase()
+          .includes(normalizedSearch)
+      );
+    },
+  );
+  const showDistribuidorContactEmpty =
+    selectedDistribuidor &&
+    contactSearch.trim() &&
+    filteredDistribuidorContacts.length === 0;
+  const canRegisterDistribuidorContact =
+    Boolean(newContact.nome.trim()) && isValidEmail(newContact.email);
 
-  const distribuidoresEncontrados = searched && !searchError
-    ? distribuidoresMock.filter((distribuidor) => {
-        const normalizedSearch = String(search || "").trim().toLowerCase();
-        const digits = onlyDigits(String(search || ""));
+  const distribuidoresEncontrados =
+    searched && !searchError
+      ? distribuidoresMock.filter((distribuidor) => {
+          const normalizedSearch = String(search || "")
+            .trim()
+            .toLowerCase();
+          const digits = onlyDigits(String(search || ""));
 
-        if (digits.length === 14 && isValidCnpj(search)) {
-          return onlyDigits(String(distribuidor.cnpj || "")) === digits;
-        }
+          if (digits.length === 14 && isValidCnpj(search)) {
+            return onlyDigits(String(distribuidor.cnpj || "")) === digits;
+          }
 
-        return String(distribuidor.nomeFantasia || "").toLowerCase().includes(normalizedSearch)
-          || String(distribuidor.razaoSocial || "").toLowerCase().includes(normalizedSearch);
-      })
-    : [];
+          return (
+            String(distribuidor.nomeFantasia || "")
+              .toLowerCase()
+              .includes(normalizedSearch) ||
+            String(distribuidor.razaoSocial || "")
+              .toLowerCase()
+              .includes(normalizedSearch)
+          );
+        })
+      : [];
 
   const handle = (e) => {
-    const value = e.target.name === "cnpj" ? formatCnpj(e.target.value) : e.target.value;
+    const value =
+      e.target.name === "cnpj" ? formatCnpj(e.target.value) : e.target.value;
     const updated = { ...data, [e.target.name]: value };
     setData(updated);
     onChange?.(updated);
@@ -682,7 +912,9 @@ function DistribuidorSection({ onChange }) {
     }
 
     if (!search.trim()) {
-      setSearchError("Informe um nome fantasia ou CNPJ para pesquisar distribuidores.");
+      setSearchError(
+        "Informe um nome fantasia ou CNPJ para pesquisar distribuidores.",
+      );
       setSearched(false);
       return;
     }
@@ -698,9 +930,10 @@ function DistribuidorSection({ onChange }) {
   };
 
   const startNewDistribuidor = () => {
-    const chosenCnpj = newCadastroCnpj && isValidCnpj(newCadastroCnpj)
-      ? sanitizeCnpj(newCadastroCnpj)
-      : sanitizeCnpj(search);
+    const chosenCnpj =
+      newCadastroCnpj && isValidCnpj(newCadastroCnpj)
+        ? sanitizeCnpj(newCadastroCnpj)
+        : sanitizeCnpj(search);
 
     const updated = { ...data, cnpj: formatCnpj(chosenCnpj) };
     setData(updated);
@@ -751,7 +984,9 @@ function DistribuidorSection({ onChange }) {
     <div className="form-section">
       <div className="section-header" onClick={() => setOpen(!open)}>
         <div className="section-title">
-          <span className="section-icon"><img src={distribuidorIcon} alt="Distribuidor" /></span>
+          <span className="section-icon">
+            <img src={distribuidorIcon} alt="Distribuidor" />
+          </span>
           Dados do Distribuidor
         </div>
         <div className="section-header-right">
@@ -763,7 +998,9 @@ function DistribuidorSection({ onChange }) {
           >
             Adicionar distribuidor
           </CnpjSearchButton>
-          <span className="chevron"><ChevronIcon open={open} /></span>
+          <span className="chevron">
+            <ChevronIcon open={open} />
+          </span>
         </div>
       </div>
 
@@ -772,47 +1009,102 @@ function DistribuidorSection({ onChange }) {
           <div className="form-row">
             <div className="form-group grow-1">
               <label>NOME FANTASIA</label>
-              <input name="nomeFantasia" value={data.nomeFantasia} onChange={handle} placeholder="Ex: Tech Solutions" />
+              <input
+                name="nomeFantasia"
+                value={data.nomeFantasia}
+                onChange={handle}
+                placeholder="Ex: Tech Solutions"
+              />
             </div>
             <div className="form-group grow-1">
               <label>RAZAO SOCIAL</label>
-              <input name="razaoSocial" value={data.razaoSocial} onChange={handle} placeholder="Ex: Tech Solutions Ltda" {...readonlyInputProps} />
+              <input
+                name="razaoSocial"
+                value={data.razaoSocial}
+                onChange={handle}
+                placeholder="Ex: Tech Solutions Ltda"
+                {...readonlyInputProps}
+              />
             </div>
           </div>
 
           <div className="form-row">
             <div className="form-group w-160">
               <label>INSC. EST.</label>
-              <input name="inscEst" value={data.inscEst} onChange={handle} placeholder="Isento" {...readonlyInputProps} />
+              <input
+                name="inscEst"
+                value={data.inscEst}
+                onChange={handle}
+                placeholder="Isento"
+                {...readonlyInputProps}
+              />
             </div>
             <div className="form-group w-120">
               <label>FONE</label>
-              <input name="fone" value={data.fone} onChange={handle} placeholder="(00) 0000-0000" {...readonlyInputProps} />
+              <input
+                name="fone"
+                value={data.fone}
+                onChange={handle}
+                placeholder="(00) 0000-0000"
+                {...readonlyInputProps}
+              />
             </div>
             <div className="form-group w-140">
               <label>CEP</label>
-              <input name="cep" value={data.cep} onChange={handle} placeholder="00000-000" {...readonlyInputProps} />
+              <input
+                name="cep"
+                value={data.cep}
+                onChange={handle}
+                placeholder="00000-000"
+                {...readonlyInputProps}
+              />
             </div>
             <div className="form-group w-180">
               <label>CNPJ</label>
-              <input name="cnpj" value={data.cnpj} onChange={handle} placeholder="00.000.000/0000-00" {...readonlyInputProps} />
+              <input
+                name="cnpj"
+                value={data.cnpj}
+                onChange={handle}
+                placeholder="00.000.000/0000-00"
+                {...readonlyInputProps}
+              />
             </div>
           </div>
 
           <div className="form-row">
             <div className="form-group grow-2">
               <label>ENDERECO</label>
-              <input name="endereco" value={data.endereco} onChange={handle} placeholder="Rua das Inovacoes, 123" {...readonlyInputProps} />
+              <input
+                name="endereco"
+                value={data.endereco}
+                onChange={handle}
+                placeholder="Rua das Inovacoes, 123"
+                {...readonlyInputProps}
+              />
             </div>
             <div className="form-group grow-1">
               <label>CIDADE</label>
-              <input name="cidade" value={data.cidade} onChange={handle} placeholder="Centro" {...readonlyInputProps} />
+              <input
+                name="cidade"
+                value={data.cidade}
+                onChange={handle}
+                placeholder="Centro"
+                {...readonlyInputProps}
+              />
             </div>
             <div className="form-group w-70">
               <label>UF</label>
-              <select name="uf" value={data.uf} onChange={handle} disabled className="readonly">
+              <select
+                name="uf"
+                value={data.uf}
+                onChange={handle}
+                disabled
+                className="readonly"
+              >
                 <option value="">--</option>
-                {UF_LIST.map((s) => <option key={s}>{s}</option>)}
+                {UF_LIST.map((s) => (
+                  <option key={s}>{s}</option>
+                ))}
               </select>
             </div>
           </div>
@@ -845,7 +1137,8 @@ function DistribuidorSection({ onChange }) {
             <div className="cadastro-actions">
               {!canSaveDistribuidorCadastro && (
                 <p className="cadastro-required-message">
-                  Preencha nome fantasia, contato e e-mail valido para salvar o cadastro.
+                  Preencha nome fantasia, contato e e-mail valido para salvar o
+                  cadastro.
                 </p>
               )}
               <button
@@ -863,12 +1156,21 @@ function DistribuidorSection({ onChange }) {
 
       {showModal && (
         <div className="modal-overlay">
-          <div className="modal" role="dialog" aria-modal="true" aria-labelledby="distribuidor-modal-title">
+          <div
+            className="modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="distribuidor-modal-title"
+          >
             <div
               className={`modal-steps ${modalStep === 2 ? "is-complete" : ""}`}
               aria-label={`Etapa ${modalStep} de 2`}
             >
-              <button type="button" className={`modal-step ${modalStep === 1 ? "active" : ""}`} onClick={() => setModalStep(1)}>
+              <button
+                type="button"
+                className={`modal-step ${modalStep === 1 ? "active" : ""}`}
+                onClick={() => setModalStep(1)}
+              >
                 {modalStep}/2
               </button>
               <button
@@ -882,71 +1184,94 @@ function DistribuidorSection({ onChange }) {
             </div>
             {modalStep === 1 ? (
               <>
-            <h3 id="distribuidor-modal-title">Buscar Distribuidor</h3>
-            <p className="modal-hint">A pesquisa pode ser feita por Nome Fantasia ou CNPJ.</p>
+                <h3 id="distribuidor-modal-title">Buscar Distribuidor</h3>
+                <p className="modal-hint">
+                  A pesquisa pode ser feita por Nome Fantasia ou CNPJ.
+                </p>
 
-            <div className="modal-search-row">
-              <input
-                type="text"
-                placeholder="Nome fantasia ou CNPJ"
-                value={search}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className="input-busca"
-              />
-              <button type="button" className="btn-modal-search" onClick={handleSearch}>
-                <SearchIcon />
-              </button>
-            </div>
-
-            {searchError && <p className="modal-message is-error">{searchError}</p>}
-
-            <div className="lista-clientes">
-              {distribuidoresEncontrados.map((distribuidor) => (
-                <button
-                  key={distribuidor.id}
-                  type="button"
-                  className="cliente-item"
-                  onClick={() => selectDistribuidorForContact(distribuidor)}
-                >
-                  <strong>{distribuidor.nomeFantasia || distribuidor.razaoSocial}</strong>
-                  {distribuidor.razaoSocial && distribuidor.nomeFantasia !== distribuidor.razaoSocial && (
-                    <small>{distribuidor.razaoSocial}</small>
-                  )}
-                  <span>{distribuidor.cnpj}</span>
-                </button>
-              ))}
-
-              {searched && !searchError && distribuidoresEncontrados.length === 0 && (
-                <div className="modal-empty">
-                  <p>Distribuidor não encontrado.</p>
-                  <p>Para cadastrar um novo distribuidor, digite o CNPJ do distribuidor que deseja cadastrar.</p>
+                <div className="modal-search-row">
                   <input
                     type="text"
-                    placeholder="Digite o CNPJ para cadastro"
-                    value={newCadastroCnpj}
-                    onChange={(e) => setNewCadastroCnpj(e.target.value)}
-                    className="input-cnpj-cadastro"
+                    placeholder="Nome fantasia ou CNPJ"
+                    value={search}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    className="input-busca"
                   />
-                  {cnpjExists(newCadastroCnpj, distribuidoresMock) && (
-                    <p className="modal-message is-error">Este CNPJ já existe como distribuidor.</p>
-                  )}
                   <button
                     type="button"
-                    className="btn-cadastrar-novo"
-                    onClick={startNewDistribuidor}
-                    disabled={!canRegisterNewDistribuidor}
+                    className="btn-modal-search"
+                    onClick={handleSearch}
                   >
-                    Cadastrar novo distribuidor
+                    <SearchIcon />
                   </button>
                 </div>
-              )}
-            </div>
+
+                {searchError && (
+                  <p className="modal-message is-error">{searchError}</p>
+                )}
+
+                <div className="lista-clientes">
+                  {distribuidoresEncontrados.map((distribuidor) => (
+                    <button
+                      key={distribuidor.id}
+                      type="button"
+                      className="cliente-item"
+                      onClick={() => selectDistribuidorForContact(distribuidor)}
+                    >
+                      <strong>
+                        {distribuidor.nomeFantasia || distribuidor.razaoSocial}
+                      </strong>
+                      {distribuidor.razaoSocial &&
+                        distribuidor.nomeFantasia !==
+                          distribuidor.razaoSocial && (
+                          <small>{distribuidor.razaoSocial}</small>
+                        )}
+                      <span>{distribuidor.cnpj}</span>
+                    </button>
+                  ))}
+
+                  {searched &&
+                    !searchError &&
+                    distribuidoresEncontrados.length === 0 && (
+                      <div className="modal-empty">
+                        <p>Distribuidor não encontrado.</p>
+                        <p>
+                          Para cadastrar um novo distribuidor, digite o CNPJ do
+                          distribuidor que deseja cadastrar.
+                        </p>
+                        <input
+                          type="text"
+                          placeholder="Digite o CNPJ para cadastro"
+                          value={newCadastroCnpj}
+                          onChange={(e) => setNewCadastroCnpj(e.target.value)}
+                          className="input-cnpj-cadastro"
+                        />
+                        {cnpjExists(newCadastroCnpj, distribuidores) && (
+                          <p className="modal-message is-error">
+                            Este CNPJ já existe como distribuidor.
+                          </p>
+                        )}
+                        <button
+                          type="button"
+                          className="btn-cadastrar-novo"
+                          onClick={startNewDistribuidor}
+                          disabled={!canRegisterNewDistribuidor}
+                        >
+                          Cadastrar novo distribuidor
+                        </button>
+                      </div>
+                    )}
+                </div>
               </>
             ) : (
               <>
                 <h3 id="distribuidor-modal-title">Selecionar Contato</h3>
                 <p className="modal-hint">
-                  Distribuidor selecionado: <strong>{selectedDistribuidor?.nomeFantasia || selectedDistribuidor?.razaoSocial}</strong>
+                  Distribuidor selecionado:{" "}
+                  <strong>
+                    {selectedDistribuidor?.nomeFantasia ||
+                      selectedDistribuidor?.razaoSocial}
+                  </strong>
                 </p>
 
                 <div className="modal-search-row single">
@@ -983,14 +1308,24 @@ function DistribuidorSection({ onChange }) {
                         type="text"
                         placeholder="Nome"
                         value={newContact.nome}
-                        onChange={(e) => setNewContact((prev) => ({ ...prev, nome: e.target.value }))}
+                        onChange={(e) =>
+                          setNewContact((prev) => ({
+                            ...prev,
+                            nome: e.target.value,
+                          }))
+                        }
                         className="input-cnpj-cadastro"
                       />
                       <input
                         type="email"
                         placeholder="E-mail"
                         value={newContact.email}
-                        onChange={(e) => setNewContact((prev) => ({ ...prev, email: e.target.value }))}
+                        onChange={(e) =>
+                          setNewContact((prev) => ({
+                            ...prev,
+                            email: e.target.value,
+                          }))
+                        }
                         className="input-cnpj-cadastro"
                       />
                       <button
@@ -1005,13 +1340,23 @@ function DistribuidorSection({ onChange }) {
                   )}
                 </div>
 
-                <button type="button" className="btn-modal-back" onClick={() => setModalStep(1)}>
+                <button
+                  type="button"
+                  className="btn-modal-back"
+                  onClick={() => setModalStep(1)}
+                >
                   Voltar para Distribuidor
                 </button>
               </>
             )}
 
-            <button type="button" className="btn-modal-close" onClick={closeModal}>Fechar</button>
+            <button
+              type="button"
+              className="btn-modal-close"
+              onClick={closeModal}
+            >
+              Fechar
+            </button>
           </div>
         </div>
       )}
@@ -1022,8 +1367,14 @@ function DistribuidorSection({ onChange }) {
 function ProdutoSection({ onChange }) {
   const [open, setOpen] = useState(true);
   const [data, setData] = useState({
-    descricao: "", pn: "", entrega: "", quantidade: "",
-    valorUnitario: "", valorTotal: "", unitFaturado: "", totalFaturado: "",
+    descricao: "",
+    pn: "",
+    entrega: "",
+    quantidade: "",
+    valorUnitario: "",
+    valorTotal: "",
+    unitFaturado: "",
+    totalFaturado: "",
   });
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState("");
@@ -1036,15 +1387,16 @@ function ProdutoSection({ onChange }) {
       id: 1,
       descricao: "Pacote Office 365 - 1 ano",
       pn: "00.000.000",
-      valorUnitario: 100.00,
+      valorUnitario: 100.0,
     },
   ];
 
-  const produtosEncontrados = searched && !searchError
-    ? produtosMock.filter((produto) =>
-        produto.descricao.toLowerCase().includes(search.trim().toLowerCase())
-      )
-    : [];
+  const produtosEncontrados =
+    searched && !searchError
+      ? produtosMock.filter((produto) =>
+          produto.descricao.toLowerCase().includes(search.trim().toLowerCase()),
+        )
+      : [];
 
   const handle = (e) => {
     const field = e.target.name;
@@ -1067,7 +1419,9 @@ function ProdutoSection({ onChange }) {
 
   const fmt = (val) => {
     const n = parseFloat(val);
-    return isNaN(n) ? "R$ 0,00" : n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    return isNaN(n)
+      ? "R$ 0,00"
+      : n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   };
 
   const closeModal = () => {
@@ -1111,7 +1465,9 @@ function ProdutoSection({ onChange }) {
     <div className="form-section">
       <div className="section-header" onClick={() => setOpen(!open)}>
         <div className="section-title">
-          <span className="section-icon"><img src={carrinho} alt="Carrinho" /></span>
+          <span className="section-icon">
+            <img src={carrinho} alt="Carrinho" />
+          </span>
           Dados do Produto
         </div>
         <div className="section-header-right">
@@ -1123,7 +1479,9 @@ function ProdutoSection({ onChange }) {
           >
             Adicionar produto
           </CnpjSearchButton>
-          <span className="chevron"><ChevronIcon open={open} /></span>
+          <span className="chevron">
+            <ChevronIcon open={open} />
+          </span>
         </div>
       </div>
 
@@ -1132,46 +1490,93 @@ function ProdutoSection({ onChange }) {
           <div className="form-row">
             <div className="form-group grow-2">
               <label>DESCRICAO DO PRODUTO</label>
-              <input name="descricao" value={data.descricao} onChange={handle} placeholder="Ex: Pacote Office 365" />
+              <input
+                name="descricao"
+                value={data.descricao}
+                onChange={handle}
+                placeholder="Ex: Pacote Office 365"
+              />
             </div>
             <div className="form-group grow-1">
               <label>P/N</label>
-              <input name="pn" value={data.pn} onChange={handle} placeholder="00.000.000" />
+              <input
+                name="pn"
+                value={data.pn}
+                onChange={handle}
+                placeholder="00.000.000"
+              />
             </div>
           </div>
 
           <div className="form-row">
             <div className="form-group grow-1">
               <label>ENTREGA</label>
-              <input name="entrega" value={data.entrega} onChange={handle} placeholder="Ex: IMEDIATA" />
+              <input
+                name="entrega"
+                value={data.entrega}
+                onChange={handle}
+                placeholder="Ex: IMEDIATA"
+              />
             </div>
             <div className="form-group grow-1">
               <label>QUANTIDADE</label>
-              <input name="quantidade" type="number" value={data.quantidade} onChange={handle} placeholder="0000" />
+              <input
+                name="quantidade"
+                type="number"
+                value={data.quantidade}
+                onChange={handle}
+                placeholder="0000"
+              />
             </div>
             <div className="form-group grow-1">
               <label>VALOR UNITARIO</label>
-              <input name="valorUnitario" type="number" step="0.01" value={data.valorUnitario} onChange={handle} placeholder="R$ 0,00" />
+              <input
+                name="valorUnitario"
+                type="number"
+                step="0.01"
+                value={data.valorUnitario}
+                onChange={handle}
+                placeholder="R$ 0,00"
+              />
             </div>
             <div className="form-group grow-1">
               <label>VALOR TOTAL</label>
-              <input value={fmt(data.valorTotal)} readOnly className="readonly" />
+              <input
+                value={fmt(data.valorTotal)}
+                readOnly
+                className="readonly"
+              />
             </div>
           </div>
 
           <div className="form-row">
             <div className="form-group grow-1">
               <label>VALOR UNIT. FATURADO</label>
-              <input name="unitFaturado" type="number" step="0.01" value={data.unitFaturado} onChange={handle} placeholder="R$ 0,00" />
+              <input
+                name="unitFaturado"
+                type="number"
+                step="0.01"
+                value={data.unitFaturado}
+                onChange={handle}
+                placeholder="R$ 0,00"
+              />
             </div>
             <div className="form-group grow-1">
               <label>TOTAL FATURADO</label>
-              <input value={fmt(data.totalFaturado)} readOnly className="readonly" />
+              <input
+                value={fmt(data.totalFaturado)}
+                readOnly
+                className="readonly"
+              />
             </div>
           </div>
 
           {showSaveButton && (
-            <button type="button" className="btn-salvar-cadastro" onClick={saveProduto}>
+            <button
+              type="button"
+              className="btn-salvar-cadastro"
+              onClick={saveProduto}
+            >
               Salvar cadastro do produto
             </button>
           )}
@@ -1182,7 +1587,9 @@ function ProdutoSection({ onChange }) {
         <div className="modal-overlay">
           <div className="modal">
             <h3>Buscar Produto</h3>
-            <p className="modal-hint">A pesquisa deve ser feita pelo nome do produto.</p>
+            <p className="modal-hint">
+              A pesquisa deve ser feita pelo nome do produto.
+            </p>
 
             <div className="modal-search-row">
               <input
@@ -1192,12 +1599,18 @@ function ProdutoSection({ onChange }) {
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="input-busca"
               />
-              <button type="button" className="btn-modal-search" onClick={handleSearch}>
+              <button
+                type="button"
+                className="btn-modal-search"
+                onClick={handleSearch}
+              >
                 <SearchIcon />
               </button>
             </div>
 
-            {searchError && <p className="modal-message is-error">{searchError}</p>}
+            {searchError && (
+              <p className="modal-message is-error">{searchError}</p>
+            )}
 
             <div className="lista-clientes">
               {produtosEncontrados.map((produto) => (
@@ -1224,15 +1637,27 @@ function ProdutoSection({ onChange }) {
 
               {searched && !searchError && produtosEncontrados.length === 0 && (
                 <div className="modal-empty">
-                  <p>Nenhum produto com esse nome esta cadastrado no sistema.</p>
-                  <button type="button" className="btn-cadastrar-novo" onClick={startNewProduto}>
+                  <p>
+                    Nenhum produto com esse nome esta cadastrado no sistema.
+                  </p>
+                  <button
+                    type="button"
+                    className="btn-cadastrar-novo"
+                    onClick={startNewProduto}
+                  >
                     Cadastrar novo produto
                   </button>
                 </div>
               )}
             </div>
 
-            <button type="button" className="btn-modal-close" onClick={closeModal}>Fechar</button>
+            <button
+              type="button"
+              className="btn-modal-close"
+              onClick={closeModal}
+            >
+              Fechar
+            </button>
           </div>
         </div>
       )}
@@ -1257,11 +1682,14 @@ export default function PedidoForm({ onFormChange }) {
   };
 
   const addProduto = () => {
-    setProdutos([...produtos, {
-      descricao: "",
-      valorTotal: 0,
-      totalFaturado: 0,
-    }]);
+    setProdutos([
+      ...produtos,
+      {
+        descricao: "",
+        valorTotal: 0,
+        totalFaturado: 0,
+      },
+    ]);
   };
 
   const removeProduto = (index) => {
@@ -1272,8 +1700,18 @@ export default function PedidoForm({ onFormChange }) {
 
   return (
     <div className="pedido-form">
-      <ClienteSection onChange={(d) => { setCliente(d); notify({ cliente: d }); }} />
-      <DistribuidorSection onChange={(d) => { setDistribuidor(d); notify({ distribuidor: d }); }} />
+      <ClienteSection
+        onChange={(d) => {
+          setCliente(d);
+          notify({ cliente: d });
+        }}
+      />
+      <DistribuidorSection
+        onChange={(d) => {
+          setDistribuidor(d);
+          notify({ distribuidor: d });
+        }}
+      />
       {produtos.map((prod, index) => (
         <div key={index}>
           <ProdutoSection onChange={(d) => updateProduto(index, d)} />
