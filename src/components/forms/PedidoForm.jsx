@@ -3,7 +3,10 @@ import "./PedidoForm.css";
 import distribuidorIcon from "../../assets/distribuidor.png";
 import perfilCliente from "../../assets/perfil_cliente.png";
 import carrinho from "../../assets/produto_carrinho.png";
-import { fetchClientesPedido } from "../../services/api";
+import {
+  fetchClientesPedido,
+  fetchDistribuidoresPedido,
+} from "../../services/api";
 
 const UF_LIST = [
   "AC",
@@ -801,24 +804,20 @@ function DistribuidorSection({ onChange }) {
   const [contactSearch, setContactSearch] = useState("");
   const [newContact, setNewContact] = useState({ nome: "", email: "" });
 
-  const distribuidoresMock = [
-    {
-      id: 1,
-      nomeFantasia: "Distribuidora XYZ",
-      razaoSocial: "Distribuidora XYZ",
-      cnpj: "11.222.333/0001-81",
-      cidade: "Sao Paulo",
-      uf: "SP",
-      email: "contato@distribuidora.com",
-      fone: "(11) 88888-8888",
-      endereco: "Avenida Paulista, 456",
-      contato: "Joao Oliveira",
-      contatos: [
-        { id: 1, nome: "Joao Oliveira", email: "contato@distribuidora.com" },
-        { id: 2, nome: "Ana Costa", email: "pedidos@distribuidora.com" },
-      ],
-    },
-  ];
+  const [distribuidores, setDistribuidores] = useState([]);
+
+  useEffect(() => {
+    const carregarDistribuidores = async () => {
+      try {
+        const dados = await fetchDistribuidoresPedido();
+        setDistribuidores(dados);
+      } catch (error) {
+        console.error("Erro ao carregar distribuidores:", error);
+        setDistribuidores([]);
+      }
+    };
+    carregarDistribuidores();
+  }, []);
 
   const newCadastroCnpjDigits = sanitizeCnpj(newCadastroCnpj);
   const newCadastroCnpjCleaned = removeFormatting(newCadastroCnpj);
@@ -826,7 +825,7 @@ function DistribuidorSection({ onChange }) {
     (newCadastroCnpjDigits.length === 14 ||
       newCadastroCnpjCleaned.length === 14) &&
     isValidCnpj(newCadastroCnpj) &&
-    !cnpjExists(newCadastroCnpj, distribuidoresMock);
+    !cnpjExists(newCadastroCnpj, distribuidores);
   const canSaveDistribuidorCadastro =
     Boolean(data.nomeFantasia.trim()) &&
     Boolean(data.contato.trim()) &&
@@ -856,7 +855,7 @@ function DistribuidorSection({ onChange }) {
 
   const distribuidoresEncontrados =
     searched && !searchError
-      ? distribuidoresMock.filter((distribuidor) => {
+      ? distribuidores.filter((distribuidor) => {
           const normalizedSearch = String(search || "")
             .trim()
             .toLowerCase();
@@ -1211,9 +1210,9 @@ function DistribuidorSection({ onChange }) {
                 )}
 
                 <div className="lista-clientes">
-                  {distribuidoresEncontrados.map((distribuidor) => (
+                  {distribuidoresEncontrados.map((distribuidor, index) => (
                     <button
-                      key={distribuidor.id}
+                      key={`${distribuidor.id}-${distribuidor.cnpj}-${index}`}
                       type="button"
                       className="cliente-item"
                       onClick={() => selectDistribuidorForContact(distribuidor)}
@@ -1290,7 +1289,11 @@ function DistribuidorSection({ onChange }) {
                 <div className="lista-clientes">
                   {filteredDistribuidorContacts.map((contact) => (
                     <button
-                      key={contact.id || `${contact.nome}-${contact.email}`}
+                      key={
+                        contact.idContato ||
+                        contact.id ||
+                        `${contact.nome}-${contact.email}`
+                      }
                       type="button"
                       className="cliente-item"
                       onClick={() => selectDistribuidorContact(contact)}
