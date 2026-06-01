@@ -253,6 +253,8 @@ body.catalog-body {
 }
 
 .catalog-row:hover { background: var(--cat-row-hover); }
+.catalog-row-clickable { cursor: pointer; }
+.catalog-row-clickable:hover { background: var(--cat-row-hover); }
 
 /* cada célula da linha ocupa 1fr como no cabeçalho */
 .catalog-row > * { flex: 1; }

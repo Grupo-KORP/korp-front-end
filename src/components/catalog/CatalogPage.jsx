@@ -34,6 +34,14 @@ function DeleteIcon() {
   );
 }
 
+function ViewIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 5.5c4.6 0 8.3 3.2 9.3 6.5-1 3.4-4.7 6.5-9.3 6.5S3.7 15.4 2.7 12C3.7 8.7 7.4 5.5 12 5.5Zm0 2.5c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4Zm0 1.4a2.6 2.6 0 1 1 0 5.2 2.6 2.6 0 0 1 0-5.2Z" />
+    </svg>
+  );
+}
+
 function ChevronDownIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -118,11 +126,13 @@ export default function CatalogPage({
   rows,
   loadingRows = false,
   moreLabel,
+  onRowClick,
   // form
   formTitle,
   formTitleEdit,
   formSubtitle = "Formulário de Cadastro",
   fields,
+  extraFormContent,
   submitLabel = "Cadastrar",
   onFieldChange,
   onSubmit,
@@ -192,7 +202,11 @@ export default function CatalogPage({
               ) : rows.length === 0 ? (
                 <p className="catalog-empty">Nenhum registro encontrado.</p>
               ) : rows.map((row) => (
-                <div className="catalog-row" key={row.id}>
+                <div
+                  className={`catalog-row ${row.onView ? "catalog-row-clickable" : ""}`}
+                  key={row.id}
+                  onClick={() => row.onView?.(row)}
+                >
                   {/* Identidade */}
                   <div
                     className="catalog-identity"
@@ -218,17 +232,26 @@ export default function CatalogPage({
 
                   {/* Ferramentas */}
                   <div className="catalog-tools">
+                    {row.onView && (
+                      <button
+                        type="button"
+                        aria-label={`Visualizar ${row.title}`}
+                        onClick={(e) => { e.stopPropagation(); row.onView?.(row); }}
+                      >
+                        <ViewIcon />
+                      </button>
+                    )}
                     <button
                       type="button"
                       aria-label={`Editar ${row.title}`}
-                      onClick={() => row.onEdit?.(row)}
+                      onClick={(e) => { e.stopPropagation(); row.onEdit?.(row); }}
                     >
                       <EditIcon />
                     </button>
                     <button
                       type="button"
                       aria-label={`Excluir ${row.title}`}
-                      onClick={() => row.onDelete?.(row)}
+                      onClick={(e) => { e.stopPropagation(); row.onDelete?.(row); }}
                     >
                       <DeleteIcon />
                     </button>
@@ -264,6 +287,12 @@ export default function CatalogPage({
               <div className="catalog-form-fields">
                 {renderFields(fields, onFieldChange)}
               </div>
+
+              {extraFormContent && (
+                <div className="catalog-extra-form-content">
+                  {extraFormContent}
+                </div>
+              )}
 
               <div className="catalog-form-actions">
                 {isEditing && onCancel && (
