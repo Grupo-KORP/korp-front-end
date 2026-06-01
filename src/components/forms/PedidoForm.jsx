@@ -146,7 +146,7 @@ function ClienteSection({ onChange }) {
   const [open, setOpen] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [data, setData] = useState({
-    nomeFantasia: "", razaoSocial: "", cnpj: "", inscEst: "", fone: "", cep: "",
+    nomeFantasia: "", razaoSocial: "", cnpj: "", inscricaoEstadual: "", fone: "", cep: "",
     endereco: "", cidade: "", uf: "", contato: "", email: "",
   });
   const [search, setSearch] = useState("");
@@ -342,7 +342,7 @@ function ClienteSection({ onChange }) {
           <div className="form-row">
             <div className="form-group w-160">
               <label>INSC. EST.</label>
-              <input name="inscEst" value={data.inscEst} onChange={handle} placeholder="Isento" {...readonlyInputProps} />
+              <input name="inscricaoEstadual" value={data.inscricaoEstadual} onChange={handle} placeholder="Isento" {...readonlyInputProps} />
             </div>
             <div className="form-group w-120">
               <label>FONE</label>
