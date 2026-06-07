@@ -130,3 +130,10 @@ export async function cadastrarColaborador(dados) {
 //   await new Promise(r => setTimeout(r, 500))
 //   return []
 // }
+
+// ─── Clientes ────────────────────────────────────────────────────────
+
+export async function fetchClientesPedido() {
+  const { data } = await api.get('/cliente/pedido-dto')
+  return data
+}

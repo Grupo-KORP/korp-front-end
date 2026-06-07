@@ -26,6 +26,7 @@ function maskPhone(raw) {
   return raw;
 }
 
+// ─── Estado inicial ───────────────────────────────────────────────────────────
 const emptyForm = {
   razaoSocial: "", nomeFantasia: "", cnpj: "", inscEst: "",
   fone: "", cep: "", endereco: "", numero: "", complemento: "",
@@ -76,7 +77,7 @@ async function fetchCEP(cepRaw) {
 function mapDistribuidorToRow(d, onEdit, onDelete, onView) {
   const isMock = d.__isMock === true;
   return {
-    id:       d.id,
+    id:       d.idDistribuidor,
     badge:    d.nomeFantasia?.slice(0, 2).toUpperCase() ?? "DT",
     title:    d.razaoSocial,
     subtitle: d.nomeFantasia || "",
@@ -90,6 +91,7 @@ function mapDistribuidorToRow(d, onEdit, onDelete, onView) {
   };
 }
 
+// ─── Página ───────────────────────────────────────────────────────────────────
 export default function DistribuidorPage() {
   const [form,          setForm]          = useState(emptyForm);
   const [errors,        setErrors]        = useState({});
@@ -120,6 +122,7 @@ export default function DistribuidorPage() {
     } finally {
       setLoadingRows(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -128,6 +131,7 @@ export default function DistribuidorPage() {
 
   const handleChange = useCallback(async (e) => {
     const { name, value } = e.target;
+
     const updateField = (n, v) => {
       setForm((prev) => ({ ...prev, [n]: v }));
       setErrors((prev) => { const next = { ...prev }; delete next[n]; return next; });
@@ -199,11 +203,12 @@ export default function DistribuidorPage() {
   }
 
   function handleEdit(d) {
-    setEditingId(d.id);
+    setEditingId(d.idDistribuidor);
+    console.log(d.cep);
     setForm({
-      razaoSocial:  d.razaoSocial  ?? "",
-      nomeFantasia: d.nomeFantasia ?? "",
-      cnpj:         maskCNPJ(d.cnpj ?? ""),
+      razaoSocial:  d.razaoSocial       ?? "",
+      nomeFantasia: d.nomeFantasia      ?? "",
+      cnpj:         maskCNPJ(d.cnpj     ?? ""),
       inscEst:      d.inscricaoEstadual ?? "",
       fone:         maskPhone(d.telefone ?? ""),
       cep:          maskCEP(d.cep ?? ""),
@@ -223,6 +228,7 @@ export default function DistribuidorPage() {
     setErrors({});
   }
 
+  // ── Cancelar edição ──
   function handleCancel() {
     setEditingId(null);
     setForm(emptyForm);
@@ -232,12 +238,13 @@ export default function DistribuidorPage() {
     setErrors({});
   }
 
+  // ── Deletar ──
   async function handleDelete(id) {
     setLoadingRows(true);
     try {
       await api.delete(`/distribuidor/${id}`);
       toast.success("Distribuidor removido com sucesso!");
-      await fetchDistribuidores(search);
+      await fetchDistribuidores(currentPage, search);
     } catch (err) {
       if (err?.status === 404) toast.error("Distribuidor nao encontrado.");
       else toast.error("Erro ao remover distribuidor. Tente novamente.");
@@ -319,7 +326,7 @@ export default function DistribuidorPage() {
       setContactErrors([{}]);
       setIsContactStep(false);
       setErrors({});
-      await fetchDistribuidores(search);
+      await fetchDistribuidores(currentPage, search);
     } catch (err) {
       if (err?.status === 409)      toast.error(err.message);
       else if (err?.status === 404) toast.error("Distribuidor nao encontrado.");
@@ -330,12 +337,15 @@ export default function DistribuidorPage() {
     }
   }
 
+  // ── Search ──
   function handleSearchChange(e) {
     const val = e.target.value;
     setSearch(val);
-    fetchDistribuidores(val);
+    setCurrentPage(1);
+    syncUrl(1, val);
   }
 
+  // ── Fields ──
   const fields = [
     { name: "cnpj",        label: "CNPJ",         pair: "start", placeholder: "00.000.000/0000-00", value: form.cnpj,         loading: loadingCNPJ, error: errors.cnpj },
     { name: "inscEst",     label: "Insc. Est.",    pair: "end",   placeholder: "isento",             value: form.inscEst,      loading: loadingCNPJ },

@@ -81,7 +81,7 @@ async function fetchCEP(cepRaw) {
 function mapClienteToRow(c, onEdit, onDelete, onView) {
   const isMock = c.__isMock === true;
   return {
-    id:       c.id,
+    id:       c.idCliente,
     badge:    c.nomeFantasia?.slice(0, 2).toUpperCase() ?? "CL",
     title:    c.razaoSocial,
     subtitle: c.nomeFantasia || "",
@@ -114,8 +114,16 @@ export default function ClientePage() {
   const [loadingCNPJ, setLoadingCNPJ] = useState(false);
   const [loadingCEP,  setLoadingCEP]  = useState(false);
 
-  // ── Fetch lista ──
-  const fetchClientes = useCallback(async (busca = "") => {
+  // ── Sincroniza URL ──
+  const syncUrl = useCallback((page, busca) => {
+    const params = {};
+    if (page > 1)  params.pagina = String(page);
+    if (busca)     params.busca  = busca;
+    setSearchParams(params, { replace: true });
+  }, [setSearchParams]);
+
+  // ── Fetch lista (paginado + busca) ──
+  const fetchClientes = useCallback(async (page, busca) => {
     setLoadingRows(true);
     try {
       const { data } = await api.get("/cliente", { params: busca ? { busca } : {} });
@@ -129,6 +137,7 @@ export default function ClientePage() {
     } finally {
       setLoadingRows(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -212,7 +221,8 @@ export default function ClientePage() {
 
   // ── Editar ──
   function handleEdit(c) {
-    setEditingId(c.id);
+    setEditingId(c.idCliente);
+    console.log("Payload para edição:", c);
     setForm({
       razaoSocial:  c.razaoSocial  ?? "",
       nomeFantasia: c.nomeFantasia ?? "",
@@ -252,7 +262,7 @@ export default function ClientePage() {
     try {
       await api.delete(`/cliente/${id}`);
       toast.success("Cliente removido com sucesso!");
-      await fetchClientes(search);
+      await fetchClientes(currentPage, search);
     } catch (err) {
       if (err?.status === 404) toast.error("Cliente não encontrado.");
       else toast.error("Erro ao remover cliente. Tente novamente.");
@@ -336,7 +346,7 @@ export default function ClientePage() {
       setContactErrors([{}]);
       setIsContactStep(false);
       setErrors({});
-      await fetchClientes(search);
+      await fetchClientes(currentPage, search);
     } catch (err) {
       if (err?.status === 409)      toast.error(err.message);
       else if (err?.status === 404) toast.error("Cliente não encontrado.");
@@ -351,7 +361,8 @@ export default function ClientePage() {
   function handleSearchChange(e) {
     const val = e.target.value;
     setSearch(val);
-    fetchClientes(val);
+    setCurrentPage(1);
+    syncUrl(1, val);
   }
 
   // ── Fields ──
@@ -497,7 +508,10 @@ export default function ClientePage() {
       ]}
       rows={rows}
       loadingRows={loadingRows}
-      moreLabel="Ver Mais Clientes"
+      pageSize={PAGE_SIZE}
+      currentPage={currentPage}
+      totalPages={totalPages}
+      onPageChange={handlePageChange}
       formTitle="Cadastrar Novo Cliente"
       formTitleEdit="Editar Cliente"
       isEditing={!!editingId}
