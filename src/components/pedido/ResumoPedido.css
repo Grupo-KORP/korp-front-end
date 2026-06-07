@@ -44,6 +44,13 @@
   width: 30px;
 }
 
+.resumo-title-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
 /* Field */
 .resumo-field {
   display: flex;
