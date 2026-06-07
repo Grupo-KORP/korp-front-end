@@ -36,6 +36,29 @@ const emptyForm = {
 
 const emptyContact = { nome: "", email: "", telefone: "" };
 
+const mockClientes = [
+  {
+    id: "mock-cliente-1",
+    razaoSocial: "Empresa Exemplo S.A.",
+    nomeFantasia: "Exemplo",
+    cnpj: "12.345.678/0001-12",
+    inscricaoEstadual: "123.456.789.000",
+    telefone: "(11) 98765-4321",
+    cep: "01234-567",
+    endereco: "Av. Paulista, 1000",
+    numero: "1000",
+    complemento: "Sala 101",
+    cidade: "São Paulo",
+    uf: "SP",
+    contatos: [
+      { nome: "João Silva", email: "joao@exemplo.com.br", telefone: "(11) 98765-4321" },
+      { nome: "Ana Costa", email: "ana@exemplo.com.br", telefone: "(11) 99876-5432" },
+    ],
+    comprasRealizadas: 12,
+    __isMock: true,
+  },
+];
+
 const UF_OPTIONS = [
   "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS",
   "MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC",
@@ -56,6 +79,7 @@ async function fetchCEP(cepRaw) {
 
 // ─── Helper: mapeia cliente da API para row da tabela ─────────────────────────
 function mapClienteToRow(c, onEdit, onDelete, onView) {
+  const isMock = c.__isMock === true;
   return {
     id:       c.id,
     badge:    c.nomeFantasia?.slice(0, 2).toUpperCase() ?? "CL",
@@ -66,8 +90,8 @@ function mapClienteToRow(c, onEdit, onDelete, onView) {
       { value: c.uf || "-", className: "catalog-centered" },
       { value: c.comprasRealizadas ?? 0, className: "catalog-centered" },
     ],
-    onEdit:   () => onEdit(c),
-    onDelete: () => onDelete(c.id),
+    onEdit:   () => isMock ? toast.error("Registro mock não pode ser editado.") : onEdit(c),
+    onDelete: () => isMock ? toast.error("Registro mock não pode ser removido.") : onDelete(c.id),
     onView:   () => onView(c),
   };
 }
@@ -95,9 +119,13 @@ export default function ClientePage() {
     setLoadingRows(true);
     try {
       const { data } = await api.get("/cliente", { params: busca ? { busca } : {} });
-      setRows(data.map((c) => mapClienteToRow(c, handleEdit, handleDelete, handleView)));
+      setRows([
+        ...mockClientes,
+        ...data,
+      ].map((c) => mapClienteToRow(c, handleEdit, handleDelete, handleView)));
     } catch {
       toast.error("Erro ao carregar clientes.");
+      setRows(mockClientes.map((c) => mapClienteToRow(c, handleEdit, handleDelete, handleView)));
     } finally {
       setLoadingRows(false);
     }
@@ -165,6 +193,16 @@ export default function ClientePage() {
   function addContact() {
     setContacts((prev) => [...prev, { ...emptyContact }]);
     setContactErrors((prev) => [...prev, {}]);
+  }
+
+  function removeContact(index) {
+    if (contacts.length === 1) {
+      setContacts([{ ...emptyContact }]);
+      setContactErrors([{}]);
+      return;
+    }
+    setContacts((prev) => prev.filter((_, idx) => idx !== index));
+    setContactErrors((prev) => prev.filter((_, idx) => idx !== index));
   }
 
   function handleView(c) {
@@ -333,7 +371,7 @@ export default function ClientePage() {
 
   const contactStepContent = (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-950">
+      {false && <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-950">
         <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">Informações da Empresa</p>
         <div className="grid md:grid-cols-2 gap-4 mt-4">
           <div className="grid gap-1">
@@ -381,12 +419,25 @@ export default function ClientePage() {
             <span className="text-sm text-slate-900 dark:text-slate-100">{form.uf || "-"}</span>
           </div>
         </div>
-      </div>
+      </div>}
 
       <div className="space-y-4">
         {contacts.map((contact, index) => (
-          <div key={index} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-            <p className="text-sm font-semibold text-slate-700 dark:text-slate-100">Contato {index + 1}</p>
+          <div key={index} className="catalog-contact-card">
+            <div className="catalog-contact-heading">
+              <p>Contato {index + 1}</p>
+              <button
+                type="button"
+                className="catalog-contact-delete"
+                onClick={() => removeContact(index)}
+                aria-label={`Remover contato ${index + 1}`}
+                title="Remover contato"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M9 3h6l.8 2H20v1.8H4V5h4.2L9 3Zm-2.7 5h11.4l-.8 12H7.1L6.3 8Zm2 1.8.55 8.4h6.3l.55-8.4H8.3Zm2.2 1.5h1.6v5.4h-1.6v-5.4Zm3.4 0h1.6v5.4h-1.6v-5.4Z" />
+                </svg>
+              </button>
+            </div>
             <div className="catalog-form-row mt-4">
               <div className="catalog-form-field">
                 <span>Nome do contato</span>
@@ -423,8 +474,8 @@ export default function ClientePage() {
         ))}
       </div>
 
-      <button type="button" className="produto-new-btn" onClick={addContact}>
-        Adicionar outro contato
+      <button type="button" className="btn-add-produto" onClick={addContact}>
+        + Adicionar Contato
       </button>
     </div>
   );
@@ -455,8 +506,9 @@ export default function ClientePage() {
       onFieldChange={handleChange}
       onSubmit={handleSubmit}
       onCancel={handleCancel}
-      submitLabel={loading ? "Aguarde..." : isContactStep ? "Salvar cadastro" : (editingId ? "Salvar" : "Cadastrar")}
+      submitLabel={loading ? "Aguarde..." : isContactStep ? "Salvar cadastro" : "Salvar e adicionar contato →"}
       submitDisabled={loading}
+      deleteEntityLabel="cliente"
     />
 
     <EntityDetailsModal

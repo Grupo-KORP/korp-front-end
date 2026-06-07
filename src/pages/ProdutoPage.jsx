@@ -284,11 +284,11 @@ export default function ProdutoPage() {
             </div>
             <p className="produto-confirm-text">Deseja realmente excluir o produto "{deleteTarget.title}"?</p>
             <div className="produto-confirm-actions">
-              <button type="button" className="catalog-cancel" onClick={closeDeleteModal}>
-                Não
-              </button>
               <button type="button" className="catalog-submit" onClick={handleDeleteConfirmed}>
                 Sim
+              </button>
+              <button type="button" className="catalog-cancel" onClick={closeDeleteModal}>
+                Não
               </button>
             </div>
           </div>

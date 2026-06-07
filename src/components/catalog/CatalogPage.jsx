@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import NavbarVendedor from "../../layout/NavbarVendedor";
 import "./CatalogPage.css";
 
@@ -30,14 +30,6 @@ function DeleteIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M9 3h6l.8 2H20v1.8H4V5h4.2L9 3Zm-2.7 5h11.4l-.8 12H7.1L6.3 8Zm2 1.8.55 8.4h6.3l.55-8.4H8.3Zm2.2 1.5h1.6v5.4h-1.6v-5.4Zm3.4 0h1.6v5.4h-1.6v-5.4Z" />
-    </svg>
-  );
-}
-
-function ViewIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 5.5c4.6 0 8.3 3.2 9.3 6.5-1 3.4-4.7 6.5-9.3 6.5S3.7 15.4 2.7 12C3.7 8.7 7.4 5.5 12 5.5Zm0 2.5c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4Zm0 1.4a2.6 2.6 0 1 1 0 5.2 2.6 2.6 0 0 1 0-5.2Z" />
     </svg>
   );
 }
@@ -139,7 +131,10 @@ export default function CatalogPage({
   onCancel,          // se passado, mostra botão Cancelar
   isEditing = false, // controla título e botão cancelar
   submitDisabled = false,
+  deleteEntityLabel = "registro",
 }) {
+  const [pendingDelete, setPendingDelete] = useState(null);
+
   useEffect(() => {
     document.body.classList.add("catalog-body");
     return () => document.body.classList.remove("catalog-body");
@@ -232,15 +227,6 @@ export default function CatalogPage({
 
                   {/* Ferramentas */}
                   <div className="catalog-tools">
-                    {row.onView && (
-                      <button
-                        type="button"
-                        aria-label={`Visualizar ${row.title}`}
-                        onClick={(e) => { e.stopPropagation(); row.onView?.(row); }}
-                      >
-                        <ViewIcon />
-                      </button>
-                    )}
                     <button
                       type="button"
                       aria-label={`Editar ${row.title}`}
@@ -251,7 +237,10 @@ export default function CatalogPage({
                     <button
                       type="button"
                       aria-label={`Excluir ${row.title}`}
-                      onClick={(e) => { e.stopPropagation(); row.onDelete?.(row); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPendingDelete({ row, label: deleteEntityLabel });
+                      }}
                     >
                       <DeleteIcon />
                     </button>
@@ -317,6 +306,36 @@ export default function CatalogPage({
         </div>
 
       </div>
+
+      {pendingDelete && (
+        <div className="catalog-confirm-backdrop">
+          <div className="catalog-confirm-modal">
+            <h3>Excluir {pendingDelete.label}?</h3>
+            <p>
+              Tem certeza que deseja excluir <strong>{pendingDelete.row.title}</strong>?
+            </p>
+            <div className="catalog-confirm-actions">
+              <button
+                type="button"
+                className="catalog-submit"
+                onClick={() => {
+                  pendingDelete.row.onDelete?.();
+                  setPendingDelete(null);
+                }}
+              >
+                Sim
+              </button>
+              <button
+                type="button"
+                className="catalog-cancel"
+                onClick={() => setPendingDelete(null)}
+              >
+                Não
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
