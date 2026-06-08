@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import "./PedidoForm.css";
 import distribuidorIcon from "../../assets/distribuidor.png";
 import perfilCliente from "../../assets/perfil_cliente.png";
@@ -6,6 +7,8 @@ import carrinho from "../../assets/produto_carrinho.png";
 import {
   fetchClientesPedido,
   fetchDistribuidoresPedido,
+  fetchProdutos,
+  cadastrarProduto,
 } from "../../services/api";
 
 const UF_LIST = [
@@ -1367,9 +1370,10 @@ function DistribuidorSection({ onChange }) {
   );
 }
 
-function ProdutoSection({ onChange }) {
+function ProdutoSection({ onChange, initialData }) {
   const [open, setOpen] = useState(true);
-  const [data, setData] = useState({
+
+  const defaultValues = {
     descricao: "",
     pn: "",
     entrega: "",
@@ -1378,28 +1382,44 @@ function ProdutoSection({ onChange }) {
     valorTotal: "",
     unitFaturado: "",
     totalFaturado: "",
-  });
+    fkProduto: "",
+  };
+
+  const [data, setData] = useState({ ...defaultValues, ...initialData });
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState("");
   const [searchError, setSearchError] = useState("");
   const [searched, setSearched] = useState(false);
   const [showSaveButton, setShowSaveButton] = useState(false);
+  const [produtos, setProdutos] = useState([]);
 
-  const produtosMock = [
-    {
-      id: 1,
-      descricao: "Pacote Office 365 - 1 ano",
-      pn: "00.000.000",
-      valorUnitario: 100.0,
-    },
-  ];
+  useEffect(() => {
+    if (initialData) {
+      setData((prev) => ({ ...prev, ...initialData }));
+    }
+  }, [initialData]);
+
+  useEffect(() => {
+    const carregarProdutos = async () => {
+      try {
+        const dados = await fetchProdutos();
+        setProdutos(dados || []);
+      } catch (error) {
+        console.error("Erro ao carregar produtos:", error);
+        setProdutos([]);
+      }
+    };
+    carregarProdutos();
+  }, []);
 
   const produtosEncontrados =
     searched && !searchError
-      ? produtosMock.filter((produto) =>
-          produto.descricao.toLowerCase().includes(search.trim().toLowerCase()),
+      ? produtos.filter((produto) =>
+          (produto.nome || "").toLowerCase().includes(search.trim().toLowerCase())
         )
       : [];
+
+  const canSaveProduto = data?.descricao?.trim() != "";
 
   const handle = (e) => {
     const field = e.target.name;
@@ -1460,8 +1480,33 @@ function ProdutoSection({ onChange }) {
     closeModal();
   };
 
-  const saveProduto = () => {
-    setShowSaveButton(false);
+  const saveProduto = async () => {
+    const descricaoTrim = (data.descricao || "").trim();
+
+    if (!descricaoTrim) {
+      toast.error("Descrição é obrigatória.");
+      return;
+    }
+
+    try {
+      const novoProduto = await cadastrarProduto({
+        nome: descricaoTrim
+      });
+
+      const updated = {
+        ...data,
+        fkProduto: novoProduto.idProduto,
+      };
+      setData(updated);
+      onChange?.(updated);
+
+      setProdutos((prev) => [...prev, novoProduto]);
+
+      setShowSaveButton(false);
+      toast.success("Produto cadastrado com sucesso!");
+    } catch (error) {
+      toast.error(error.message || "Erro ao cadastrar produto.");
+    }
   };
 
   return (
@@ -1495,18 +1540,20 @@ function ProdutoSection({ onChange }) {
               <label>DESCRICAO DO PRODUTO</label>
               <input
                 name="descricao"
-                value={data.descricao}
+                value={data.descricao || ""}
                 onChange={handle}
                 placeholder="Ex: Pacote Office 365"
+                {...(data.fkProduto && !showSaveButton ? readonlyInputProps : {})}
               />
             </div>
             <div className="form-group grow-1">
               <label>P/N</label>
               <input
                 name="pn"
-                value={data.pn}
+                value={data.pn || ""}
                 onChange={handle}
                 placeholder="00.000.000"
+                {...(data.fkProduto && !showSaveButton ? readonlyInputProps : {})}
               />
             </div>
           </div>
@@ -1516,7 +1563,7 @@ function ProdutoSection({ onChange }) {
               <label>ENTREGA</label>
               <input
                 name="entrega"
-                value={data.entrega}
+                value={data.entrega || ""}
                 onChange={handle}
                 placeholder="Ex: IMEDIATA"
               />
@@ -1526,7 +1573,7 @@ function ProdutoSection({ onChange }) {
               <input
                 name="quantidade"
                 type="number"
-                value={data.quantidade}
+                value={data.quantidade || ""}
                 onChange={handle}
                 placeholder="0000"
               />
@@ -1537,7 +1584,7 @@ function ProdutoSection({ onChange }) {
                 name="valorUnitario"
                 type="number"
                 step="0.01"
-                value={data.valorUnitario}
+                value={data.valorUnitario || ""}
                 onChange={handle}
                 placeholder="R$ 0,00"
               />
@@ -1545,7 +1592,7 @@ function ProdutoSection({ onChange }) {
             <div className="form-group grow-1">
               <label>VALOR TOTAL</label>
               <input
-                value={fmt(data.valorTotal)}
+                value={fmt(data.valorTotal || "")}
                 readOnly
                 className="readonly"
               />
@@ -1559,7 +1606,7 @@ function ProdutoSection({ onChange }) {
                 name="unitFaturado"
                 type="number"
                 step="0.01"
-                value={data.unitFaturado}
+                value={data.unitFaturado || ""}
                 onChange={handle}
                 placeholder="R$ 0,00"
               />
@@ -1567,7 +1614,7 @@ function ProdutoSection({ onChange }) {
             <div className="form-group grow-1">
               <label>TOTAL FATURADO</label>
               <input
-                value={fmt(data.totalFaturado)}
+                value={fmt(data.totalFaturado || "")}
                 readOnly
                 className="readonly"
               />
@@ -1579,6 +1626,7 @@ function ProdutoSection({ onChange }) {
               type="button"
               className="btn-salvar-cadastro"
               onClick={saveProduto}
+              disabled={!canSaveProduto}
             >
               Salvar cadastro do produto
             </button>
@@ -1618,14 +1666,14 @@ function ProdutoSection({ onChange }) {
             <div className="lista-clientes">
               {produtosEncontrados.map((produto) => (
                 <div
-                  key={produto.id}
+                  key={produto.idProduto}
                   className="cliente-item"
                   onClick={() => {
                     const updated = {
                       ...data,
-                      descricao: produto.descricao,
-                      pn: produto.pn,
-                      valorUnitario: produto.valorUnitario,
+                      descricao: produto.nome,
+                      pn: produto.codigoProduto,
+                      fkProduto: produto.idProduto,
                     };
                     setData(updated);
                     onChange?.(updated);
@@ -1633,8 +1681,8 @@ function ProdutoSection({ onChange }) {
                     closeModal();
                   }}
                 >
-                  <strong>{produto.descricao}</strong>
-                  <span>{produto.pn}</span>
+                  <strong>{produto.nome}</strong>
+                  <span>{produto.codigoProduto}</span>
                 </div>
               ))}
 
@@ -1689,8 +1737,14 @@ export default function PedidoForm({ onFormChange }) {
       ...produtos,
       {
         descricao: "",
-        valorTotal: 0,
-        totalFaturado: 0,
+        pn: "",
+        entrega: "",
+        quantidade: "",
+        valorUnitario: "",
+        valorTotal: "",
+        unitFaturado: "",
+        totalFaturado: "",
+        fkProduto: "",
       },
     ]);
   };
@@ -1717,7 +1771,10 @@ export default function PedidoForm({ onFormChange }) {
       />
       {produtos.map((prod, index) => (
         <div key={index}>
-          <ProdutoSection onChange={(d) => updateProduto(index, d)} />
+          <ProdutoSection 
+            initialData={prod}
+            onChange={(d) => updateProduto(index, d)} 
+          />
 
           {index > 0 && (
             <button

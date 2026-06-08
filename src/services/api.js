@@ -146,3 +146,22 @@ export async function fetchDistribuidoresPedido() {
   const { data } = await api.get("/distribuidor/pedido-dto");
   return data;
 }
+
+// ─── Produtos ────────────────────────────────────────────────────────
+
+export async function fetchProdutos() {
+  const { data } = await api.get("/produto");
+  return data;
+}
+
+export async function cadastrarProduto(produto) {
+  const { data } = await api.post("/produto/cadastrar", produto);
+  return data;
+}
+
+// ─── Pedidos ─────────────────────────────────────────────────────────
+
+export async function cadastrarPedido(pedidoRequest) {
+  const { data } = await api.post("/pedidos/cadastrar", pedidoRequest);
+  return data;
+}
