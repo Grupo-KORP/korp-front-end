@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useState } from "react";
 import NavbarVendedor from "../../layout/NavbarVendedor";
 import "./CatalogPage.css";
 
@@ -39,6 +39,113 @@ function ChevronDownIcon() {
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="m7.2 9.4 4.8 4.8 4.8-4.8 1.2 1.2-6 6-6-6 1.2-1.2Z" />
     </svg>
+  );
+}
+
+// ─── Paginação ────────────────────────────────────────────────────────────────
+function Pagination({ currentPage, totalPages, onPageChange }) {
+  if (totalPages <= 1) return null;
+
+  const getVisiblePages = () => {
+    if (totalPages <= 3) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    let start = Math.max(2, currentPage - 1);
+    let end   = Math.min(totalPages - 1, currentPage + 1);
+    if (currentPage <= 2)             { start = 2; end = Math.min(4, totalPages - 1); }
+    if (currentPage >= totalPages - 1){ start = Math.max(2, totalPages - 3); end = totalPages - 1; }
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  };
+
+  const rawVisible   = getVisiblePages();
+  const visiblePages = rawVisible.filter((p) => p !== 1 && p !== totalPages);
+  const showStartEllipsis = visiblePages.length > 0 && visiblePages[0] > 2;
+  const showEndEllipsis   = visiblePages.length > 0 && visiblePages[visiblePages.length - 1] < totalPages - 1;
+
+  const ellipsis = <span className="catalog-pagination-ellipsis">···</span>;
+
+  return (
+    <div className="catalog-pagination">
+      <span className="catalog-pagination-info">
+        Pág. {currentPage} de {totalPages}
+      </span>
+
+      <div className="catalog-pagination-controls">
+        {/* Primeira */}
+        <button
+          className="catalog-pag-btn"
+          onClick={() => onPageChange(1)}
+          disabled={currentPage === 1}
+          title="Primeira página"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M11 19l-7-7 7-7M18 19l-7-7 7-7" />
+          </svg>
+        </button>
+
+        {/* Anterior */}
+        <button
+          className="catalog-pag-btn"
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          title="Página anterior"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+
+        {/* Página 1 */}
+        <button
+          className={`catalog-pag-btn ${currentPage === 1 ? "is-active" : ""}`}
+          onClick={() => onPageChange(1)}
+        >1</button>
+
+        {showStartEllipsis && ellipsis}
+
+        {visiblePages.map((page) => (
+          <button
+            key={page}
+            className={`catalog-pag-btn ${currentPage === page ? "is-active" : ""}`}
+            onClick={() => onPageChange(page)}
+          >{page}</button>
+        ))}
+
+        {showEndEllipsis && ellipsis}
+
+        {/* Última página (se > 1) */}
+        {totalPages > 1 && (
+          <button
+            className={`catalog-pag-btn ${currentPage === totalPages ? "is-active" : ""}`}
+            onClick={() => onPageChange(totalPages)}
+          >{totalPages}</button>
+        )}
+
+        {/* Próxima */}
+        <button
+          className="catalog-pag-btn"
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          title="Próxima página"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+
+        {/* Última */}
+        <button
+          className="catalog-pag-btn"
+          onClick={() => onPageChange(totalPages)}
+          disabled={currentPage === totalPages}
+          title="Última página"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M13 5l7 7-7 7M6 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -85,7 +192,6 @@ function FormField({ field, onChange }) {
   );
 }
 
-// Agrupa campos com pair="start"/"end" em linhas de dois
 function renderFields(fields, onChange) {
   const result = [];
   let i = 0;
@@ -117,6 +223,11 @@ export default function CatalogPage({
   tableColumns,
   rows,
   loadingRows = false,
+  pageSize = 5,
+  // paginação
+  currentPage,
+  totalPages,
+  onPageChange,
   moreLabel,
   onRowClick,
   // form
@@ -128,11 +239,14 @@ export default function CatalogPage({
   submitLabel = "Cadastrar",
   onFieldChange,
   onSubmit,
-  onCancel,          // se passado, mostra botão Cancelar
-  isEditing = false, // controla título e botão cancelar
+  onCancel,
+  isEditing = false,
   submitDisabled = false,
   deleteEntityLabel = "registro",
 }) {
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting,     setDeleting]     = useState(false);
+
   const [pendingDelete, setPendingDelete] = useState(null);
 
   useEffect(() => {
@@ -140,7 +254,19 @@ export default function CatalogPage({
     return () => document.body.classList.remove("catalog-body");
   }, []);
 
+  async function handleDeleteConfirmed() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await deleteTarget.onDelete?.();
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
+    }
+  }
+
   const activeFormTitle = isEditing && formTitleEdit ? formTitleEdit : formTitle;
+  const hasPagination   = totalPages != null && onPageChange != null;
 
   return (
     <div className="catalog-shell">
@@ -191,7 +317,7 @@ export default function CatalogPage({
             {/* Linhas */}
             <div className="catalog-table-body">
               {loadingRows ? (
-                Array.from({ length: 5 }).map((_, i) => (
+                Array.from({ length: pageSize }).map((_, i) => (
                   <div key={i} className="catalog-row-skeleton" />
                 ))
               ) : rows.length === 0 ? (
@@ -214,7 +340,6 @@ export default function CatalogPage({
                     </div>
                   </div>
 
-                  {/* Células */}
                   {row.cells.map((cell, idx) => (
                     <span
                       key={idx}
@@ -225,7 +350,6 @@ export default function CatalogPage({
                     </span>
                   ))}
 
-                  {/* Ferramentas */}
                   <div className="catalog-tools">
                     <button
                       type="button"
@@ -249,11 +373,13 @@ export default function CatalogPage({
               ))}
             </div>
 
-            {moreLabel && (
-              <button className="catalog-more" type="button">
-                {moreLabel}
-                <ChevronDownIcon />
-              </button>
+            {/* Paginação */}
+            {hasPagination && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={onPageChange}
+              />
             )}
           </div>
         </div>
@@ -307,35 +433,53 @@ export default function CatalogPage({
 
       </div>
 
-      {pendingDelete && (
-        <div className="catalog-confirm-backdrop">
-          <div className="catalog-confirm-modal">
-            <h3>Excluir {pendingDelete.label}?</h3>
-            <p>
-              Tem certeza que deseja excluir <strong>{pendingDelete.row.title}</strong>?
-            </p>
-            <div className="catalog-confirm-actions">
+      {/* ── Modal de confirmação de exclusão ── */}
+      {deleteTarget && (
+        <div
+          className="produto-modal-backdrop"
+          onClick={() => !deleting && setDeleteTarget(null)}
+        >
+          <div className="produto-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="produto-modal-header">
+              <div>
+                <p className="produto-eyebrow">Excluir registro</p>
+                <h2>Tem certeza?</h2>
+              </div>
               <button
                 type="button"
-                className="catalog-submit"
-                onClick={() => {
-                  pendingDelete.row.onDelete?.();
-                  setPendingDelete(null);
-                }}
-              >
-                Sim
-              </button>
+                className="produto-close-btn"
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleting}
+                aria-label="Fechar modal"
+              >×</button>
+            </div>
+
+            <p className="produto-confirm-text">
+              Deseja realmente excluir <strong>{deleteTarget.title}</strong>? Esta ação não pode ser desfeita.
+            </p>
+
+            <div className="produto-confirm-actions">
               <button
                 type="button"
                 className="catalog-cancel"
-                onClick={() => setPendingDelete(null)}
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleting}
               >
-                Não
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="catalog-submit catalog-submit--danger"
+                onClick={handleDeleteConfirmed}
+                disabled={deleting}
+              >
+                {deleting ? "Excluindo..." : "Excluir"}
               </button>
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }

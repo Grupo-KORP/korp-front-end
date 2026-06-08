@@ -66,6 +66,7 @@ body.catalog-body {
   max-width: 1450px;
   margin: 0 auto;
   padding: 28px 0 32px;
+  min-height: calc(100vh - 92px);
 }
 
 /* ─── Coluna esquerda (cresce) ───────────────────────────────────────────────── */
@@ -75,6 +76,7 @@ body.catalog-body {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-height: calc(100vh - 92px);
 }
 
 /* ─── Linha do título + search ───────────────────────────────────────────────── */
@@ -347,29 +349,84 @@ body.dark .catalog-tools button:last-child:hover {
 
 .catalog-tools svg { width: 16px; height: 16px; fill: currentColor; }
 
-/* "Ver mais" */
-.catalog-more {
-  height: 52px;
-  margin: 16px -24px 0;
-  border: 0;
-  border-top: 1px solid var(--cat-border);
-  border-radius: 0 0 var(--cat-card-radius) var(--cat-card-radius);
-  background: var(--cat-card-bg);
-  color: var(--cat-text-m);
+/* ─── Paginação ───────────────────────────────────────────────────────────────── */
+.catalog-pagination {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font-size: 9px;
-  font-weight: 900;
-  letter-spacing: 1.8px;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: background 0.15s;
+  justify-content: space-between;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--cat-border);
 }
 
-.catalog-more:hover { background: var(--cat-row-hover); }
-.catalog-more svg   { width: 12px; height: 12px; fill: currentColor; }
+.catalog-pagination-info {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--cat-text-s);
+}
+
+.catalog-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.catalog-pag-btn {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--cat-border);
+  border-radius: 0.75rem;
+  background: var(--cat-card-bg);
+  color: var(--cat-text-m);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
+  flex-shrink: 0;
+}
+
+.catalog-pag-btn svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+}
+
+.catalog-pag-btn:hover:not(:disabled):not(.is-active) {
+  background: var(--cat-badge-bg);
+  color: var(--cat-accent);
+  border-color: #bfdbfe;
+}
+
+.catalog-pag-btn.is-active {
+  background: var(--cat-gradient);
+  border-color: transparent;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(26, 58, 122, 0.3);
+  cursor: default;
+}
+
+.catalog-pag-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.catalog-pagination-ellipsis {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cat-text-s);
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
 
 /* ─── Coluna direita: form sidebar ───────────────────────────────────────────── */
 .catalog-right {
@@ -416,6 +473,7 @@ body.dark .catalog-tools button:last-child:hover {
   background: rgba(148, 163, 184, 0.45);
   border-radius: 999px;
 }
+
 .produto-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -472,6 +530,7 @@ body.dark .catalog-tools button:last-child:hover {
 .catalog-left {
   min-height: calc(100vh - 92px);
 }
+
 /* Heading */
 .catalog-form-heading { display: flex; flex-direction: column; gap: 2px; }
 
@@ -708,6 +767,29 @@ body.dark .catalog-tools button:last-child:hover {
   .catalog-search { width: 100%; }
 
   .catalog-table-card { overflow-x: auto; }
+  
+  .catalog-pagination {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
+
+/* ─── Modal eyebrow ──────────────────────────────────────────────────────────── */
+.produto-eyebrow {
+  margin: 0 0 2px;
+  color: var(--cat-accent);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* ─── Submit variante danger ─────────────────────────────────────────────────── */
+.catalog-submit--danger {
+  background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%);
+  box-shadow: 0 4px 14px rgba(185, 28, 28, 0.3);
 }
 
 .catalog-confirm-backdrop {
