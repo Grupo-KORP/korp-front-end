@@ -402,6 +402,9 @@ export default function ProdutoPage() {
               <button type="button" className="catalog-submit catalog-submit--danger" onClick={handleDeleteConfirmed} disabled={deleting}>
                 {deleting ? "Excluindo..." : "Excluir"}
               </button>
+              <button type="button" className="catalog-cancel" onClick={closeDeleteModal}>
+                Não
+              </button>
             </div>
           </div>
         </div>

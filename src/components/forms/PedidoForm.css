@@ -48,9 +48,15 @@
   color: var(--pedido-text-strong, #061d51);
 }
 
-.section-icon {
+.pedido-form .section-icon {
   width: 30px;
   height: 30px;
+  display: block;
+}
+
+.pedido-form .section-icon img {
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   display: block;
 }
@@ -343,18 +349,22 @@
   background: var(--pedido-blue-soft, #f1f5f9);
 }
 
-.btn-add-produto {
+.pedido-form .btn-add-produto {
   margin-top: 5px;
-  padding: 10px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 10px 14px;
   border-radius: 10px;
   border: 1px dashed var(--pedido-blue, #3b82f6);
   background: transparent;
   color: var(--pedido-blue, #3b82f6);
   cursor: pointer;
   transition: 0.2s;
+  text-align: center;
 }
 
-.btn-add-produto:hover {
+.pedido-form .btn-add-produto:hover {
   background: var(--pedido-blue-soft, #eff6ff);
 }
 
