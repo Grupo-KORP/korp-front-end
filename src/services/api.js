@@ -165,3 +165,8 @@ export async function cadastrarPedido(pedidoRequest) {
   const { data } = await api.post("/pedidos/cadastrar", pedidoRequest);
   return data;
 }
+
+export async function criarComissao(idPedido, pagamentoDTO) {
+  const { data } = await api.post(`/pedidos/${idPedido}/comissao`, pagamentoDTO);
+  return data;
+}
