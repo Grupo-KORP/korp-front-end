@@ -65,7 +65,7 @@ export default function EntityDetailsModal({ entity, onClose, title, open = true
                 <InfoItem label="Inscricao Estadual" value={entity.inscricaoEstadual} />
                 <InfoItem label="Telefone" value={formatPhone(entity.telefone)} />
                 <InfoItem label="CEP" value={formatCEP(entity.cep)} />
-                <InfoItem label="Endereco" value={entity.endereco} colSpan={2} />
+                <InfoItem label="Endereco" value={entity.logradouro} colSpan={2} />
                 <InfoItem label="Numero" value={entity.numero} />
                 <InfoItem label="Complemento" value={entity.complemento || "-"} />
                 <InfoItem label="Cidade" value={entity.cidade} />

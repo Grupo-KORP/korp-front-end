@@ -10,23 +10,23 @@ const PAGE_SIZE = 8;
 // ─── Máscaras ─────────────────────────────────────────────────────────────────
 function maskCNPJ(raw) {
   raw = raw.replace(/\D/g, "").slice(0, 14);
-  if (raw.length > 12) return `${raw.slice(0,2)}.${raw.slice(2,5)}.${raw.slice(5,8)}/${raw.slice(8,12)}-${raw.slice(12)}`;
-  if (raw.length > 8)  return `${raw.slice(0,2)}.${raw.slice(2,5)}.${raw.slice(5,8)}/${raw.slice(8)}`;
-  if (raw.length > 5)  return `${raw.slice(0,2)}.${raw.slice(2,5)}.${raw.slice(5)}`;
-  if (raw.length > 2)  return `${raw.slice(0,2)}.${raw.slice(2)}`;
+  if (raw.length > 12) return `${raw.slice(0, 2)}.${raw.slice(2, 5)}.${raw.slice(5, 8)}/${raw.slice(8, 12)}-${raw.slice(12)}`;
+  if (raw.length > 8) return `${raw.slice(0, 2)}.${raw.slice(2, 5)}.${raw.slice(5, 8)}/${raw.slice(8)}`;
+  if (raw.length > 5) return `${raw.slice(0, 2)}.${raw.slice(2, 5)}.${raw.slice(5)}`;
+  if (raw.length > 2) return `${raw.slice(0, 2)}.${raw.slice(2)}`;
   return raw;
 }
 
 function maskCEP(raw) {
   raw = raw.replace(/\D/g, "").slice(0, 8);
-  if (raw.length > 5) return `${raw.slice(0,5)}-${raw.slice(5)}`;
+  if (raw.length > 5) return `${raw.slice(0, 5)}-${raw.slice(5)}`;
   return raw;
 }
 
 function maskPhone(raw) {
   raw = raw.replace(/\D/g, "").slice(0, 11);
-  if (raw.length > 7) return `(${raw.slice(0,2)}) ${raw.slice(2,7)}-${raw.slice(7)}`;
-  if (raw.length > 2) return `(${raw.slice(0,2)}) ${raw.slice(2)}`;
+  if (raw.length > 7) return `(${raw.slice(0, 2)}) ${raw.slice(2, 7)}-${raw.slice(7)}`;
+  if (raw.length > 2) return `(${raw.slice(0, 2)}) ${raw.slice(2)}`;
   return raw;
 }
 
@@ -40,9 +40,9 @@ const emptyForm = {
 const emptyContact = { nome: "", email: "", telefone: "" };
 
 const UF_OPTIONS = [
-  "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS",
-  "MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC",
-  "SP","SE","TO",
+  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS",
+  "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC",
+  "SP", "SE", "TO",
 ];
 
 // ─── APIs externas ────────────────────────────────────────────────────────────
@@ -53,7 +53,7 @@ async function fetchEmpresa(cnpjRaw) {
 }
 
 async function fetchCEP(cepRaw) {
-  const res  = await fetch(`https://viacep.com.br/ws/${cepRaw}/json/`);
+  const res = await fetch(`https://viacep.com.br/ws/${cepRaw}/json/`);
   const data = await res.json();
   if (data.erro) throw new Error("CEP não encontrado.");
   return { endereco: data.logradouro, cidade: data.localidade, uf: data.uf };
@@ -62,17 +62,17 @@ async function fetchCEP(cepRaw) {
 // ─── Helper: mapeia distribuidor da API para row ──────────────────────────────
 function mapDistribuidorToRow(d, onEdit, onDelete, onView) {
   return {
-    id:       d.idDistribuidor ?? d.id,
-    badge:    d.nomeFantasia?.slice(0, 2).toUpperCase() ?? "DT",
-    title:    d.razaoSocial,
+    id: d.idDistribuidor ?? d.id,
+    badge: d.nomeFantasia?.slice(0, 2).toUpperCase() ?? "DT",
+    title: d.razaoSocial,
     subtitle: d.nomeFantasia || "",
     cells: [
       { value: d.contatos?.length ?? 0, className: "catalog-centered" },
-      { value: d.uf || "-",             className: "catalog-centered" },
+      { value: d.uf || "-", className: "catalog-centered" },
     ],
-    onEdit:   () => onEdit(d),
+    onEdit: () => onEdit(d),
     onDelete: () => onDelete(d.idDistribuidor ?? d.id),
-    onView:   () => onView(d),
+    onView: () => onView(d),
   };
 }
 
@@ -80,33 +80,38 @@ function mapDistribuidorToRow(d, onEdit, onDelete, onView) {
 export default function DistribuidorPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const pageFromUrl  = parseInt(searchParams.get("pagina") || "1", 10);
+  const pageFromUrl = parseInt(searchParams.get("pagina") || "1", 10);
   const buscaFromUrl = searchParams.get("busca") || "";
 
-  const [form,          setForm]          = useState(emptyForm);
-  const [errors,        setErrors]        = useState({});
-  const [loading,       setLoading]       = useState(false);
-  const [loadingRows,   setLoadingRows]   = useState(false);
-  const [rows,          setRows]          = useState([]);
-  const [totalPages,    setTotalPages]    = useState(1);
-  const [editingId,     setEditingId]     = useState(null);
-  const [search,        setSearch]        = useState(buscaFromUrl);
-  const [currentPage,   setCurrentPage]   = useState(
+  const [form, setForm] = useState(emptyForm);
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [loadingRows, setLoadingRows] = useState(false);
+  const [rows, setRows] = useState([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [editingId, setEditingId] = useState(null);
+  const [search, setSearch] = useState(buscaFromUrl);
+  const [currentPage, setCurrentPage] = useState(
     isNaN(pageFromUrl) || pageFromUrl < 1 ? 1 : pageFromUrl
   );
-  const [isContactStep,        setIsContactStep]        = useState(false);
-  const [contacts,             setContacts]             = useState([{ ...emptyContact }]);
-  const [contactErrors,        setContactErrors]        = useState([{}]);
+  const [isContactStep, setIsContactStep] = useState(false);
+  const [contacts, setContacts] = useState([{ ...emptyContact }]);
+  const [contactErrors, setContactErrors] = useState([{}]);
   const [selectedDistribuidor, setSelectedDistribuidor] = useState(null);
 
   const [loadingCNPJ, setLoadingCNPJ] = useState(false);
-  const [loadingCEP,  setLoadingCEP]  = useState(false);
+  const [loadingCEP, setLoadingCEP] = useState(false);
+
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+
+  const [contactToDelete, setContactToDelete] = useState(null);
+  const [deletingContact, setDeletingContact] = useState(false);
 
   // ── Sincroniza URL ──
   const syncUrl = useCallback((page, busca) => {
     const params = {};
     if (page > 1) params.pagina = String(page);
-    if (busca)    params.busca  = busca;
+    if (busca) params.busca = busca;
     setSearchParams(params, { replace: true });
   }, [setSearchParams]);
 
@@ -125,6 +130,7 @@ export default function DistribuidorPage() {
       if (data.content !== undefined) {
         setRows(data.content.map((d) => mapDistribuidorToRow(d, handleEdit, handleDelete, handleView)));
         setTotalPages(data.totalPages ?? 1);
+        console.log("Distribuidores carregados:", data.content);
       } else {
         setRows(data.map((d) => mapDistribuidorToRow(d, handleEdit, handleDelete, handleView)));
         setTotalPages(1);
@@ -134,7 +140,7 @@ export default function DistribuidorPage() {
     } finally {
       setLoadingRows(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -228,34 +234,63 @@ export default function DistribuidorPage() {
     setContactErrors((prev) => prev.filter((_, idx) => idx !== index));
   }
 
+  async function handleDeleteContact() {
+    if (!contactToDelete) return;
+
+    setDeletingContact(true);
+
+    try {
+      if (contactToDelete.idContato) {
+        await api.delete(`/contatos/${contactToDelete.idContato}`);
+
+        setContacts((prev) =>
+          prev.filter(
+            (c) => c.idContato !== contactToDelete.idContato
+          )
+        );
+
+        toast.success("Contato removido com sucesso!");
+      } else {
+        removeContact(contactToDelete.index);
+      }
+    } catch {
+      toast.error("Erro ao remover contato.");
+    } finally {
+      setDeletingContact(false);
+      setContactToDelete(null);
+    }
+  }
+
   // ── View ──
   function handleView(d) {
     setSelectedDistribuidor(d);
+    setShowDetailsModal(true);
   }
 
   // ── Editar ──
   function handleEdit(d) {
     setEditingId(d.idDistribuidor ?? d.id);
     setForm({
-      razaoSocial:  d.razaoSocial        ?? "",
-      nomeFantasia: d.nomeFantasia       ?? "",
-      cnpj:         maskCNPJ(d.cnpj      ?? ""),
-      inscEst:      d.inscricaoEstadual  ?? "",
-      fone:         maskPhone(d.telefone ?? ""),
-      cep:          maskCEP(d.cep        ?? ""),
-      endereco:     d.endereco           ?? "",
-      numero:       d.numero             ?? "",
-      complemento:  d.complemento        ?? "",
-      cidade:       d.cidade             ?? "",
-      uf:           d.uf                 ?? "SP",
+      razaoSocial: d.razaoSocial ?? "",
+      inscEst: d.inscricaoEstadual ?? "",
+      cnpj: maskCNPJ(d.cnpj ?? ""),
+      nomeFantasia: d.nomeFantasia ?? "",
+      fone: maskPhone(d.telefone ?? ""),
+      cep: maskCEP(d.cep ?? ""),
+      endereco: d.logradouro ?? "",
+      numero: d.numero ?? "",
+      complemento: d.complemento ?? "",
+      cidade: d.cidade ?? "",
+      uf: d.uf ?? "SP",
     });
     setContacts(
       d.contatos && d.contatos.length > 0
         ? d.contatos.map((item) => ({
-            nome:     item.nome     || "",
-            email:    item.email    || "",
-            telefone: maskPhone(item.telefone || ""),
-          }))
+          idContato: item.idContato,
+          nome: item.nome || "",
+          email: item.email || "",
+          telefone: maskPhone(item.telefone || ""),
+        }))
         : [{ nome: d.contato || "", email: d.email || "", telefone: "" }]
     );
     setContactErrors([{}]);
@@ -291,12 +326,12 @@ export default function DistribuidorPage() {
   // ── Validação ──
   function validateCompany() {
     const errs = {};
-    if (!form.razaoSocial.trim())                               errs.razaoSocial  = "Razão social obrigatória.";
-    if (!form.nomeFantasia.trim())                              errs.nomeFantasia = "Nome fantasia obrigatório.";
-    if (form.cnpj.replace(/\D/g, "").length < 14)              errs.cnpj         = "CNPJ inválido.";
-    if (!form.fone || form.fone.replace(/\D/g, "").length < 10) errs.fone        = "Telefone inválido.";
-    if (form.cep.replace(/\D/g, "").length < 8)                errs.cep          = "CEP inválido.";
-    if (!form.numero.trim())                                    errs.numero       = "Número obrigatório.";
+    if (!form.razaoSocial.trim()) errs.razaoSocial = "Razão social obrigatória.";
+    if (!form.nomeFantasia.trim()) errs.nomeFantasia = "Nome fantasia obrigatório.";
+    if (form.cnpj.replace(/\D/g, "").length < 14) errs.cnpj = "CNPJ inválido.";
+    if (!form.fone || form.fone.replace(/\D/g, "").length < 10) errs.fone = "Telefone inválido.";
+    if (form.cep.replace(/\D/g, "").length < 8) errs.cep = "CEP inválido.";
+    if (!form.numero.trim()) errs.numero = "Número obrigatório.";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -304,8 +339,8 @@ export default function DistribuidorPage() {
   function validateContacts() {
     const errorsByContact = contacts.map((contact) => {
       const err = {};
-      if (!contact.nome.trim())                                           err.nome     = "Nome obrigatório.";
-      if (!contact.email || !contact.email.includes("@"))                err.email    = "E-mail inválido.";
+      if (!contact.nome.trim()) err.nome = "Nome obrigatório.";
+      if (!contact.email || !contact.email.includes("@")) err.email = "E-mail inválido.";
       if (!contact.telefone || contact.telefone.replace(/\D/g, "").length < 10) err.telefone = "Telefone inválido.";
       return err;
     });
@@ -323,53 +358,104 @@ export default function DistribuidorPage() {
     }
 
     if (!validateContacts()) {
-      if (contacts.length === 0) toast.error("Cadastre pelo menos um contato.");
+      if (contacts.length === 0) {
+        toast.error("Cadastre pelo menos um contato.");
+      }
       return;
     }
 
-    const payload = {
-      razaoSocial:       form.razaoSocial,
-      nomeFantasia:      form.nomeFantasia,
-      cnpj:              form.cnpj.replace(/\D/g, ""),
+    const companyPayload = {
+      razaoSocial: form.razaoSocial,
       inscricaoEstadual: form.inscEst,
-      telefone:          form.fone.replace(/\D/g, ""),
-      cep:               form.cep.replace(/\D/g, ""),
-      endereco:          form.endereco,
-      numero:            form.numero,
-      complemento:       form.complemento,
-      cidade:            form.cidade,
-      uf:                form.uf,
+      cnpj: form.cnpj.replace(/\D/g, ""),
+      nomeFantasia: form.nomeFantasia,
+      telefone: form.fone.replace(/\D/g, ""),
+      cep: form.cep.replace(/\D/g, ""),
+      endereco: form.endereco,
+      numero: form.numero,
+      complemento: form.complemento,
+      cidade: form.cidade,
+      uf: form.uf,
+    };
+
+    const contatosPayload = {
       contatos: contacts.map((c) => ({
-        nome:     c.nome,
-        email:    c.email,
+        idContato: c.idContato,
+        nome: c.nome,
+        email: c.email,
         telefone: c.telefone.replace(/\D/g, ""),
       })),
-      // compat. com backend que ainda espera campos planos
-      contato: contacts[0]?.nome  || "",
-      email:   contacts[0]?.email || "",
     };
 
     setLoading(true);
+
     try {
       if (editingId) {
-        await api.put(`/distribuidor/${editingId}`, payload);
-        toast.success("Distribuidor atualizado com sucesso!");
+        console.log("Payload distribuidor:", {
+  ...companyPayload,
+  contatos: contatosPayload.contatos,
+});
+        await api.put(
+          `/distribuidor/${editingId}`,
+          companyPayload
+        );
+
+        await api.put(
+          `/distribuidor/${editingId}/contatos`,
+          contatosPayload
+        );
+
+        toast.success(
+          "Distribuidor atualizado com sucesso!"
+        );
+
         setEditingId(null);
+
       } else {
-        await api.post("/distribuidor", payload);
-        toast.success("Distribuidor cadastrado com sucesso!");
+        console.log("Payload para criação:", {
+          ...companyPayload,
+          contatos: contatosPayload.contatos,
+        });
+
+        await api.post("/distribuidor", {
+          ...companyPayload,
+          contatos: contatosPayload.contatos,
+        });
+
+        toast.success(
+          "Distribuidor cadastrado com sucesso!"
+        );
       }
+
       setForm(emptyForm);
       setContacts([{ ...emptyContact }]);
       setContactErrors([{}]);
       setIsContactStep(false);
       setErrors({});
-      await fetchDistribuidores(currentPage, search);
+
+      await fetchDistribuidores(
+        currentPage,
+        search
+      );
+
     } catch (err) {
-      if (err?.status === 409)      toast.error(err.message);
-      else if (err?.status === 404) toast.error("Distribuidor não encontrado.");
-      else if (err?.status === 400) toast.error(err.message ?? "Dados inválidos.");
-      else toast.error(editingId ? "Erro ao atualizar distribuidor." : "Erro ao cadastrar distribuidor.");
+
+      if (err?.status === 409) {
+        toast.error(err.message);
+      } else if (err?.status === 404) {
+        toast.error("Distribuidor não encontrado.");
+      } else if (err?.status === 400) {
+        toast.error(
+          err.message ?? "Dados inválidos."
+        );
+      } else {
+        toast.error(
+          editingId
+            ? "Erro ao atualizar distribuidor."
+            : "Erro ao cadastrar distribuidor."
+        );
+      }
+
     } finally {
       setLoading(false);
     }
@@ -377,17 +463,17 @@ export default function DistribuidorPage() {
 
   // ── Fields da etapa 1 ──
   const fields = [
-    { name: "cnpj",         label: "CNPJ",         pair: "start", placeholder: "00.000.000/0000-00", value: form.cnpj,         loading: loadingCNPJ, error: errors.cnpj },
-    { name: "inscEst",      label: "Insc. Est.",    pair: "end",   placeholder: "isento",             value: form.inscEst,      loading: loadingCNPJ },
-    { name: "razaoSocial",  label: "Razão Social",  placeholder: "Ex: Tech Solutions Ltda",           value: form.razaoSocial,  readOnly: true, loading: loadingCNPJ, error: errors.razaoSocial },
-    { name: "nomeFantasia", label: "Nome Fantasia", placeholder: "Ex: Tech Solutions",                value: form.nomeFantasia, loading: loadingCNPJ, error: errors.nomeFantasia },
-    { name: "fone",         label: "Fone",          pair: "start", placeholder: "(00) 0000-0000",      value: form.fone,         error: errors.fone },
-    { name: "cep",          label: "CEP",           pair: "end",   placeholder: "00000-000",           value: form.cep,          loading: loadingCEP, error: errors.cep },
-    { name: "endereco",     label: "Endereço",      placeholder: "Rua das Inovações",                 value: form.endereco,     readOnly: true, loading: loadingCEP },
-    { name: "numero",       label: "Número",        pair: "start", placeholder: "104",                 value: form.numero,       error: errors.numero },
-    { name: "complemento",  label: "Complemento",   pair: "end",   placeholder: "Sala 104",            value: form.complemento },
-    { name: "cidade",       label: "Cidade",        pair: "start", placeholder: "São Paulo",           value: form.cidade,       readOnly: true, loading: loadingCEP },
-    { name: "uf",           label: "UF",            pair: "end",   type: "select", value: form.uf,     readOnly: true, options: UF_OPTIONS },
+    { name: "cnpj", label: "CNPJ", pair: "start", placeholder: "00.000.000/0000-00", value: form.cnpj, loading: loadingCNPJ, error: errors.cnpj },
+    { name: "inscEst", label: "Insc. Est.", pair: "end", placeholder: "isento", value: form.inscEst, loading: loadingCNPJ },
+    { name: "razaoSocial", label: "Razão Social", placeholder: "Ex: Tech Solutions Ltda", value: form.razaoSocial, readOnly: true, loading: loadingCNPJ, error: errors.razaoSocial },
+    { name: "nomeFantasia", label: "Nome Fantasia", placeholder: "Ex: Tech Solutions", value: form.nomeFantasia, loading: loadingCNPJ, error: errors.nomeFantasia },
+    { name: "fone", label: "Fone", pair: "start", placeholder: "(00) 0000-0000", value: form.fone, error: errors.fone },
+    { name: "cep", label: "CEP", pair: "end", placeholder: "00000-000", value: form.cep, loading: loadingCEP, error: errors.cep },
+    { name: "endereco", label: "Endereço", placeholder: "Rua das Inovações", value: form.endereco, readOnly: true, loading: loadingCEP },
+    { name: "numero", label: "Número", pair: "start", placeholder: "104", value: form.numero, error: errors.numero },
+    { name: "complemento", label: "Complemento", pair: "end", placeholder: "Sala 104", value: form.complemento },
+    { name: "cidade", label: "Cidade", pair: "start", placeholder: "São Paulo", value: form.cidade, readOnly: true, loading: loadingCEP },
+    { name: "uf", label: "UF", pair: "end", type: "select", value: form.uf, readOnly: true, options: UF_OPTIONS },
   ];
 
   // ── Conteúdo da etapa 2 (contatos) ──
@@ -401,7 +487,12 @@ export default function DistribuidorPage() {
               <button
                 type="button"
                 className="catalog-contact-delete"
-                onClick={() => removeContact(index)}
+                onClick={() =>
+                  setContactToDelete({
+                    ...contact,
+                    index,
+                  })
+                }
                 aria-label={`Remover contato ${index + 1}`}
                 title="Remover contato"
               >
@@ -455,9 +546,9 @@ export default function DistribuidorPage() {
         onSearchChange={handleSearchChange}
         tableTitle="Base de Fornecedores"
         tableColumns={[
-          { label: "Identificação dos Cadastros", flex: "2"   },
-          { label: "Contatos",                    flex: "1"   },
-          { label: "UF",                          flex: "0.7" },
+          { label: "Identificação dos Cadastros", flex: "2" },
+          { label: "Contatos", flex: "1" },
+          { label: "UF", flex: "0.7" },
         ]}
         rows={rows}
         loadingRows={loadingRows}
@@ -479,10 +570,76 @@ export default function DistribuidorPage() {
       />
 
       <EntityDetailsModal
-        entity={selectedDistribuidor}
-        title="Detalhes do Distribuidor"
-        onClose={() => setSelectedDistribuidor(null)}
-      />
+      title="Detalhes do Distribuidor"
+      open={showDetailsModal}
+      entity={selectedDistribuidor}
+      onClose={() => setShowDetailsModal(false)}
+    />
+
+    {contactToDelete && (
+  <div
+    className="produto-modal-backdrop"
+    onClick={() =>
+      !deletingContact &&
+      setContactToDelete(null)
+    }
+  >
+    <div
+      className="produto-modal-card"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="produto-modal-header">
+        <div>
+          <p className="produto-eyebrow">
+            Excluir contato
+          </p>
+          <h2>Tem certeza?</h2>
+        </div>
+
+        <button
+          type="button"
+          className="produto-close-btn"
+          onClick={() =>
+            setContactToDelete(null)
+          }
+        >
+          ×
+        </button>
+      </div>
+
+      <p className="produto-confirm-text">
+        Deseja realmente excluir o contato{" "}
+        <strong>
+          {contactToDelete.nome}
+        </strong>
+        ?
+      </p>
+
+      <div className="produto-confirm-actions">
+        <button
+          type="button"
+          className="catalog-cancel"
+          onClick={() =>
+            setContactToDelete(null)
+          }
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="button"
+          className="catalog-submit catalog-submit--danger"
+          onClick={handleDeleteContact}
+          disabled={deletingContact}
+        >
+          {deletingContact
+            ? "Excluindo..."
+            : "Excluir"}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </>
   );
 }

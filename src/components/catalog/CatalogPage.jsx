@@ -1,4 +1,4 @@
-import { useEffect, useState, useState } from "react";
+import { useEffect, useState } from "react";
 import NavbarVendedor from "../../layout/NavbarVendedor";
 import "./CatalogPage.css";
 
@@ -49,16 +49,16 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
   const getVisiblePages = () => {
     if (totalPages <= 3) return Array.from({ length: totalPages }, (_, i) => i + 1);
     let start = Math.max(2, currentPage - 1);
-    let end   = Math.min(totalPages - 1, currentPage + 1);
-    if (currentPage <= 2)             { start = 2; end = Math.min(4, totalPages - 1); }
-    if (currentPage >= totalPages - 1){ start = Math.max(2, totalPages - 3); end = totalPages - 1; }
+    let end = Math.min(totalPages - 1, currentPage + 1);
+    if (currentPage <= 2) { start = 2; end = Math.min(4, totalPages - 1); }
+    if (currentPage >= totalPages - 1) { start = Math.max(2, totalPages - 3); end = totalPages - 1; }
     return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   };
 
-  const rawVisible   = getVisiblePages();
+  const rawVisible = getVisiblePages();
   const visiblePages = rawVisible.filter((p) => p !== 1 && p !== totalPages);
   const showStartEllipsis = visiblePages.length > 0 && visiblePages[0] > 2;
-  const showEndEllipsis   = visiblePages.length > 0 && visiblePages[visiblePages.length - 1] < totalPages - 1;
+  const showEndEllipsis = visiblePages.length > 0 && visiblePages[visiblePages.length - 1] < totalPages - 1;
 
   const ellipsis = <span className="catalog-pagination-ellipsis">···</span>;
 
@@ -150,11 +150,11 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
 }
 
 function FormField({ field, onChange }) {
-  const isAuto   = field.readOnly;
+  const isAuto = field.readOnly;
   const hasError = !!field.error;
   const cls = [
     "catalog-form-field",
-    isAuto   ? "is-auto"   : "",
+    isAuto ? "is-auto" : "",
     hasError ? "has-error" : "",
   ].filter(Boolean).join(" ");
 
@@ -200,7 +200,7 @@ function renderFields(fields, onChange) {
     if (field.pair === "start" && fields[i + 1]?.pair === "end") {
       result.push(
         <div className="catalog-form-row" key={field.name}>
-          <FormField field={field}         onChange={onChange} />
+          <FormField field={field} onChange={onChange} />
           <FormField field={fields[i + 1]} onChange={onChange} />
         </div>
       );
@@ -245,9 +245,7 @@ export default function CatalogPage({
   deleteEntityLabel = "registro",
 }) {
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [deleting,     setDeleting]     = useState(false);
-
-  const [pendingDelete, setPendingDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     document.body.classList.add("catalog-body");
@@ -266,7 +264,7 @@ export default function CatalogPage({
   }
 
   const activeFormTitle = isEditing && formTitleEdit ? formTitleEdit : formTitle;
-  const hasPagination   = totalPages != null && onPageChange != null;
+  const hasPagination = totalPages != null && onPageChange != null;
 
   return (
     <div className="catalog-shell">
@@ -363,7 +361,7 @@ export default function CatalogPage({
                       aria-label={`Excluir ${row.title}`}
                       onClick={(e) => {
                         e.stopPropagation();
-                        setPendingDelete({ row, label: deleteEntityLabel });
+                        setDeleteTarget(row); 
                       }}
                     >
                       <DeleteIcon />

@@ -444,7 +444,7 @@ body.dark .catalog-tools button:last-child:hover {
   gap: 20px;
   transition: background 0.3s;
   min-height: 0;
-  max-height: calc(100vh - 120px);
+  max-height: calc(100vh - 50px);
   overflow: hidden;
 }
 .catalog-form {
