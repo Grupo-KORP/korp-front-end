@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import "./ResumoPedido.css";
 import dinheiroIcon from "../../assets/dinheiro.png";
 import perfilDistribuidor from "../../assets/distribuidor.png";
+import { cadastrarPedido } from "../../services/api";
+import { mapperFormDataToPedidoRequest } from "../../services/pedidoRequestMapper";
 
 export default function ResumoPedido({ formData }) {
   const cliente = formData?.cliente || {};
@@ -20,6 +22,8 @@ export default function ResumoPedido({ formData }) {
   const [cidadeEntrega, setCidadeEntrega] = useState(entrega.cidade);
   const [cepEntrega, setCepEntrega] = useState(entrega.cep);
   const [showEnviarPdfModal, setShowEnviarPdfModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   // Sincronizar com formData quando entrega mudar
   useEffect(() => {
@@ -388,30 +392,22 @@ export default function ResumoPedido({ formData }) {
 
   const navigate = useNavigate();
 
-  const salvarPedido = () => {
-    const novoId = `V${Date.now().toString().slice(-6)}`;
-    const clienteLabel = clienteFaturado || cliente.nome || "Cliente";
-    const nomeVenda = `VENDA ${novoId}`;
-    const pedido = {
-      id: novoId,
-      nome: nomeVenda,
-      cliente: clienteLabel,
-      comissao: fmt(comissao),
-      status: "Aguardando",
-      tipo: "pendente",
-      parcelas: [{ label: "Parcela 1/1", valor: fmt(valorFaturamento) }],
-    };
+  const salvarPedido = async () => {
+    setLoading(true);
+    setError(null);
 
     try {
-      const chave = "korp_pedidos";
-      const armazenado = JSON.parse(localStorage.getItem(chave) || "[]");
-      armazenado.push(pedido);
-      localStorage.setItem(chave, JSON.stringify(armazenado));
-    } catch (e) {
-      console.error("Erro ao salvar pedido:", e);
-    }
+      const pedidoRequest = transformFormDataToRequest(formData);
+      const response = await cadastrarPedido(pedidoRequest);
 
-    navigate("/vendedores/home");
+      if (response && response.idPedido) {
+        navigate("/vendedores/home");
+      }
+    } catch (err) {
+      console.error("Erro ao salvar pedido:", err);
+      setError(err.message || "Erro ao salvar pedido. Tente novamente.");
+      setLoading(false);
+    }
   };
 
   const adicionarPedido = () => {
@@ -425,7 +421,7 @@ export default function ResumoPedido({ formData }) {
       await gerarPDF();
     }
 
-    salvarPedido();
+    await salvarPedido();
   };
 
   return (
@@ -507,14 +503,42 @@ export default function ResumoPedido({ formData }) {
         </div>
 
         <div className="botoes-resumo">
-          <button className="btn-primary" onClick={adicionarPedido}>
-            Adicionar Pedido
+          <button className="btn-primary" onClick={adicionarPedido} disabled={loading}>
+            {loading ? "Salvando..." : "Adicionar Pedido"}
           </button>
           <button className="btn-secondary" onClick={gerarPDF}>
             Pré visualizar PDF
           </button>
         </div>
       </div>
+
+      {error && (
+        <div className="resumo-modal-overlay" role="dialog" aria-modal="true">
+          <div className="resumo-modal">
+            <h3>Erro ao salvar pedido</h3>
+            <p>{error}</p>
+            <div className="resumo-modal-actions">
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => {
+                  setError(null);
+                  setShowEnviarPdfModal(true);
+                }}
+              >
+                Tentar novamente
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setError(null)}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showEnviarPdfModal && (
         <div className="resumo-modal-overlay" role="dialog" aria-modal="true">

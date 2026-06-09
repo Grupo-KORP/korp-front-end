@@ -6,7 +6,7 @@ import Alert from '../ui/Alert'
 import { useForm } from '../../hooks/useForm'
 import { useAuth } from '../../hooks/useAuth'
 import { decodeJWT } from '../../services/api'
-import ModalAlterarSenha from '../modal/ModalAlterarSenha'
+// import ModalAlterarSenha from '../modal/ModalAlterarSenha'
 
 /**
  * LoginForm
@@ -15,9 +15,9 @@ import ModalAlterarSenha from '../modal/ModalAlterarSenha'
  * Conecta-se ao hook useAuth para autenticação via API.
  */
 function LoginForm() {
-  const navigate = useNavigate()
+  const navegar = useNavigate()
   const { entrar, loading, error } = useAuth()
-  const [modalSenhaAberto, setModalSenhaAberto] = useState(false)
+  // const [modalSenhaAberto, setModalSenhaAberto] = useState(false)
 
   // Definição dos campos e validações
   const { values, errors, handleChange, handleBlur, validate } = useForm(
@@ -46,20 +46,20 @@ function LoginForm() {
       const isVendedor = decodeJWT(token).roles.includes('ROLE_VEND')
 
       if (isVendedor) {
-        navigate('/vendedores/home')
+        navegar('/vendedores/home')
       } else {
-        navigate('/financeiro/vendedores')
+        navegar('/financeiro/vendedores')
       }
     } catch {
       // Erro já capturado pelo hook useAuth e exibido via `error`
     }
   }
 
-  function handleAlterarSenha({ senhaAtual, novaSenha }) {
-    // TODO: chamar API para alterar senha
-    console.log({ senhaAtual, novaSenha })
-    setModalSenhaAberto(false)
-  }
+  // function handleAlterarSenha({ senhaAtual, novaSenha }) {
+  //   // TODO: chamar API para alterar senha
+  //   console.log({ senhaAtual, novaSenha })
+  //   setModalSenhaAberto(false)
+  // }
 
   return (
     <>
@@ -98,19 +98,20 @@ function LoginForm() {
           <button
             type="button"
             className="text-xs text-brand-blue hover:underline"
-            onClick={() => setModalSenhaAberto(true)}
+            onClick={() => navegar('/vendedores/recuperar-senha')}
           >
             Esqueci minha senha
           </button>
         </div>
       </form>
 
-      {modalSenhaAberto && (
+      {/* Modal de alterar senha desativado temporariamente */}
+      {/* {modalSenhaAberto && (
         <ModalAlterarSenha
           aoConfirmar={handleAlterarSenha}
           aoFechar={() => setModalSenhaAberto(false)}
         />
-      )}
+      )} */}
     </>
   )
 }
