@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "./ResumoPedido.css";
 import dinheiroIcon from "../../assets/dinheiro.png";
 import perfilDistribuidor from "../../assets/distribuidor.png";
-import { cadastrarPedido } from "../../services/api";
+import { cadastrarPedido, criarComissao } from "../../services/api";
 import { mapperFormDataToPedidoRequest } from "../../services/pedidoRequestMapper";
 
 export default function ResumoPedido({ formData }) {
@@ -393,22 +393,29 @@ export default function ResumoPedido({ formData }) {
   const navigate = useNavigate();
 
   const salvarPedido = async () => {
-    setLoading(true);
-    setError(null);
+  setLoading(true);
+  setError(null);
 
-    try {
-      const pedidoRequest = transformFormDataToRequest(formData);
-      const response = await cadastrarPedido(pedidoRequest);
+  try {
+    const pedidoRequest = mapperFormDataToPedidoRequest(formData);
+    const response = await cadastrarPedido(pedidoRequest);
 
-      if (response && response.idPedido) {
-        navigate("/vendedores/home");
-      }
-    } catch (err) {
-      console.error("Erro ao salvar pedido:", err);
-      setError(err.message || "Erro ao salvar pedido. Tente novamente.");
-      setLoading(false);
+    if (response && response.idPedido) {
+      const pagamentoDTO = { // mock de dados de pagamento para criar comissão
+        metodoPagamento: formData.metodoPagamento || "CARTAO_CREDITO",
+        parcelado: formData.parcelado || true,
+        quantidadeParcelas: formData.quantidadeParcelas || 5,
+      };
+
+      await criarComissao(response.idPedido, pagamentoDTO);
+      navigate("/vendedores/home");
     }
-  };
+  } catch (err) {
+    console.error("Erro ao salvar pedido:", err);
+    setError(err.message || "Erro ao salvar pedido. Tente novamente.");
+    setLoading(false);
+  }
+};
 
   const adicionarPedido = () => {
     setShowEnviarPdfModal(true);
