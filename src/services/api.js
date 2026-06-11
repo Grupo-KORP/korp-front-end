@@ -170,3 +170,19 @@ export async function criarComissao(idPedido, pagamentoDTO) {
   const { data } = await api.post(`/pedidos/${idPedido}/comissao`, pagamentoDTO);
   return data;
 }
+
+export async function atualizarPedido(idPedido, pedidoEditRequest) {
+  const { data } = await api.put(`/pedidos/atualizar/${idPedido}`, pedidoEditRequest);
+  return data;
+}
+
+// ─── Painel do vendedor ─────────────────────────────────────────────────────
+
+export async function buscarPainelVendedor({ ano, mes } = {}) {
+  const params = {};
+  if (ano) params.ano = ano;
+  if (mes) params.mes = mes;
+
+  const { data } = await api.get("/vendedor/home", { params });
+  return data;
+}

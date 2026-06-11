@@ -1,417 +1,79 @@
-import React, { useState, useRef, useEffect } from "react";
+﻿import React, { useState, useRef, useEffect } from "react";
 import Navbar from "../layout/NavbarVendedor";
 import { useDarkMode } from "../hooks/useDarkMode";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { verificarSeVendedor, verificarToken } from "../services/api";
+import { buscarPainelVendedor, verificarSeVendedor, verificarToken } from "../services/api";
 import ModalDetalheVenda from "../components/modal/Modaldetalhevenda";
 
-/* ══════════════════════════════════════════
-   DADOS MOCKADOS
-══════════════════════════════════════════ */
 const MESES = [
   "Janeiro", "Fevereiro", "Março", "Abril",
   "Maio", "Junho", "Julho", "Agosto",
   "Setembro", "Outubro", "Novembro", "Dezembro",
 ];
 
-/* ── Detalhes completos por chave "Mês-ID" ── */
-const DETALHES_VENDA = {
-  "Março-V1": {
-    cliente: {
-      razaoSocial: "Microsoft Informática Ltda.",
-      cnpj: "60.316.817/0001-44",
-      inscricaoEstadual: "111.222.333.444",
-      telefone: "(11) 3456-7890",
-      cep: "04534-000",
-      endereco: "Av. das Nações Unidas, 12.901 – Cj. 2601",
-      cidade: "São Paulo",
-      uf: "SP",
-      contato: "Maria Silva",
-      email: "maria.silva@microsoft.com",
-    },
-    distribuidor: {
-      razaoSocial: "TND Brasil Distribuidora S.A.",
-      cnpj: "12.345.678/0001-90",
-      inscricaoEstadual: "987.654.321.000",
-      telefone: "(11) 4002-8922",
-      cep: "01310-100",
-      endereco: "Av. Paulista, 1374 – 12º andar",
-      cidade: "São Paulo",
-      uf: "SP",
-      contato: "Carlos Mendonça",
-      email: "carlos.mendonca@tndbrasil.com.br",
-    },
-    produto: {
-      descricao: "Licença Microsoft 365 Business Premium (pacote anual)",
-      pn: "CFQ7TTC0LCHC-0001",
-      entrega: "15/03/2026",
-      quantidade: 50,
-      valorUnitario: "R$ 89,90",
-      valorTotal: "R$ 4.495,00",
-      valorUnitarioFaturado: "R$ 85,00",
-      totalFaturado: "R$ 4.250,00",
-    },
-  },
-  "Março-V2": {
-    cliente: {
-      razaoSocial: "Tech Solutions Tecnologia S.A.",
-      cnpj: "23.456.789/0001-11",
-      inscricaoEstadual: "222.333.444.555",
-      telefone: "(11) 3333-4444",
-      cep: "04711-130",
-      endereco: "R. Verbo Divino, 1488 – Sala 801",
-      cidade: "São Paulo",
-      uf: "SP",
-      contato: "João Oliveira",
-      email: "joao.oliveira@techsolutions.com.br",
-    },
-    distribuidor: {
-      razaoSocial: "TND Brasil Distribuidora S.A.",
-      cnpj: "12.345.678/0001-90",
-      inscricaoEstadual: "987.654.321.000",
-      telefone: "(11) 4002-8922",
-      cep: "01310-100",
-      endereco: "Av. Paulista, 1374 – 12º andar",
-      cidade: "São Paulo",
-      uf: "SP",
-      contato: "Carlos Mendonça",
-      email: "carlos.mendonca@tndbrasil.com.br",
-    },
-    produto: {
-      descricao: "Switch Gerenciável 24 Portas PoE+ Layer 2",
-      pn: "SG350-28P-K9-BR",
-      entrega: "22/03/2026",
-      quantidade: 4,
-      valorUnitario: "R$ 2.890,00",
-      valorTotal: "R$ 11.560,00",
-      valorUnitarioFaturado: "R$ 2.750,00",
-      totalFaturado: "R$ 11.000,00",
-    },
-  },
-  "Março-V3": {
-    cliente: {
-      razaoSocial: "Global Corp Comércio Internacional Ltda.",
-      cnpj: "34.567.890/0001-22",
-      inscricaoEstadual: "333.444.555.666",
-      telefone: "(21) 2222-5555",
-      cep: "20040-020",
-      endereco: "Praça XV de Novembro, 20 – Sala 1101",
-      cidade: "Rio de Janeiro",
-      uf: "RJ",
-      contato: "Ana Costa",
-      email: "ana.costa@globalcorp.com.br",
-    },
-    distribuidor: {
-      razaoSocial: "TND Brasil Distribuidora S.A.",
-      cnpj: "12.345.678/0001-90",
-      inscricaoEstadual: "987.654.321.000",
-      telefone: "(11) 4002-8922",
-      cep: "01310-100",
-      endereco: "Av. Paulista, 1374 – 12º andar",
-      cidade: "São Paulo",
-      uf: "SP",
-      contato: "Ana Beatriz Freitas",
-      email: "ana.freitas@tndbrasil.com.br",
-    },
-    produto: {
-      descricao: "Servidor Dell PowerEdge R650xs – 2x Intel Xeon Silver",
-      pn: "DELL-R650XS-2X4314",
-      entrega: "28/03/2026",
-      quantidade: 2,
-      valorUnitario: "R$ 34.900,00",
-      valorTotal: "R$ 69.800,00",
-      valorUnitarioFaturado: "R$ 33.200,00",
-      totalFaturado: "R$ 66.400,00",
-    },
-  },
-  "Março-V4": {
-    cliente: {
-      razaoSocial: "Global Corp Comércio Internacional Ltda.",
-      cnpj: "34.567.890/0001-22",
-      inscricaoEstadual: "333.444.555.666",
-      telefone: "(21) 2222-5555",
-      cep: "20040-020",
-      endereco: "Praça XV de Novembro, 20 – Sala 1101",
-      cidade: "Rio de Janeiro",
-      uf: "RJ",
-      contato: "Rafa Santos",
-      email: "rafa.santos@globalcorp.com.br",
-    },
-    distribuidor: {
-      razaoSocial: "TND Brasil Distribuidora S.A.",
-      cnpj: "12.345.678/0001-90",
-      inscricaoEstadual: "987.654.321.000",
-      telefone: "(11) 4002-8922",
-      cep: "01310-100",
-      endereco: "Av. Paulista, 1374 – 12º andar",
-      cidade: "São Paulo",
-      uf: "SP",
-      contato: "Marcos Vinicius",
-      email: "marcos.vinicius@tndbrasil.com.br",
-    },
-    produto: {
-      descricao: "Firewall Fortinet FortiGate 100F",
-      pn: "FG-100F-BDL-950-12",
-      entrega: "10/04/2026",
-      quantidade: 1,
-      valorUnitario: "R$ 18.500,00",
-      valorTotal: "R$ 18.500,00",
-      valorUnitarioFaturado: "R$ 17.600,00",
-      totalFaturado: "R$ 17.600,00",
-    },
-  },
-  "Março-V5": {
-    cliente: {
-      razaoSocial: "Acme Corp Soluções Industriais Ltda.",
-      cnpj: "45.678.901/0001-33",
-      inscricaoEstadual: "444.555.666.777",
-      telefone: "(19) 3344-5566",
-      cep: "13010-111",
-      endereco: "Av. Barão de Itapura, 1900 – Bloco B",
-      cidade: "Campinas",
-      uf: "SP",
-      contato: "Bruno Lima",
-      email: "bruno.lima@acmecorp.com.br",
-    },
-    distribuidor: {
-      razaoSocial: "TND Brasil Distribuidora S.A.",
-      cnpj: "12.345.678/0001-90",
-      inscricaoEstadual: "987.654.321.000",
-      telefone: "(11) 4002-8922",
-      cep: "01310-100",
-      endereco: "Av. Paulista, 1374 – 12º andar",
-      cidade: "São Paulo",
-      uf: "SP",
-      contato: "Fernanda Lopes",
-      email: "fernanda.lopes@tndbrasil.com.br",
-    },
-    produto: {
-      descricao: "Access Point Wi-Fi 6 Ubiquiti UniFi U6 Pro (Kit 10un)",
-      pn: "U6-PRO-KIT10",
-      entrega: "18/04/2026",
-      quantidade: 10,
-      valorUnitario: "R$ 1.890,00",
-      valorTotal: "R$ 18.900,00",
-      valorUnitarioFaturado: "R$ 1.800,00",
-      totalFaturado: "R$ 18.000,00",
-    },
-  },
-  "Abril-V1": {
-    cliente: {
-      razaoSocial: "StartX Inovação Tecnológica S.A.",
-      cnpj: "56.789.012/0001-44",
-      inscricaoEstadual: "555.666.777.888",
-      telefone: "(11) 9988-7766",
-      cep: "05426-200",
-      endereco: "R. Funchal, 418 – 11º andar",
-      cidade: "São Paulo",
-      uf: "SP",
-      contato: "Lucas Mendes",
-      email: "lucas.mendes@startx.com.br",
-    },
-    distribuidor: {
-      razaoSocial: "TND Brasil Distribuidora S.A.",
-      cnpj: "12.345.678/0001-90",
-      inscricaoEstadual: "987.654.321.000",
-      telefone: "(11) 4002-8922",
-      cep: "01310-100",
-      endereco: "Av. Paulista, 1374 – 12º andar",
-      cidade: "São Paulo",
-      uf: "SP",
-      contato: "Ricardo Alves",
-      email: "ricardo.alves@tndbrasil.com.br",
-    },
-    produto: {
-      descricao: "Licença Zoom Business (pacote 50 usuários/ano)",
-      pn: "ZOOM-BIZ-50U-12M",
-      entrega: "01/04/2026",
-      quantidade: 50,
-      valorUnitario: "R$ 199,00",
-      valorTotal: "R$ 9.950,00",
-      valorUnitarioFaturado: "R$ 190,00",
-      totalFaturado: "R$ 9.500,00",
-    },
-  },
-  "Abril-V2": {
-    cliente: {
-      razaoSocial: "Nexus Consultoria em TI Ltda.",
-      cnpj: "67.890.123/0001-55",
-      inscricaoEstadual: "666.777.888.999",
-      telefone: "(11) 4567-8901",
-      cep: "01452-000",
-      endereco: "Al. Santos, 745 – Cj. 51",
-      cidade: "São Paulo",
-      uf: "SP",
-      contato: "Camila Rocha",
-      email: "camila.rocha@nexus.com.br",
-    },
-    distribuidor: {
-      razaoSocial: "TND Brasil Distribuidora S.A.",
-      cnpj: "12.345.678/0001-90",
-      inscricaoEstadual: "987.654.321.000",
-      telefone: "(11) 4002-8922",
-      cep: "01310-100",
-      endereco: "Av. Paulista, 1374 – 12º andar",
-      cidade: "São Paulo",
-      uf: "SP",
-      contato: "Juliana Costa",
-      email: "juliana.costa@tndbrasil.com.br",
-    },
-    produto: {
-      descricao: "Storage NAS Synology DS923+ (sem HDs)",
-      pn: "DS923PLUS",
-      entrega: "08/04/2026",
-      quantidade: 3,
-      valorUnitario: "R$ 4.200,00",
-      valorTotal: "R$ 12.600,00",
-      valorUnitarioFaturado: "R$ 4.000,00",
-      totalFaturado: "R$ 12.000,00",
-    },
-  },
-  "Abril-V3": {
-    cliente: {
-      razaoSocial: "Beta Corp Engenharia e Sistemas S.A.",
-      cnpj: "78.901.234/0001-66",
-      inscricaoEstadual: "777.888.999.000",
-      telefone: "(31) 3210-4567",
-      cep: "30130-110",
-      endereco: "Av. Afonso Pena, 867 – 5º andar",
-      cidade: "Belo Horizonte",
-      uf: "MG",
-      contato: "Pedro Alves",
-      email: "pedro.alves@betacorp.com.br",
-    },
-    distribuidor: {
-      razaoSocial: "TND Brasil Distribuidora S.A.",
-      cnpj: "12.345.678/0001-90",
-      inscricaoEstadual: "987.654.321.000",
-      telefone: "(11) 4002-8922",
-      cep: "01310-100",
-      endereco: "Av. Paulista, 1374 – 12º andar",
-      cidade: "São Paulo",
-      uf: "SP",
-      contato: "Roberto Faria",
-      email: "roberto.faria@tndbrasil.com.br",
-    },
-    produto: {
-      descricao: "Nobreak APC Smart-UPS 3000VA 230V",
-      pn: "SMT3000I",
-      entrega: "20/04/2026",
-      quantidade: 6,
-      valorUnitario: "R$ 5.600,00",
-      valorTotal: "R$ 33.600,00",
-      valorUnitarioFaturado: "R$ 5.300,00",
-      totalFaturado: "R$ 31.800,00",
-    },
-  },
-  "Fevereiro-V1": {
-    cliente: {
-      razaoSocial: "SoftHouse Desenvolvimento de Software Ltda.",
-      cnpj: "89.012.345/0001-77",
-      inscricaoEstadual: "888.999.000.111",
-      telefone: "(11) 5678-9012",
-      cep: "04543-011",
-      endereco: "R. Joaquim Floriano, 960 – Sala 31",
-      cidade: "São Paulo",
-      uf: "SP",
-      contato: "Fernanda Lima",
-      email: "fernanda.lima@softhouse.com.br",
-    },
-    distribuidor: {
-      razaoSocial: "TND Brasil Distribuidora S.A.",
-      cnpj: "12.345.678/0001-90",
-      inscricaoEstadual: "987.654.321.000",
-      telefone: "(11) 4002-8922",
-      cep: "01310-100",
-      endereco: "Av. Paulista, 1374 – 12º andar",
-      cidade: "São Paulo",
-      uf: "SP",
-      contato: "Patricia Gomes",
-      email: "patricia.gomes@tndbrasil.com.br",
-    },
-    produto: {
-      descricao: "Licença JetBrains All Products Pack (equipe 10 devs)",
-      pn: "JB-ALL-10U-12M",
-      entrega: "02/02/2026",
-      quantidade: 10,
-      valorUnitario: "R$ 890,00",
-      valorTotal: "R$ 8.900,00",
-      valorUnitarioFaturado: "R$ 850,00",
-      totalFaturado: "R$ 8.500,00",
-    },
-  },
-  "Fevereiro-V2": {
-    cliente: {
-      razaoSocial: "DataPlus Análise de Dados S.A.",
-      cnpj: "90.123.456/0001-88",
-      inscricaoEstadual: "999.000.111.222",
-      telefone: "(41) 3344-6677",
-      cep: "80010-010",
-      endereco: "R. XV de Novembro, 980 – 8º andar",
-      cidade: "Curitiba",
-      uf: "PR",
-      contato: "Thiago Nunes",
-      email: "thiago.nunes@dataplus.com.br",
-    },
-    distribuidor: {
-      razaoSocial: "TND Brasil Distribuidora S.A.",
-      cnpj: "12.345.678/0001-90",
-      inscricaoEstadual: "987.654.321.000",
-      telefone: "(11) 4002-8922",
-      cep: "01310-100",
-      endereco: "Av. Paulista, 1374 – 12º andar",
-      cidade: "São Paulo",
-      uf: "SP",
-      contato: "Eduardo Martins",
-      email: "eduardo.martins@tndbrasil.com.br",
-    },
-    produto: {
-      descricao: "Licença Tableau Creator (pacote anual – 5 usuários)",
-      pn: "TABLEAU-CRT-5U-12M",
-      entrega: "14/02/2026",
-      quantidade: 5,
-      valorUnitario: "R$ 5.200,00",
-      valorTotal: "R$ 26.000,00",
-      valorUnitarioFaturado: "R$ 4.950,00",
-      totalFaturado: "R$ 24.750,00",
-    },
-  },
+const HOJE = new Date();
+const MES_ATUAL = MESES[HOJE.getMonth()];
+const ANO_ATUAL = HOJE.getFullYear();
+
+const formatarMoedaBR = (valor) =>
+  Number(valor || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+
+const formatarValorMoeda = (valor) => {
+  if (valor === null || valor === undefined || valor === "") return formatarMoedaBR(0);
+  if (typeof valor === "string" && valor.trim().startsWith("R$")) return valor;
+  return formatarMoedaBR(valor);
 };
 
-const DADOS_POR_MES = {
-  "Março": {
-    totalVendas: 10, comissoesLiberadas: 10, pagamentosPendentes: 4,
-    projecao: "R$ 1.350,00", parcelas: 8, tendencia: "+4%",
-    vendas: [
-      { id: "V1", nome: "VENDA 1", cliente: "Maria Silva - Microsoft", comissao: "1/3 – R$ 200,00", status: "PAGO 1ª PARCELA", tipo: "liberada", parcelas: [{ label: "Parcela 1/5", valor: "R$ 450,00" }, { label: "Parcela 2/5", valor: "R$ 1.900,00" }] },
-      { id: "V2", nome: "VENDA 2", cliente: "João Oliveira - Tech Solutions", comissao: "R$ 200,00", status: "PAGO 1ª PARCELA", tipo: "liberada", parcelas: [{ label: "Parcela 1/5", valor: "R$ 450,00" }, { label: "Parcela 2/5", valor: "R$ 1.900,00" }] },
-      { id: "V3", nome: "VENDA 3", cliente: "Ana Costa - Global Corp", comissao: "R$ 200,00", status: "PAGO 1ª PARCELA", tipo: "liberada", parcelas: [{ label: "Parcela 1/5", valor: "R$ 200,00" }] },
-      { id: "V4", nome: "VENDA 4", cliente: "Rafa Santos - Global Corp", comissao: "R$ 200,00", status: "AGUARDANDO", tipo: "pendente", parcelas: [{ label: "Parcela 1/3", valor: "R$ 200,00" }] },
-      { id: "V5", nome: "VENDA 5", cliente: "Bruno Lima - Acme Corp", comissao: "R$ 450,00", status: "AGUARDANDO", tipo: "pendente", parcelas: [{ label: "Parcela 1/2", valor: "R$ 450,00" }] },
-    ],
-  },
-  "Abril": {
-    totalVendas: 7, comissoesLiberadas: 5, pagamentosPendentes: 2,
-    projecao: "R$ 980,00", parcelas: 5, tendencia: "-2%",
-    vendas: [
-      { id: "V1", nome: "VENDA 1", cliente: "Lucas Mendes - StartX", comissao: "R$ 300,00", status: "PAGO 1ª PARCELA", tipo: "liberada", parcelas: [{ label: "Parcela 1/3", valor: "R$ 300,00" }] },
-      { id: "V2", nome: "VENDA 2", cliente: "Camila Rocha - Nexus", comissao: "R$ 180,00", status: "PAGO 1ª PARCELA", tipo: "liberada", parcelas: [{ label: "Parcela 1/4", valor: "R$ 180,00" }] },
-      { id: "V3", nome: "VENDA 3", cliente: "Pedro Alves - Beta Corp", comissao: "R$ 500,00", status: "AGUARDANDO", tipo: "pendente", parcelas: [{ label: "Parcela 1/2", valor: "R$ 500,00" }] },
-    ],
-  },
-  "Fevereiro": {
-    totalVendas: 12, comissoesLiberadas: 12, pagamentosPendentes: 0,
-    projecao: "R$ 2.100,00", parcelas: 10, tendencia: "+8%",
-    vendas: [
-      { id: "V1", nome: "VENDA 1", cliente: "Fernanda Lima - SoftHouse", comissao: "R$ 600,00", status: "PAGO 1ª PARCELA", tipo: "liberada", parcelas: [{ label: "Parcela 1/5", valor: "R$ 600,00" }] },
-      { id: "V2", nome: "VENDA 2", cliente: "Thiago Nunes - DataPlus", comissao: "R$ 1.500,00", status: "PAGO 1ª PARCELA", tipo: "liberada", parcelas: [{ label: "Parcela 1/3", valor: "R$ 1.500,00" }] },
-    ],
-  },
+const normalizarParcela = (parcela) => ({
+  ...parcela,
+  valor: formatarValorMoeda(parcela?.valor),
+});
+
+const normalizarProduto = (produto = {}) => ({
+  ...produto,
+  valorUnitario: formatarValorMoeda(produto.valorUnitario),
+  valorTotal: formatarValorMoeda(produto.valorTotal),
+  valorUnitarioFaturado: formatarValorMoeda(produto.valorUnitarioFaturado),
+  totalFaturado: formatarValorMoeda(produto.totalFaturado),
+});
+
+const normalizarPainelVendedor = (painel) => {
+  if (!painel) return null;
+
+  const vendas = (painel.vendas || []).map((venda) => ({
+    ...venda,
+    status: venda.tipo === "liberada" && String(venda.status || "").toUpperCase().startsWith("PAGO")
+      ? String(venda.status).replace(/^PAGO/i, "LIBERADA")
+      : venda.status,
+    comissao: venda.comissao || formatarValorMoeda(venda.valorComissao),
+    parcelas: (venda.parcelas || []).map(normalizarParcela),
+  }));
+
+  const detalhesVenda = Object.fromEntries(
+    Object.entries(painel.detalhesVenda || {}).map(([chave, detalhe]) => [
+      chave,
+      {
+        ...detalhe,
+        produto: normalizarProduto(detalhe?.produto),
+      },
+    ]),
+  );
+
+  return {
+    totalVendas: painel.totalVendas || 0,
+    comissoesLiberadas: painel.comissoesLiberadas || 0,
+    pagamentosPendentes: painel.pagamentosPendentes || 0,
+    projecao: formatarValorMoeda(painel.projecao),
+    parcelas: painel.parcelas || 0,
+    tendencia: painel.tendencia || "0%",
+    vendas,
+    detalhesVenda,
+  };
 };
-
-const MES_ATUAL = "Março";
-
 
 
 /* ══════════════════════════════════════════
@@ -564,6 +226,8 @@ export default function HomeVendedor() {
   const [vendaExpandida, setVendaExpandida] = useState(null);
   const [ocultarProjecao, setOcultarProjecao] = useState(false);
   const [vendaNoModal, setVendaNoModal] = useState(null);
+  const [painelVendedor, setPainelVendedor] = useState(null);
+  const [atualizacaoPainel, setAtualizacaoPainel] = useState(0);
 
   const refDropdown = useRef(null);
   const toastShown = useRef(false);
@@ -593,21 +257,43 @@ export default function HomeVendedor() {
     }
   }, []);
 
-  const baseDados = DADOS_POR_MES[mesSelecionado] || DADOS_POR_MES[MES_ATUAL];
+  useEffect(() => {
+    if (!verificarToken() || !verificarSeVendedor()) return;
 
-  const pedidosSalvos = (() => {
-    try { return JSON.parse(localStorage.getItem("korp_pedidos") || "[]"); }
-    catch (e) { return []; }
-  })();
+    let ativo = true;
+    const mes = MESES.indexOf(mesSelecionado) + 1;
 
-  const dados = {
-    ...baseDados,
-    vendas: [...baseDados.vendas, ...pedidosSalvos],
-    totalVendas: (baseDados.totalVendas || 0) + pedidosSalvos.length,
+    async function carregarPainel() {
+      try {
+        const response = await buscarPainelVendedor({ ano: ANO_ATUAL, mes });
+        if (ativo) setPainelVendedor(normalizarPainelVendedor(response));
+      } catch (error) {
+        if (!ativo) return;
+        setPainelVendedor(normalizarPainelVendedor(null));
+        toast.error(error.message || "NÃ£o foi possÃ­vel carregar o painel do vendedor.");
+      }
+    }
+
+    carregarPainel();
+
+    return () => {
+      ativo = false;
+    };
+  }, [mesSelecionado, atualizacaoPainel]);
+
+  const dados = painelVendedor || {
+    totalVendas: 0,
+    comissoesLiberadas: 0,
+    pagamentosPendentes: 0,
+    projecao: formatarMoedaBR(0),
+    parcelas: 0,
+    tendencia: "0%",
+    vendas: [],
+    detalhesVenda: {},
   };
 
   const vendasFiltradas = dados.vendas.filter((v) => {
-    if (cardAtivo === "liberadas") return v.tipo === "liberada";
+    if (cardAtivo === "liberadas") return v.tipo === "liberada" || v.tipo === "paga";
     if (cardAtivo === "pendentes") return v.tipo === "pendente";
     return true;
   });
@@ -620,7 +306,7 @@ export default function HomeVendedor() {
   const vendasExibidas = mostrarTodas ? vendasFiltradas : vendasFiltradas.slice(0, 3);
 
   const todasParcelas = dados.vendas
-    .filter((v) => v.tipo === "liberada")
+    .filter((v) => v.tipo === "liberada" || v.tipo === "paga")
     .flatMap((v) => v.parcelas);
 
   const tendenciaPositiva = dados.tendencia.startsWith("+");
@@ -629,7 +315,7 @@ export default function HomeVendedor() {
     const pdfHtml = `
       <html>
         <head>
-          <title>Relatório de Comissões – ${mesSelecionado} 2026</title>
+          <title>Relatório de Comissões – ${mesSelecionado} ${ANO_ATUAL}</title>
           <style>
             * { box-sizing: border-box; }
             body { margin: 0; background: #ffffff; font-family: Arial, sans-serif; color: #1e293b; }
@@ -644,7 +330,8 @@ export default function HomeVendedor() {
             th { text-align: left; font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; padding: 8px 12px; border-bottom: 2px solid #f1f5f9; }
             td { padding: 10px 12px; font-size: 13px; border-bottom: 1px solid #f1f5f9; }
             .badge { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
-            .liberada { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+            .paga { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+            .liberada { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
             .pendente { background: #fff7ed; color: #d97706; border: 1px solid #fed7aa; }
             .resumo, .caixa, tr { break-inside: avoid; page-break-inside: avoid; }
             footer { margin-top: 40px; font-size: 10px; color: #cbd5e1; text-align: center; }
@@ -653,7 +340,7 @@ export default function HomeVendedor() {
         <body>
           <main class="pdf-document">
           <p class="sub">Operações de Venda</p>
-          <h1>Painel do Consultor – ${mesSelecionado} 2026</h1>
+          <h1>Painel do Consultor – ${mesSelecionado} ${ANO_ATUAL}</h1>
           <div class="resumo">
             <div class="caixa"><div class="rotulo">Total de Vendas</div><div class="valor">${dados.totalVendas}</div></div>
             <div class="caixa"><div class="rotulo">Comissões Liberadas</div><div class="valor">${dados.comissoesLiberadas}</div></div>
@@ -699,7 +386,7 @@ export default function HomeVendedor() {
     const pdfElement = iframeDocument.querySelector(".pdf-document") || iframeDocument.body;
     const opt = {
       margin: 10,
-      filename: `relatorio-comissoes-${mesSelecionado.toLowerCase()}-2026.pdf`,
+      filename: `relatorio-comissoes-${mesSelecionado.toLowerCase()}-${ANO_ATUAL}.pdf`,
       image: { type: "jpeg", quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
       pagebreak: { mode: ["css", "legacy"] },
@@ -776,12 +463,17 @@ export default function HomeVendedor() {
         doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(30, 41, 59);
         cells.forEach((cell, index) => {
           if (index === 4) {
+            const isPaga = venda.tipo === "paga";
             const isLiberada = venda.tipo === "liberada";
-            doc.setFillColor(isLiberada ? 240 : 255, isLiberada ? 253 : 247, isLiberada ? 244 : 237);
+            if (isPaga) doc.setFillColor(240, 253, 244);
+            else if (isLiberada) doc.setFillColor(239, 246, 255);
+            else doc.setFillColor(255, 247, 237);
             const bW = Math.min(cell.width - 4, 34);
             doc.roundedRect(x + 1, y + 2, bW, 6, 1.5, 1.5, "F");
             doc.setFont("helvetica", "bold"); doc.setFontSize(6.5);
-            doc.setTextColor(isLiberada ? 22 : 217, isLiberada ? 163 : 119, isLiberada ? 74 : 6);
+            if (isPaga) doc.setTextColor(22, 163, 74);
+            else if (isLiberada) doc.setTextColor(37, 99, 235);
+            else doc.setTextColor(217, 119, 6);
             doc.text(safeText(cell.value(venda)), x + 3, y + 6.2, { maxWidth: bW - 4 });
             doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(30, 41, 59);
           } else {
@@ -797,7 +489,7 @@ export default function HomeVendedor() {
 
     doc.setFillColor(15, 37, 87); doc.rect(0, 0, pageWidth, 22, "F");
     doc.setFont("helvetica", "bold"); doc.setFontSize(13); doc.setTextColor(255, 255, 255);
-    doc.text(`Painel do Consultor – ${mesSelecionado} 2026`, margin, 13);
+    doc.text(`Painel do Consultor – ${mesSelecionado} ${ANO_ATUAL}`, margin, 13);
     doc.setFontSize(7.5); doc.setTextColor(147, 174, 219);
     doc.text("OPERAÇÕES DE VENDA", pageWidth - margin, 13, { align: "right" });
     y = 32;
@@ -817,7 +509,7 @@ export default function HomeVendedor() {
       doc.text(`Página ${i} de ${totalPages}`, pageWidth - margin, pageHeight - 7, { align: "right" });
     }
 
-    doc.save(`relatorio-comissoes-${mesSelecionado.toLowerCase()}-2026.pdf`);
+    doc.save(`relatorio-comissoes-${mesSelecionado.toLowerCase()}-${ANO_ATUAL}.pdf`);
   }
 
   function alternarCard(chave) {
@@ -852,8 +544,9 @@ export default function HomeVendedor() {
         <ModalDetalheVenda
           venda={vendaNoModal}
           mes={mesSelecionado}
-          detalhesVenda={DETALHES_VENDA}
+          detalhesVenda={dados.detalhesVenda}
           aoFechar={() => setVendaNoModal(null)}
+          aoAtualizar={() => setAtualizacaoPainel((valor) => valor + 1)}
           escuro={modoEscuro}
         />
       )}
@@ -918,7 +611,7 @@ export default function HomeVendedor() {
                 icone={<IconCarrinho />}
                 rotulo="Total de Vendas"
                 valor={dados.totalVendas}
-                badge="+5 vs mês ant."
+                badge={`${dados.tendencia} vs mês ant.`}
                 ativo={cardAtivo === "vendas"}
                 aoClicar={() => alternarCard("vendas")}
                 dark={modoEscuro}
@@ -927,7 +620,7 @@ export default function HomeVendedor() {
                 icone={<IconConfirmado />}
                 rotulo="Comissões Liberadas"
                 valor={dados.comissoesLiberadas}
-                badge="+5 vs mês ant."
+                badge={`${dados.tendencia} vs mês ant.`}
                 ativo={cardAtivo === "liberadas"}
                 aoClicar={() => alternarCard("liberadas")}
                 dark={modoEscuro}
@@ -975,7 +668,7 @@ export default function HomeVendedor() {
                 {vendasExibidas.map((v) => (
                   <button
                     key={v.id}
-                    onClick={() => setVendaNoModal(v)}
+                    onClick={() => setVendaNoModal({ ...v, parcelas: v.parcelasDaVenda || v.parcelas })}
                     className={`w-full grid grid-cols-[2fr_2fr_2fr_auto] gap-4 items-center px-2 py-3 rounded-xl transition-colors text-left group ${hover}`}
                   >
                     {/* Identificação */}
@@ -998,8 +691,10 @@ export default function HomeVendedor() {
                     {/* Status */}
                     <div className="flex justify-center">
                       <span className={`text-[9px] font-bold tracking-wider px-2.5 py-0.5 rounded-full uppercase border
-                        ${v.tipo === "liberada"
+                        ${v.tipo === "paga"
                           ? "bg-green-50 text-green-600 border-green-200"
+                          : v.tipo === "liberada"
+                            ? "bg-blue-50 text-blue-600 border-blue-200"
                           : "bg-orange-50 text-orange-500 border-orange-200"
                         }`}>
                         {v.status}
@@ -1052,7 +747,7 @@ export default function HomeVendedor() {
                   </span>
                   <span className={`text-[9px] uppercase tracking-wider ml-auto ${textoS}`}>Previsão</span>
                 </div>
-                <p className={`text-sm font-extrabold ${textoP}`}>{mesSelecionado} de 2026</p>
+                <p className={`text-sm font-extrabold ${textoP}`}>{mesSelecionado} de {ANO_ATUAL}</p>
               </div>
 
               <div className={`flex items-center justify-between py-1.5 border-b ${borda}`}>

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "./ResumoPedido.css";
 import dinheiroIcon from "../../assets/dinheiro.png";
 import perfilDistribuidor from "../../assets/distribuidor.png";
-import { cadastrarPedido, criarComissao } from "../../services/api";
+import { cadastrarPedido } from "../../services/api";
 import { mapperFormDataToPedidoRequest } from "../../services/pedidoRequestMapper";
 
 export default function ResumoPedido({ formData }) {
@@ -401,13 +401,6 @@ export default function ResumoPedido({ formData }) {
     const response = await cadastrarPedido(pedidoRequest);
 
     if (response && response.idPedido) {
-      const pagamentoDTO = { // mock de dados de pagamento para criar comissão
-        metodoPagamento: formData.metodoPagamento || "CARTAO_CREDITO",
-        parcelado: formData.parcelado || true,
-        quantidadeParcelas: formData.quantidadeParcelas || 5,
-      };
-
-      await criarComissao(response.idPedido, pagamentoDTO);
       navigate("/vendedores/home");
     }
   } catch (err) {
