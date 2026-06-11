@@ -8,6 +8,7 @@ import ClientePage from '../pages/ClientePage'
 import DistribuidorPage from '../pages/DistribuidorPage'
 import ProdutoPage from '../pages/ProdutoPage'
 import PaginaRecuperarSenha from './../pages/PaginaRecuperarSenha'
+import PaginaRedefinirSenha from './../pages/PaginaRedefinirSenha'
 
 function AppRoutes() {
   return (
@@ -22,6 +23,7 @@ function AppRoutes() {
       <Route path="/vendedores/pedido"     element={<PedidoPage />} />
       <Route path="/vendedores/home"     element={<HomeVendedor/>}   />
       <Route path="/vendedores/recuperar-senha" element={<PaginaRecuperarSenha />} />
+      <Route path="/vendedores/redefinir-senha" element={<PaginaRedefinirSenha />} />
     </Routes>
   )
 }

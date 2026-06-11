@@ -148,7 +148,7 @@ function IndicadorForca({ senha }) {
   );
 }
 
-export default function ModalAlterarSenha({ aoConfirmar, aoFechar }) {
+export default function ModalAlterarSenha({ aoConfirmar, aoFechar, obrigatorio = false }) {
   const [senhaAtual,       setSenhaAtual]       = useState("");
   const [novaSenha,        setNovaSenha]        = useState("");
   const [confirmacaoSenha, setConfirmacaoSenha] = useState("");
@@ -167,14 +167,18 @@ export default function ModalAlterarSenha({ aoConfirmar, aoFechar }) {
   const temPendencia  = !podeSalvar;
 
   useEffect(() => {
-    const fn = (e) => {
-      if (e.key !== "Escape") return;
-      if (temPendencia) { e.preventDefault(); e.stopPropagation(); }
-      else aoFechar?.();
-    };
-    document.addEventListener("keydown", fn, true);
-    return () => document.removeEventListener("keydown", fn, true);
-  }, [temPendencia, aoFechar]);
+  const fn = (e) => {
+    if (e.key !== "Escape") return;
+    if (obrigatorio || temPendencia) {        
+      e.preventDefault();
+      e.stopPropagation();
+    } else {
+      aoFechar?.();
+    }
+  };
+  document.addEventListener("keydown", fn, true);
+  return () => document.removeEventListener("keydown", fn, true);
+}, [obrigatorio, temPendencia, aoFechar]);
 
   const dispararErros = useCallback(() => {
     setErroAtual(validarSenhaAtual(senhaAtual));
@@ -183,19 +187,29 @@ export default function ModalAlterarSenha({ aoConfirmar, aoFechar }) {
   }, [senhaAtual, novaSenha, confirmacaoSenha]);
 
   const tentarFechar = () => {
-    aoFechar?.();
-  };
+  if (obrigatorio) return;   
+  aoFechar?.();
+};
 
-  const handleSubmit = () => {
-    dispararErros();
-    if (!podeSalvar) return;
-    aoConfirmar?.({ senhaAtual, novaSenha });
-  };
+const [carregando, setCarregando] = useState(false);
+
+const handleSubmit = async () => {
+  dispararErros();
+  if (!podeSalvar) return;
+
+  setCarregando(true);
+  try {
+    await aoConfirmar?.({ senhaAtual, novaSenha });
+  } finally {
+    setCarregando(false);
+  }
+};
 
   const handleOverlay = (e) => {
-    if (e.target !== e.currentTarget) return;
-    aoFechar?.();
-  };
+  if (e.target !== e.currentTarget) return;
+  if (obrigatorio) return;  
+  aoFechar?.();
+};
 
   return createPortal(
     <div
@@ -226,6 +240,7 @@ export default function ModalAlterarSenha({ aoConfirmar, aoFechar }) {
               Preencha todos os campos para atualizar sua senha.
             </p>
           </div>
+          {!obrigatorio && (
           <button
             type="button"
             onClick={tentarFechar}
@@ -236,6 +251,7 @@ export default function ModalAlterarSenha({ aoConfirmar, aoFechar }) {
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
+          )}
         </div>
 
         {/* ── Corpo ── */}
@@ -283,16 +299,16 @@ export default function ModalAlterarSenha({ aoConfirmar, aoFechar }) {
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={!podeSalvar}
+            disabled={!podeSalvar || carregando}
             className="w-full h-9 rounded-xl text-[13px] font-bold text-white transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.98] mt-1"
             style={{
-              background: podeSalvar ? "#0a3490" : "#94a3b8",
-              cursor: podeSalvar ? "pointer" : "not-allowed",
+              background: podeSalvar && !carregando ? "#0a3490" : "#94a3b8",
+              cursor: podeSalvar && !carregando ? "pointer" : "not-allowed",
               boxShadow: podeSalvar ? "0 4px 14px rgba(10,52,144,0.28)" : "none",
             }}
           >
             <IcoCadeado size={13} />
-            Salvar senha
+            {carregando ? "Salvando..." : "Salvar senha"}
           </button>
         </div>
       </div>
