@@ -3,8 +3,16 @@ import Navbar from "../layout/NavbarVendedor";
 import { useDarkMode } from "../hooks/useDarkMode";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { buscarPainelVendedor, verificarSeVendedor, verificarToken } from "../services/api";
+import {
+  alterarSenha,
+  buscarPainelVendedor,
+  verificarPrimeiroAcesso,
+  verificarSeVendedor,
+  verificarToken,
+} from "../services/api";
 import ModalDetalheVenda from "../components/modal/Modaldetalhevenda";
+import DatePickerCalendar from "../components/ui/DatePickerCalendar";
+import ModalAlterarSenha from "../components/modal/ModalAlterarSenha";
 
 const MESES = [
   "Janeiro", "Fevereiro", "Março", "Abril",
@@ -75,7 +83,6 @@ const normalizarPainelVendedor = (painel) => {
   };
 };
 
-
 /* ══════════════════════════════════════════
    ÍCONES
 ══════════════════════════════════════════ */
@@ -100,13 +107,6 @@ const IconRelogio = () => (
   </svg>
 );
 
-const IconFiltro = () => (
-  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-      d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" />
-  </svg>
-);
-
 const IconOlho = ({ desligado }) => desligado ? (
   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
@@ -126,13 +126,6 @@ const IconSetaDireita = () => (
   </svg>
 );
 
-const IconSetaBaixo = ({ rotacionado }) => (
-  <svg className={`w-4 h-4 transition-transform duration-200 ${rotacionado ? "rotate-180" : ""}`}
-    fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-  </svg>
-);
-
 const IconTendenciaAlta = () => (
   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
@@ -149,20 +142,6 @@ const IconRelatorio = ({ dark }) => (
   <svg className={`w-4 h-4 ${dark ? "text-blue-400" : "text-blue-700"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
       d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-  </svg>
-);
-
-const IconLua = () => (
-  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-      d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-  </svg>
-);
-
-const IconSol = () => (
-  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-      d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707.707M6.343 6.343l-.707.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
   </svg>
 );
 
@@ -221,13 +200,13 @@ export default function HomeVendedor() {
   const navigate = useNavigate();
   const [mesSelecionado, setMesSelecionado] = useState(MES_ATUAL);
   const [mostrarMeses, setMostrarMeses] = useState(false);
+  const [selecao, setSelecao] = useState(null);
   const [cardAtivo, setCardAtivo] = useState(null);
-  const [mostrarTodas, setMostrarTodas] = useState(false);
-  const [vendaExpandida, setVendaExpandida] = useState(null);
   const [ocultarProjecao, setOcultarProjecao] = useState(false);
   const [vendaNoModal, setVendaNoModal] = useState(null);
   const [painelVendedor, setPainelVendedor] = useState(null);
   const [atualizacaoPainel, setAtualizacaoPainel] = useState(0);
+  const [primeiroAcesso, setPrimeiroAcesso] = useState(null);
 
   const refDropdown = useRef(null);
   const toastShown = useRef(false);
@@ -255,7 +234,21 @@ export default function HomeVendedor() {
       toast.error("Acesso negado. Você não tem permissão para acessar esta página.");
       navigate("/financeiro/vendedores");
     }
-  }, []);
+
+    verificarPrimeiroAcesso()
+      .then((isPrimeiro) => setPrimeiroAcesso(isPrimeiro))
+      .catch(() => setPrimeiroAcesso(false));
+  }, [navigate]);
+
+  async function handleAlterarSenha({ senhaAtual, novaSenha }) {
+    try {
+      await alterarSenha({ senhaAtual, novaSenha });
+      toast.success("Senha alterada com sucesso!");
+      setPrimeiroAcesso(false);
+    } catch (err) {
+      toast.error(err.message || "Erro ao alterar a senha.");
+    }
+  }
 
   useEffect(() => {
     if (!verificarToken() || !verificarSeVendedor()) return;
@@ -303,7 +296,7 @@ export default function HomeVendedor() {
       : cardAtivo === "pendentes" ? "Pagamentos Pendentes"
         : "Todas as Vendas";
 
-  const vendasExibidas = mostrarTodas ? vendasFiltradas : vendasFiltradas.slice(0, 3);
+  const vendasExibidas = vendasFiltradas;
 
   const todasParcelas = dados.vendas
     .filter((v) => v.tipo === "liberada" || v.tipo === "paga")
@@ -514,16 +507,12 @@ export default function HomeVendedor() {
 
   function alternarCard(chave) {
     setCardAtivo((anterior) => (anterior === chave ? null : chave));
-    setMostrarTodas(false);
-    setVendaExpandida(null);
   }
 
   function selecionarMes(mes) {
     setMesSelecionado(mes);
     setMostrarMeses(false);
     setCardAtivo(null);
-    setMostrarTodas(false);
-    setVendaExpandida(null);
   }
 
   /* classes de tema */
@@ -551,6 +540,14 @@ export default function HomeVendedor() {
         />
       )}
 
+      {primeiroAcesso === true && (
+        <ModalAlterarSenha
+          obrigatorio
+          aoConfirmar={handleAlterarSenha}
+          aoFechar={() => {}}  
+        />
+      )}
+
       <div className="flex-1 overflow-y-auto w-full px-6 py-6">
 
         {/* ── Header ── */}
@@ -563,39 +560,17 @@ export default function HomeVendedor() {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="relative" ref={refDropdown}>
-              <button
-                onClick={() => setMostrarMeses((p) => !p)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-semibold transition-colors shadow-sm
-                  ${modoEscuro
-                    ? "border-gray-600 bg-gray-800 text-gray-300 hover:border-blue-500 hover:text-blue-400"
-                    : "border-gray-200 bg-white text-gray-500 hover:border-blue-300 hover:text-blue-600"
-                  }`}
-              >
-                <IconFiltro />
-                {mesSelecionado}
-                <IconSetaBaixo rotacionado={mostrarMeses} />
-              </button>
-
-              {mostrarMeses && (
-                <div className={`absolute right-0 mt-2 w-44 border rounded-2xl shadow-xl z-30 py-2 overflow-hidden
-                  ${modoEscuro ? "bg-gray-800 border-gray-700" : "bg-white border-gray-100"}`}>
-                  {MESES.map((m) => (
-                    <button
-                      key={m}
-                      onClick={() => selecionarMes(m)}
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors
-                        ${m === mesSelecionado
-                          ? modoEscuro ? "bg-blue-900/50 text-blue-400 font-bold" : "bg-blue-50 text-blue-700 font-bold"
-                          : modoEscuro ? "text-gray-300 hover:bg-gray-700" : "text-gray-600 hover:bg-gray-50"
-                        }`}
-                    >
-                      {m}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <DatePickerCalendar
+              selecao={selecao}
+              aoSelecionar={(s) => {
+                setSelecao(s);
+                if (s) {
+                  const nomeMes = MESES[s.m];
+                  selecionarMes(nomeMes);
+                }
+              }}
+              dark={modoEscuro}
+            />
           </div>
         </div>
 
@@ -643,7 +618,7 @@ export default function HomeVendedor() {
                 <h2 className={`text-base font-bold ${textoM}`}>{tituloTabela}</h2>
                 {cardAtivo && (
                   <button
-                    onClick={() => { setCardAtivo(null); setMostrarTodas(false); setVendaExpandida(null); }}
+                    onClick={() => setCardAtivo(null)}
                     className={`ml-auto text-xs font-semibold tracking-wider uppercase transition-colors ${textoS} hover:text-blue-500`}
                   >
                     Limpar filtro ×
@@ -659,11 +634,10 @@ export default function HomeVendedor() {
                 <span />
               </div>
 
-              {/* Linhas — clique abre o modal */}
-              <div className="flex flex-col gap-0.5">
-                {vendasExibidas.length === 0 && (
-                  <p className={`text-sm text-center py-6 ${textoS}`}>Nenhuma venda encontrada para este filtro.</p>
-                )}
+              {/* Linhas */}
+              <div className="flex flex-col gap-0.5 max-h-64 overflow-y-auto pr-2" style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(156,163,175,0.35) transparent" }}>                {vendasExibidas.length === 0 && (
+                <p className={`text-sm text-center py-6 ${textoS}`}>Nenhuma venda encontrada para este filtro.</p>
+              )}
 
                 {vendasExibidas.map((v) => (
                   <button
@@ -708,35 +682,28 @@ export default function HomeVendedor() {
                   </button>
                 ))}
               </div>
-
-              {/* Ver mais */}
-              {vendasFiltradas.length > 3 && (
-                <div className={`flex justify-center mt-4 pt-3 border-t ${borda}`}>
-                  <button
-                    onClick={() => setMostrarTodas((p) => !p)}
-                    className={`flex items-center gap-2 text-xs font-semibold tracking-widest transition-colors uppercase ${textoS} hover:text-blue-500`}
-                  >
-                    {mostrarTodas ? "VER MENOS" : "VER MAIS TRANSAÇÕES"}
-                    <IconSetaBaixo rotacionado={mostrarTodas} />
-                  </button>
-                </div>
-              )}
             </div>
           </div>
 
           {/* ── Coluna direita ── */}
           <div className="w-full lg:w-64 flex-shrink-0 flex flex-col gap-3">
 
-            {/* Resumo de comissões */}
-            <div className={`${cardBg} rounded-2xl shadow-sm p-4 flex flex-col gap-3`}>
+            {/* ── Resumo de comissões ── */}
+<div className={`${cardBg} rounded-2xl shadow-sm p-4 flex flex-col gap-2 h-[304px]`}>
+                {/* Cabeçalho do card */}
               <div>
                 <div className="flex items-center gap-1.5 mb-0.5">
                   <IconRelatorio dark={modoEscuro} />
-                  <h3 className={`text-xs font-extrabold tracking-widest uppercase ${textoM}`}>Resumo de Comissões</h3>
+                  <h3 className={`text-xs font-extrabold tracking-widest uppercase ${textoM}`}>
+                    Resumo de Comissões
+                  </h3>
                 </div>
-                <p className={`text-[9px] tracking-wider uppercase ${textoS}`}>Relatório Mensal de Projeção</p>
+                <p className={`text-[9px] tracking-wider uppercase ${textoS}`}>
+                  Relatório Mensal de Projeção
+                </p>
               </div>
 
+              {/* Tendência */}
               <div className="flex flex-col gap-0.5">
                 <div className="flex items-center gap-1.5">
                   <span className={tendenciaPositiva ? "text-green-500" : "text-red-400"}>
@@ -750,13 +717,18 @@ export default function HomeVendedor() {
                 <p className={`text-sm font-extrabold ${textoP}`}>{mesSelecionado} de {ANO_ATUAL}</p>
               </div>
 
-              <div className={`flex items-center justify-between py-1.5 border-b ${borda}`}>
+              {/* Divisor */}
+              <div className={`border-t ${borda}`} />
+
+              {/* Parcelas em aberto */}
+              <div className="flex items-center justify-between">
                 <span className={`text-xs ${textoS}`}>Parcelas em aberto</span>
                 <span className={`text-sm font-bold ${textoM}`}>
                   {String(dados.parcelas).padStart(2, "0")}
                 </span>
               </div>
 
+              {/* Barra de progresso */}
               <div className={`w-full h-1 rounded-full ${modoEscuro ? "bg-gray-700" : "bg-gray-100"}`}>
                 <div
                   className="h-1 rounded-full bg-blue-600 transition-all duration-500"
@@ -764,14 +736,28 @@ export default function HomeVendedor() {
                 />
               </div>
 
-              <div className="flex flex-col gap-2 max-h-36 overflow-y-auto pr-1">
-                {todasParcelas.length === 0 && (
-                  <p className={`text-xs text-center py-2 ${textoS}`}>Sem parcelas liberadas.</p>
-                )}
+              {/* Lista de parcelas com scroll interno e Pedido ID por item */}
+              <div className="flex flex-col gap-1.5 overflow-y-auto flex-1 min-h-0 pr-1" style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(156,163,175,0.35) transparent" }}>                {todasParcelas.length === 0 && (
+                <p className={`text-xs text-center py-2 ${textoS}`}>Sem parcelas liberadas.</p>
+              )}
                 {todasParcelas.map((p, i) => (
-                  <div key={i} className="flex items-center justify-between">
-                    <span className={`text-xs ${textoS}`}>{p.label}</span>
-                    <span className={`text-xs font-bold ${textoM}`}>{p.valor}</span>
+                  <div
+                    key={i}
+                    className={`flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg
+                      ${modoEscuro ? "bg-gray-700/50" : "bg-gray-50"}`}
+                  >
+                    {/* Pedido ID + label da parcela */}
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                      <span className={`text-[10px] font-bold whitespace-nowrap ${textoM}`}>
+                        Pedido: {p.pedidoId}
+                      </span>
+                      <span className={`text-[10px] ${textoS}`}>{p.label}</span>
+                    </div>
+
+                    {/* Valor */}
+                    <span className={`text-xs font-bold whitespace-nowrap ${textoM}`}>
+                      {p.valor}
+                    </span>
                   </div>
                 ))}
               </div>

@@ -111,6 +111,41 @@ export function verificarSeAdmin() {
   return decodeJWT(token).roles.includes("ROLE_ADMIN");
 }
 
+export async function verificarPrimeiroAcesso() {
+  const token = localStorage.getItem("korp_token");
+  const id = decodeJWT(token).id;
+
+  const { data } = await api.get(`/usuario/${id}`);
+  if (!data) throw new Error("Usuário não encontrado");
+  console.log("API: verificarPrimeiroAcesso", data);
+
+  const primeiroAcesso = Boolean(data.primeiroAcesso);
+
+  return primeiroAcesso;
+}
+
+// ─── Troca de Senha ───────────────────────────────────────────────────────
+
+export async function alterarSenha({ senhaAtual, novaSenha }) {
+  const { data } = await api.post(`/usuario/trocar-senha-primeiro-acesso`, {
+    senhaAtual,
+    novaSenha,
+  });
+  return data;
+}
+
+export async function solicitarRecuperacaoSenha(email) {
+  const { data } = await api.post('/usuario/esqueci-senha', { email });
+  return data;
+}
+
+export async function redefinirSenha({ token, novaSenha, confirmaSenha }) {
+  const { data } = await api.patch('/usuario/troca-senha', 
+    { novaSenha, confirmaSenha },           
+    { params: { token } }    
+  );
+  return data;
+}
 // ─── Colaboradores ───────────────────────────────────────────────────────────
 
 export async function cadastrarColaborador(dados) {
