@@ -26,21 +26,16 @@ const IconeX = () => (
 
 /* ── Campo somente leitura ── */
 function CampoLeitura({ rotulo, valor, escuro, colSpan = 1 }) {
-    // Define a cor do texto do label de acordo com o tema.
     const classeLabel = escuro ? "text-gray-500" : "text-gray-400";
-    // Define o visual do input de acordo com o tema.
     const classeInput = escuro
         ? "bg-gray-800/80 border-gray-700 text-gray-200"
         : "bg-white border-gray-200 text-gray-700";
 
-    // Retorna o campo pronto para ser exibido na tela.
     return (
         <div className={colSpan === 2 ? "col-span-2" : colSpan === 3 ? "col-span-3" : colSpan === 4 ? "col-span-4" : ""}>
-            {/* Mostra o nome do campo. */}
             <label className={`block text-[9px] font-bold tracking-widest uppercase mb-1 ${classeLabel}`}>
                 {rotulo}
             </label>
-            {/* Mostra o valor em um input que nao pode ser editado. */}
             <input
                 type="text"
                 readOnly
@@ -55,26 +50,19 @@ function CampoLeitura({ rotulo, valor, escuro, colSpan = 1 }) {
 
 /* ── Campo de quantidade editável ── */
 function CampoQuantidade({ valor, modoEdicao, aoAlterar, escuro }) {
-    // Define a cor do label conforme o tema.
     const classeLabel = escuro ? "text-gray-500" : "text-gray-400";
-    // Guarda as classes que o input sempre vai usar.
     const classeBase = "w-full px-3 py-1.5 rounded-lg border text-xs font-semibold focus:outline-none transition-all duration-200";
-    // Define o estilo quando o campo esta somente para leitura.
     const classeLeitura = escuro
         ? "bg-gray-800/80 border-gray-700 text-gray-200 cursor-default"
         : "bg-white border-gray-200 text-gray-700 cursor-default";
-    // Define o estilo quando o campo esta em modo de edicao.
     const classeEdicao = escuro
         ? "bg-blue-950/60 border-blue-500 text-white ring-1 ring-blue-500/40"
         : "bg-blue-50 border-blue-400 text-blue-900 ring-1 ring-blue-300/50";
 
-    // Retorna o campo de quantidade.
     return (
         <div>
-            {/* Label do campo quantidade. */}
             <label className={`block text-[9px] font-bold tracking-widest uppercase mb-1 ${classeLabel}`}>
                 Quantidade
-                {/* Mostra a etiqueta apenas quando o campo esta editavel. */}
                 {modoEdicao && (
                     <span className={`ml-1.5 text-[8px] font-bold tracking-wider normal-case px-1.5 py-0.5 rounded-full
             ${escuro ? "bg-blue-900/60 text-blue-300" : "bg-blue-100 text-blue-600"}`}>
@@ -82,7 +70,6 @@ function CampoQuantidade({ valor, modoEdicao, aoAlterar, escuro }) {
                     </span>
                 )}
             </label>
-            {/* Input numerico da quantidade. */}
             <input
                 type="number"
                 min={1}
@@ -96,16 +83,12 @@ function CampoQuantidade({ valor, modoEdicao, aoAlterar, escuro }) {
 }
 
 /* Campo de texto editavel */
-function CampoTextoEditavel({ rotulo, valor, modoEdicao, aoAlterar, escuro, colSpan = 1 }) {
-    // Define a cor do label conforme o tema.
+function CampoTextoEditavel({ rotulo, valor, modoEdicao, aoAlterar, escuro, colSpan = 1, placeholder = "" }) {
     const classeLabel = escuro ? "text-gray-500" : "text-gray-400";
-    // Guarda as classes que o input sempre vai usar.
     const classeBase = "w-full px-3 py-1.5 rounded-lg border text-xs font-semibold focus:outline-none transition-all duration-200";
-    // Define o estilo quando o campo esta somente para leitura.
     const classeLeitura = escuro
         ? "bg-gray-800/80 border-gray-700 text-gray-200 cursor-default"
         : "bg-white border-gray-200 text-gray-700 cursor-default";
-    // Define o estilo quando o campo esta em modo de edicao.
     const classeEdicao = escuro
         ? "bg-blue-950/60 border-blue-500 text-white ring-1 ring-blue-500/40"
         : "bg-blue-50 border-blue-400 text-blue-900 ring-1 ring-blue-300/50";
@@ -117,7 +100,7 @@ function CampoTextoEditavel({ rotulo, valor, modoEdicao, aoAlterar, escuro, colS
                 {modoEdicao && (
                     <span className={`ml-1.5 text-[8px] font-bold tracking-wider normal-case px-1.5 py-0.5 rounded-full
             ${escuro ? "bg-blue-900/60 text-blue-300" : "bg-blue-100 text-blue-600"}`}>
-                        editavel
+                        editável
                     </span>
                 )}
             </label>
@@ -126,7 +109,7 @@ function CampoTextoEditavel({ rotulo, valor, modoEdicao, aoAlterar, escuro, colS
                 value={valor}
                 readOnly={!modoEdicao}
                 onChange={(e) => aoAlterar(e.target.value)}
-                placeholder="Distribuidora XYZ"
+                placeholder={placeholder || "—"}
                 className={`${classeBase} ${modoEdicao ? classeEdicao : classeLeitura}`}
             />
         </div>
@@ -135,12 +118,9 @@ function CampoTextoEditavel({ rotulo, valor, modoEdicao, aoAlterar, escuro, colS
 
 /* ── Cabeçalho de seção ── */
 function CabecalhoSecao({ titulo, cor, escuro }) {
-    // Retorna o titulo da secao com uma barra colorida ao lado.
     return (
         <div className="flex items-center gap-2 mb-3">
-            {/* Barra colorida que ajuda a identificar a secao. */}
             <div className={`w-1 h-4 rounded-full ${cor}`} />
-            {/* Texto do titulo da secao. */}
             <span className={`text-[10px] font-extrabold tracking-widest uppercase ${escuro ? "text-white" : "text-gray-900"}`}>
                 {titulo}
             </span>
@@ -152,77 +132,81 @@ function CabecalhoSecao({ titulo, cor, escuro }) {
    MODAL PRINCIPAL
 ══════════════════════════════════════════ */
 export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar, escuro }) {
-    // Cria uma chave juntando o mes e o id da venda.
     const chave = `${mes}-${venda.id}`;
-    // Busca os detalhes da venda usando a chave criada.
     const detalhes = detalhesVenda?.[chave];
 
-    // Guarda a quantidade atual do produto.
+    // Quantidade
     const [quantidade, setQuantidade] = useState(detalhes?.produto?.quantidade ?? 0);
-    // Guarda se o modal esta em modo de edicao.
-    const [modoEdicao, setModoEdicao] = useState(false);
-    // Guarda a quantidade antiga para cancelar alteracoes.
     const [quantidadeAntes, setQuantidadeAntes] = useState(quantidade);
-    // Guarda os nomes fantasia editaveis.
+
+    // Modo de edição
+    const [modoEdicao, setModoEdicao] = useState(false);
+
+    // Nome fantasia do cliente
     const [nomeFantasiaCliente, setNomeFantasiaCliente] = useState(detalhes?.cliente?.nomeFantasia ?? "");
-    const [nomeFantasiaDistribuidor, setNomeFantasiaDistribuidor] = useState(detalhes?.distribuidor?.nomeFantasia ?? "");
-    // Guarda se cliente e distribuidor estao em modo de edicao.
-    // Guarda os valores antigos para cancelar alteracoes.
     const [nomeFantasiaClienteAntes, setNomeFantasiaClienteAntes] = useState(nomeFantasiaCliente);
+
+    // Nome fantasia do distribuidor
+    const [nomeFantasiaDistribuidor, setNomeFantasiaDistribuidor] = useState(detalhes?.distribuidor?.nomeFantasia ?? "");
     const [nomeFantasiaDistribuidorAntes, setNomeFantasiaDistribuidorAntes] = useState(nomeFantasiaDistribuidor);
+
+    // Entrega
+    const [entrega, setEntrega] = useState(detalhes?.produto?.entrega ?? "");
+    const [entregaAntes, setEntregaAntes] = useState(entrega);
 
     // Atualiza os dados quando troca a venda aberta.
     useEffect(() => {
-        // Pega a quantidade do produto ou usa zero se nao existir.
         const qtd = detalhes?.produto?.quantidade ?? 0;
-        // Atualiza a quantidade exibida.
         setQuantidade(qtd);
-        // Salva a quantidade original.
         setQuantidadeAntes(qtd);
-        // Atualiza os nomes fantasia exibidos.
+
         const clienteFantasia = detalhes?.cliente?.nomeFantasia ?? "";
         const distribuidorFantasia = detalhes?.distribuidor?.nomeFantasia ?? "";
         setNomeFantasiaCliente(clienteFantasia);
         setNomeFantasiaDistribuidor(distribuidorFantasia);
         setNomeFantasiaClienteAntes(clienteFantasia);
         setNomeFantasiaDistribuidorAntes(distribuidorFantasia);
-        // Sai do modo de edicao.
+
+        const entregaVal = detalhes?.produto?.entrega ?? "";
+        setEntrega(entregaVal);
+        setEntregaAntes(entregaVal);
+
         setModoEdicao(false);
     }, [chave]);
 
-    // Cria o atalho para fechar o modal com a tecla Escape.
+    // Atalho Escape para fechar.
     useEffect(() => {
-        // Verifica qual tecla foi apertada.
         function aoApertarTecla(e) { if (e.key === "Escape") tentarFechar(); }
-        // Adiciona o evento no documento.
         document.addEventListener("keydown", aoApertarTecla);
-        // Remove o evento quando o componente desmonta.
         return () => document.removeEventListener("keydown", aoApertarTecla);
-    }, [modoEdicao, quantidadeAntes, nomeFantasiaClienteAntes, nomeFantasiaDistribuidorAntes]);
+    }, [modoEdicao, quantidadeAntes, nomeFantasiaClienteAntes, nomeFantasiaDistribuidorAntes, entregaAntes]);
 
-    // Ativa a edicao e guarda o valor atual.
     function iniciarEdicao() {
         setQuantidadeAntes(quantidade);
         setNomeFantasiaClienteAntes(nomeFantasiaCliente);
         setNomeFantasiaDistribuidorAntes(nomeFantasiaDistribuidor);
+        setEntregaAntes(entrega);
         setModoEdicao(true);
     }
-    // Confirma a edicao e fecha o modo editavel.
-    function confirmarEdicao() { setModoEdicao(false); /* chamada à API aqui */ }
-    // Cancela a edicao e volta para o valor anterior.
+
+    function confirmarEdicao() {
+        setModoEdicao(false);
+        /* chamada à API aqui — incluir: quantidade, nomeFantasiaCliente, nomeFantasiaDistribuidor, entrega */
+    }
+
     function cancelarEdicao() {
         setQuantidade(quantidadeAntes);
         setNomeFantasiaCliente(nomeFantasiaClienteAntes);
         setNomeFantasiaDistribuidor(nomeFantasiaDistribuidorAntes);
+        setEntrega(entregaAntes);
         setModoEdicao(false);
     }
-    // Fecha normalmente ou pergunta se deve descartar alteracoes em andamento.
+
     function tentarFechar() {
         if (!modoEdicao) {
             aoFechar();
             return;
         }
-
         const deveDescartar = window.confirm("Descartar alterações?");
         if (deveDescartar) {
             cancelarEdicao();
@@ -230,24 +214,18 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
         }
     }
 
-    // Define o fundo e a borda do card principal.
     const classeCard = escuro
         ? "bg-gray-800 border-gray-700"
         : "bg-gray-100 border-gray-300";
-    // Define o fundo e a borda das secoes internas.
     const classeSecao = escuro ? "bg-gray-900/60 border-gray-700" : "bg-gray-50 border-gray-100";
-    // Define a cor das bordas/separadores.
     const classeSeparador = escuro ? "border-gray-700" : "border-gray-100";
 
-    // Retorna o modal completo para a tela.
     return (
-        // Div principal que cobre a tela toda atras do modal.
         <div
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
             style={{ backgroundColor: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}
             onClick={(e) => { if (e.target === e.currentTarget) tentarFechar(); }}
         >
-            {/* Card principal que contem todas as informacoes da venda. */}
             <div
                 className={`w-full max-w-[96vw] max-h-[92vh] overflow-hidden rounded-2xl shadow-2xl border flex flex-col ${classeCard}`}
                 style={{ animation: "modalEntrar 0.2s ease-out" }}
@@ -273,14 +251,14 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
                                 : "bg-orange-500/20 text-orange-300 border-orange-500/40"}`}>
                             {venda.status}
                         </span>
-                </div>
+                    </div>
                 </div>
 
                 {/* ── Corpo ── */}
                 <div className="modal-detalhe-scroll flex flex-col gap-4 p-8 overflow-y-auto flex-1 min-h-0">
                     {detalhes ? (
                         <>
-                            {/* Cliente e distribuidor*/}
+                            {/* Cliente e Distribuidor */}
                             <div className="grid grid-cols-2 gap-4">
 
                                 {/* Dados do Cliente */}
@@ -295,6 +273,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
                                             aoAlterar={setNomeFantasiaCliente}
                                             escuro={escuro}
                                             colSpan={2}
+                                            placeholder="Nome fantasia do cliente"
                                         />
                                         <CampoLeitura rotulo="CNPJ" valor={detalhes.cliente.cnpj} escuro={escuro} />
                                         <CampoLeitura rotulo="Inscrição Estadual" valor={detalhes.cliente.inscricaoEstadual} escuro={escuro} />
@@ -320,6 +299,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
                                             aoAlterar={setNomeFantasiaDistribuidor}
                                             escuro={escuro}
                                             colSpan={2}
+                                            placeholder="Nome fantasia do distribuidor"
                                         />
                                         <CampoLeitura rotulo="CNPJ" valor={detalhes.distribuidor.cnpj} escuro={escuro} />
                                         <CampoLeitura rotulo="Inscrição Estadual" valor={detalhes.distribuidor.inscricaoEstadual} escuro={escuro} />
@@ -339,7 +319,6 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
                                 <CabecalhoSecao titulo="Dados do Produto" cor="bg-cyan-500" escuro={escuro} />
 
                                 <div className="flex flex-col gap-4">
-                                    {/* Descrição ocupa toda a linha */}
                                     <CampoLeitura
                                         rotulo="Descrição do Produto"
                                         valor={detalhes.produto.descricao}
@@ -349,10 +328,16 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
 
                                     <div className={`w-full h-px ${classeSeparador}`} />
 
-                                    {/* 4 colunas aproveitando a largura */}
                                     <div className="grid grid-cols-4 gap-x-5 gap-y-3">
                                         <CampoLeitura rotulo="P/N" valor={detalhes.produto.pn} escuro={escuro} />
-                                        <CampoLeitura rotulo="Entrega" valor={detalhes.produto.entrega} escuro={escuro} />
+                                        <CampoTextoEditavel
+                                            rotulo="Entrega"
+                                            valor={entrega}
+                                            modoEdicao={modoEdicao}
+                                            aoAlterar={setEntrega}
+                                            escuro={escuro}
+                                            placeholder="Ex: Imediata"
+                                        />
                                         <CampoQuantidade
                                             valor={quantidade}
                                             modoEdicao={modoEdicao}
@@ -364,7 +349,6 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
                                     </div>
 
                                     <div className={`w-full h-px ${classeSeparador}`} />
-
 
                                     <div
                                         className="rounded-xl p-4 grid grid-cols-4 gap-x-5 gap-y-3 items-end"
@@ -393,7 +377,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
                                 </div>
                             </div>
 
-                            {/* ── Parcelas (CONFERIR COM O GRUPO) */}
+                            {/* ── Parcelas */}
                             {venda.parcelas?.length > 0 && (
                                 <div className={`rounded-xl border p-5 ${classeSecao}`}>
                                     <CabecalhoSecao titulo="Parcelas desta Venda" cor="bg-emerald-500" escuro={escuro} />
@@ -425,7 +409,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
                         <p className={`text-[10px] mr-auto flex items-center gap-1.5
               ${escuro ? "text-blue-400" : "text-blue-500"}`}>
                             <IconeLapis />
-                            Nome fantasia e quantidade podem ser editados
+                            Nome fantasia, entrega e quantidade podem ser editados
                         </p>
                     )}
                     {modoEdicao ? (
@@ -524,4 +508,3 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
         </div>
     );
 }
-
