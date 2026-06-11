@@ -3,8 +3,9 @@ import Navbar from "../layout/NavbarVendedor";
 import { useDarkMode } from "../hooks/useDarkMode";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { verificarSeVendedor, verificarToken } from "../services/api";
+import { verificarSeVendedor, verificarToken, verificarPrimeiroAcesso, alterarSenha } from "../services/api";
 import ModalDetalheVenda from "../components/modal/Modaldetalhevenda";
+import ModalAlterarSenha from "../components/modal/ModalAlterarSenha";
 
 /* ══════════════════════════════════════════
    DADOS MOCKADOS
@@ -564,6 +565,8 @@ export default function HomeVendedor() {
   const [vendaExpandida, setVendaExpandida] = useState(null);
   const [ocultarProjecao, setOcultarProjecao] = useState(false);
   const [vendaNoModal, setVendaNoModal] = useState(null);
+ 
+  const [primeiroAcesso, setPrimeiroAcesso] = useState(null);
 
   const refDropdown = useRef(null);
   const toastShown = useRef(false);
@@ -591,7 +594,21 @@ export default function HomeVendedor() {
       toast.error("Acesso negado. Você não tem permissão para acessar esta página.");
       navigate("/financeiro/vendedores");
     }
+
+    verificarPrimeiroAcesso()
+    .then((isPrimeiro) => setPrimeiroAcesso(isPrimeiro))
+    .catch(() => setPrimeiroAcesso(false)); 
   }, []);
+
+  async function handleAlterarSenha({ senhaAtual, novaSenha }) {
+  try {
+    await alterarSenha({ senhaAtual, novaSenha });
+    toast.success("Senha alterada com sucesso!");
+    setPrimeiroAcesso(false);
+  } catch (err) {
+    toast.error(err.message || "Erro ao alterar a senha.");
+  }
+}
 
   const baseDados = DADOS_POR_MES[mesSelecionado] || DADOS_POR_MES[MES_ATUAL];
 
@@ -855,6 +872,14 @@ export default function HomeVendedor() {
           detalhesVenda={DETALHES_VENDA}
           aoFechar={() => setVendaNoModal(null)}
           escuro={modoEscuro}
+        />
+      )}
+
+      {primeiroAcesso === true && (
+        <ModalAlterarSenha
+          obrigatorio
+          aoConfirmar={handleAlterarSenha}
+          aoFechar={() => {}}  
         />
       )}
 
