@@ -202,6 +202,7 @@ export default function HomeVendedor() {
   const [anoSelecionado, setAnoSelecionado] = useState(ANO_ATUAL);
   const [mesSelecionado, setMesSelecionado] = useState(MES_ATUAL);
   const [diaSelecionado, setDiaSelecionado] = useState(DIA_ATUAL);
+  const [tipoFiltroPeriodo, setTipoFiltroPeriodo] = useState("day");
   const [mostrarMeses, setMostrarMeses] = useState(false);
   const [selecao, setSelecao] = useState(null);
   const [cardAtivo, setCardAtivo] = useState(null);
@@ -258,10 +259,15 @@ export default function HomeVendedor() {
 
     let ativo = true;
     const mes = MESES.indexOf(mesSelecionado) + 1;
+    const filtroPeriodo = {
+      ano: anoSelecionado,
+      mes,
+      ...(tipoFiltroPeriodo === "day" ? { dia: diaSelecionado } : {}),
+    };
 
     async function carregarPainel() {
       try {
-        const response = await buscarPainelVendedor({ ano: anoSelecionado, mes, dia: diaSelecionado });
+        const response = await buscarPainelVendedor(filtroPeriodo);
         if (ativo) setPainelVendedor(normalizarPainelVendedor(response));
       } catch (error) {
         if (!ativo) return;
@@ -275,7 +281,7 @@ export default function HomeVendedor() {
     return () => {
       ativo = false;
     };
-  }, [diaSelecionado, mesSelecionado, anoSelecionado, atualizacaoPainel]);
+  }, [diaSelecionado, mesSelecionado, anoSelecionado, tipoFiltroPeriodo, atualizacaoPainel]);
 
   const dados = painelVendedor || {
     totalVendas: 0,
@@ -567,19 +573,20 @@ export default function HomeVendedor() {
               <DatePickerCalendar
                 selecao={selecao}
                 aoSelecionar={(s) => {
-                  console.log(s);
                   setSelecao(s);
-                  if (s) {
-                    if (s.type == "day") {
-                      const dia = s.d;
-                      setDiaSelecionado(dia);
-                      console.log(diaSelecionado);
-                    }
-                    const nomeMes = MESES[s.m];
-                    const ano = s.y;
-                    setAnoSelecionado(ano);
-                    selecionarMes(nomeMes)
+                  if (!s) {
+                    setTipoFiltroPeriodo("month");
+                    setDiaSelecionado(null);
+                    setAnoSelecionado(ANO_ATUAL);
+                    selecionarMes(MES_ATUAL);
+                    return;
                   }
+
+                  const nomeMes = MESES[s.m];
+                  setTipoFiltroPeriodo(s.type);
+                  setDiaSelecionado(s.type === "day" ? s.d : null);
+                  setAnoSelecionado(s.y);
+                  selecionarMes(nomeMes);
                 }}
                 dark={modoEscuro}
               />
