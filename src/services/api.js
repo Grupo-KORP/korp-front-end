@@ -197,6 +197,7 @@ export async function cadastrarProduto(produto) {
 // ─── Pedidos ─────────────────────────────────────────────────────────
 
 export async function cadastrarPedido(pedidoRequest) {
+  console.log("API: cadastrarPedido", pedidoRequest);
   const { data } = await api.post("/pedidos/cadastrar", pedidoRequest);
   return data;
 }
@@ -218,6 +219,16 @@ export async function buscarPainelVendedor({ ano, mes } = {}) {
   if (ano) params.ano = ano;
   if (mes) params.mes = mes;
 
-  const { data } = await api.get("/vendedor/home", { params });
-  return data;
+  try {
+    const { data } = await api.get("/vendedor/home", { params });
+    return data;
+  } catch (err) {
+    const status = err?.status ?? err?.response?.status;
+
+    if (status === 404) throw new Error("Painel do vendedor sem dados.");
+    if (status === 403) throw new Error("Sem permissão para acessar o painel.");
+    if (status === 401) throw new Error("Sessão expirada. Faça login novamente.");
+
+    throw new Error("Erro ao carregar o painel. Tente novamente.");
+  }
 }

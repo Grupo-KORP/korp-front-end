@@ -47,9 +47,17 @@ const UF_OPTIONS = [
 
 // ─── APIs externas ────────────────────────────────────────────────────────────
 async function fetchEmpresa(cnpjRaw) {
-  // Troque pela API real quando disponível
-  await new Promise((r) => setTimeout(r, 600));
-  return { razaoSocial: "EMPRESA MOCKADA LTDA", inscEst: "110.042.490.114", nomeFantasia: "Tech Solutions" };
+  const res = await fetch(`https://api.opencnpj.org/${cnpjRaw}`);
+  if (!res.ok) throw new Error("CNPJ não encontrado.");
+  const data = await res.json();
+  if (data.situacao_cadastral && data.situacao_cadastral.toLowerCase() !== "ativa") {
+    throw new Error(`CNPJ com situação: ${data.situacao_cadastral}.`);
+  }
+  return {
+    razaoSocial: data.razao_social ?? "",
+    nomeFantasia: data.nome_fantasia ?? "",
+    inscEst: "",
+  };
 }
 
 async function fetchCEP(cepRaw) {
@@ -178,7 +186,7 @@ export default function DistribuidorPage() {
         try {
           const empresa = await fetchEmpresa(masked.replace(/\D/g, ""));
           setForm((prev) => ({ ...prev, razaoSocial: empresa.razaoSocial, inscEst: empresa.inscEst, nomeFantasia: empresa.nomeFantasia || "" }));
-        } catch { toast.error("Não foi possível consultar o CNPJ."); }
+        } catch (err) { toast.error(err?.message ?? "Não foi possível consultar o CNPJ."); }
         finally { setLoadingCNPJ(false); }
       } else {
         setForm((prev) => ({ ...prev, razaoSocial: "", inscEst: "", nomeFantasia: "" }));
@@ -463,8 +471,8 @@ export default function DistribuidorPage() {
 
   // ── Fields da etapa 1 ──
   const fields = [
-    { name: "cnpj", label: "CNPJ", pair: "start", placeholder: "00.000.000/0000-00", value: form.cnpj, loading: loadingCNPJ, error: errors.cnpj },
-    { name: "inscEst", label: "Insc. Est.", pair: "end", placeholder: "isento", value: form.inscEst, loading: loadingCNPJ },
+    { name: "cnpj", label: "CNPJ", pair: "start", placeholder: "00.000.000/0000-00", value: form.cnpj, loading: loadingCNPJ, error: errors.cnpj, readOnly: !!editingId  },
+    { name: "inscEst", label: "Insc. Est.", pair: "end", placeholder: "isento", value: form.inscEst, loading: loadingCNPJ, readOnly: !!editingId  },
     { name: "razaoSocial", label: "Razão Social", placeholder: "Ex: Tech Solutions Ltda", value: form.razaoSocial, readOnly: true, loading: loadingCNPJ, error: errors.razaoSocial },
     { name: "nomeFantasia", label: "Nome Fantasia", placeholder: "Ex: Tech Solutions", value: form.nomeFantasia, loading: loadingCNPJ, error: errors.nomeFantasia },
     { name: "fone", label: "Fone", pair: "start", placeholder: "(00) 0000-0000", value: form.fone, error: errors.fone },

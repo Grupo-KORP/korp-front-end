@@ -263,7 +263,7 @@ export default function HomeVendedor() {
       } catch (error) {
         if (!ativo) return;
         setPainelVendedor(normalizarPainelVendedor(null));
-        toast.error(error.message || "NÃ£o foi possÃ­vel carregar o painel do vendedor.");
+        toast.error(error.message || "Não foi possível carregar o painel do vendedor.");
       }
     }
 
