@@ -171,6 +171,9 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
     const [entrega, setEntrega] = useState(detalhes?.produto?.entrega ?? "");
     const [entregaAntes, setEntregaAntes] = useState(entrega);
 
+    const formatarDataBR = (data) =>
+        new Intl.DateTimeFormat("pt-BR").format(new Date(data));
+
     // Atualiza os dados quando troca a venda aberta.
     useEffect(() => {
         const qtd = detalhes?.produto?.quantidade ?? 0;
@@ -246,7 +249,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
         }
     }
     // Cancela a edicao e volta para o valor anterior.
-        /* chamada à API aqui — incluir: quantidade, nomeFantasiaCliente, nomeFantasiaDistribuidor, entrega */
+    /* chamada à API aqui — incluir: quantidade, nomeFantasiaCliente, nomeFantasiaDistribuidor, entrega */
     function cancelarEdicao() {
         setQuantidade(quantidadeAntes);
         setNomeFantasiaCliente(nomeFantasiaClienteAntes);
@@ -540,7 +543,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
                                             >
                                                 <span className="flex items-center gap-2 text-xs">
                                                     {parcelaEstaPaga(parcela) && <IconeCheck />}
-                                                    {parcela.label}
+                                                    {parcela.label} - {formatarDataBR(parcela.dataVencimento)}
                                                 </span>
                                                 <span className="text-sm font-bold">{parcela.valor}</span>
                                             </div>

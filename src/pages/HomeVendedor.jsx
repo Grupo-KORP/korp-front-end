@@ -23,6 +23,7 @@ const MESES = [
 const HOJE = new Date();
 const MES_ATUAL = MESES[HOJE.getMonth()];
 const ANO_ATUAL = HOJE.getFullYear();
+const DIA_ATUAL = HOJE.getDate();
 
 const formatarMoedaBR = (valor) =>
   Number(valor || 0).toLocaleString("pt-BR", {
@@ -198,7 +199,9 @@ function CardMetrica({ icone, rotulo, valor, badge, sub, ativo, aoClicar, dark }
 export default function HomeVendedor() {
   const { darkMode: modoEscuro } = useDarkMode();
   const navigate = useNavigate();
+  const [anoSelecionado, setAnoSelecionado] = useState(ANO_ATUAL);
   const [mesSelecionado, setMesSelecionado] = useState(MES_ATUAL);
+  const [diaSelecionado, setDiaSelecionado] = useState(DIA_ATUAL);
   const [mostrarMeses, setMostrarMeses] = useState(false);
   const [selecao, setSelecao] = useState(null);
   const [cardAtivo, setCardAtivo] = useState(null);
@@ -258,7 +261,7 @@ export default function HomeVendedor() {
 
     async function carregarPainel() {
       try {
-        const response = await buscarPainelVendedor({ ano: ANO_ATUAL, mes });
+        const response = await buscarPainelVendedor({ ano: anoSelecionado, mes, dia: diaSelecionado });
         if (ativo) setPainelVendedor(normalizarPainelVendedor(response));
       } catch (error) {
         if (!ativo) return;
@@ -272,7 +275,7 @@ export default function HomeVendedor() {
     return () => {
       ativo = false;
     };
-  }, [mesSelecionado, atualizacaoPainel]);
+  }, [diaSelecionado, mesSelecionado, anoSelecionado, atualizacaoPainel]);
 
   const dados = painelVendedor || {
     totalVendas: 0,
@@ -544,279 +547,287 @@ export default function HomeVendedor() {
         <ModalAlterarSenha
           obrigatorio
           aoConfirmar={handleAlterarSenha}
-          aoFechar={() => {}}  
+          aoFechar={() => { }}
         />
       )}
 
       <div className="flex-1 overflow-y-auto min-h-0 w-full">
         <div className="flex flex-col lg:h-full px-3 py-4 sm:px-6 sm:py-6">
 
-        {/* ── Header ── */}
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
-          <div>
-            <p className="text-xs font-semibold tracking-widest text-blue-500 uppercase mb-0.5">
-              Operações de Venda
-            </p>
-            <h1 className={`text-xl sm:text-2xl font-extrabold ${textoP}`}>Painel do Vendedor</h1>
-          </div>
+          {/* ── Header ── */}
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
+            <div>
+              <p className="text-xs font-semibold tracking-widest text-blue-500 uppercase mb-0.5">
+                Operações de Venda
+              </p>
+              <h1 className={`text-xl sm:text-2xl font-extrabold ${textoP}`}>Painel do Vendedor</h1>
+            </div>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <DatePickerCalendar
-              selecao={selecao}
-              aoSelecionar={(s) => {
-                setSelecao(s);
-                if (s) {
-                  const nomeMes = MESES[s.m];
-                  selecionarMes(nomeMes);
-                }
-              }}
-              dark={modoEscuro}
-            />
-          </div>
-        </div>
-
-        {/* ── Layout principal ── */}
-        <div className="flex flex-col lg:flex-row gap-5 lg:items-stretch lg:flex-1 lg:min-h-0">
-
-          {/* ── Coluna esquerda ── */}
-          <div className="flex flex-col gap-4 lg:flex-1 lg:min-h-0">
-
-            {/* Cards de métricas */}
-            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-3">
-              <CardMetrica
-                icone={<IconCarrinho />}
-                rotulo="Total de Vendas"
-                valor={dados.totalVendas}
-                badge={`${dados.tendencia} vs mês ant.`}
-                ativo={cardAtivo === "vendas"}
-                aoClicar={() => alternarCard("vendas")}
-                dark={modoEscuro}
-              />
-              <CardMetrica
-                icone={<IconConfirmado />}
-                rotulo="Comissões Liberadas"
-                valor={dados.comissoesLiberadas}
-                badge={`${dados.tendencia} vs mês ant.`}
-                ativo={cardAtivo === "liberadas"}
-                aoClicar={() => alternarCard("liberadas")}
-                dark={modoEscuro}
-              />
-              <CardMetrica
-                icone={<IconRelogio />}
-                rotulo="Pagamentos Pendentes"
-                valor={dados.pagamentosPendentes}
-                sub="Aguardando conciliação"
-                ativo={cardAtivo === "pendentes"}
-                aoClicar={() => alternarCard("pendentes")}
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <DatePickerCalendar
+                selecao={selecao}
+                aoSelecionar={(s) => {
+                  console.log(s);
+                  setSelecao(s);
+                  if (s) {
+                    if (s.type == "day") {
+                      const dia = s.d;
+                      setDiaSelecionado(dia);
+                      console.log(diaSelecionado);
+                    }
+                    const nomeMes = MESES[s.m];
+                    const ano = s.y;
+                    setAnoSelecionado(ano);
+                    selecionarMes(nomeMes)
+                  }
+                }}
                 dark={modoEscuro}
               />
             </div>
-
-            {/* Tabela */}
-            <div className={`${cardBg} rounded-2xl shadow-sm p-5 flex flex-col lg:flex-1 lg:min-h-0`}>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-1 h-5 rounded-full bg-blue-700" />
-                <h2 className={`text-base font-bold ${textoM}`}>{tituloTabela}</h2>
-                {cardAtivo && (
-                  <button
-                    onClick={() => setCardAtivo(null)}
-                    className={`ml-auto text-xs font-semibold tracking-wider uppercase transition-colors ${textoS} hover:text-blue-500`}
-                  >
-                    Limpar filtro ×
-                  </button>
-                )}
-              </div>
-
-              {/* Cabeçalho */}
-              <div className="hidden sm:grid grid-cols-[2fr_2fr_2fr_auto] gap-4 px-2 mb-2">
-                <span className={`text-[9px] font-bold tracking-widest uppercase ${textoS}`}>Identificação da Venda</span>
-                <span className={`text-[9px] font-bold tracking-widest uppercase text-center ${textoS}`}>Comissão Total</span>
-                <span className={`text-[9px] font-bold tracking-widest uppercase text-center ${textoS}`}>Status Atual</span>
-                <span />
-              </div>
-              {/* Cabeçalho mobile */}
-              <div className="grid sm:hidden grid-cols-[1fr_auto] gap-2 px-2 mb-2">
-                <span className={`text-[9px] font-bold tracking-widest uppercase ${textoS}`}>Identificação da Venda</span>
-                <span />
-              </div>
-
-              {/* Linhas */}
-              <div className="flex flex-col gap-0.5 lg:flex-1 overflow-y-auto max-h-72 lg:max-h-none pr-2 lg:min-h-0" style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(156,163,175,0.35) transparent" }}>                {vendasExibidas.length === 0 && (
-                <p className={`text-sm text-center py-6 ${textoS}`}>Nenhuma venda encontrada para este filtro.</p>
-              )}
-
-                {vendasExibidas.map((v) => (
-                  <button
-                    key={v.id}
-                    onClick={() => setVendaNoModal({ ...v, parcelas: v.parcelasDaVenda || v.parcelas })}
-                    className={`w-full grid grid-cols-[auto_1fr] sm:grid-cols-[2fr_2fr_2fr_auto] gap-2 sm:gap-4 items-center px-2 py-3 rounded-xl transition-colors text-left group ${hover}`}
-                  >
-                    {/* Identificação + info mobile */}
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0
-                        ${modoEscuro ? "bg-blue-900/50" : "bg-blue-50"}`}>
-                        <span className="text-[10px] font-bold text-blue-700">{v.id}</span>
-                      </div>
-                      <div className="min-w-0">
-                        <p className={`text-xs font-bold truncate ${textoM}`}>{v.nome}</p>
-                        <p className={`text-[10px] truncate ${textoS}`}>{v.cliente}</p>
-                        {/* Comissão + status visíveis só no mobile */}
-                        <div className="flex items-center gap-2 mt-0.5 sm:hidden">
-                          <span className={`text-xs font-bold ${textoM}`}>{v.comissao}</span>
-                          <span className={`text-[9px] font-bold tracking-wider px-2 py-0.5 rounded-full uppercase border
-                            ${v.tipo === "paga"
-                              ? "bg-green-50 text-green-600 border-green-200"
-                              : v.tipo === "liberada"
-                                ? "bg-blue-50 text-blue-600 border-blue-200"
-                              : "bg-orange-50 text-orange-500 border-orange-200"
-                            }`}>
-                            {v.status}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Comissão — só desktop */}
-                    <div className="hidden sm:flex text-center justify-center">
-                      <span className={`text-sm font-bold ${textoM}`}>{v.comissao}</span>
-                    </div>
-
-                    {/* Status — só desktop */}
-                    <div className="hidden sm:flex justify-center">
-                      <span className={`text-[9px] font-bold tracking-wider px-2.5 py-0.5 rounded-full uppercase border
-                        ${v.tipo === "paga"
-                          ? "bg-green-50 text-green-600 border-green-200"
-                          : v.tipo === "liberada"
-                            ? "bg-blue-50 text-blue-600 border-blue-200"
-                          : "bg-orange-50 text-orange-500 border-orange-200"
-                        }`}>
-                        {v.status}
-                      </span>
-                    </div>
-
-                    {/* Seta */}
-                    <div className={`transition-transform duration-200 ${textoS} group-hover:text-blue-400`}>
-                      <IconSetaDireita />
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
 
-          {/* ── Coluna direita ── */}
-          <div className="w-full lg:w-64 flex-shrink-0 flex flex-col gap-3 lg:min-h-0">
+          {/* ── Layout principal ── */}
+          <div className="flex flex-col lg:flex-row gap-5 lg:items-stretch lg:flex-1 lg:min-h-0">
 
-            {/* ── Resumo de comissões ── */}
-<div className={`${cardBg} rounded-2xl shadow-sm p-4 flex flex-col gap-2 lg:flex-1 lg:min-h-0`}>
-                {/* Cabeçalho do card */}
-              <div>
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <IconRelatorio dark={modoEscuro} />
-                  <h3 className={`text-xs font-extrabold tracking-widest uppercase ${textoM}`}>
-                    Resumo de Comissões
-                  </h3>
-                </div>
-                <p className={`text-[9px] tracking-wider uppercase ${textoS}`}>
-                  Relatório Mensal de Projeção
-                </p>
-              </div>
+            {/* ── Coluna esquerda ── */}
+            <div className="flex flex-col gap-4 lg:flex-1 lg:min-h-0">
 
-              {/* Tendência */}
-              <div className="flex flex-col gap-0.5">
-                <div className="flex items-center gap-1.5">
-                  <span className={tendenciaPositiva ? "text-green-500" : "text-red-400"}>
-                    {tendenciaPositiva ? <IconTendenciaAlta /> : <IconTendenciaBaixa />}
-                  </span>
-                  <span className={`text-[9px] font-bold tracking-wider ${tendenciaPositiva ? "text-green-500" : "text-red-400"}`}>
-                    {dados.tendencia}
-                  </span>
-                  <span className={`text-[9px] uppercase tracking-wider ml-auto ${textoS}`}>Previsão</span>
-                </div>
-                <p className={`text-sm font-extrabold ${textoP}`}>{mesSelecionado} de {ANO_ATUAL}</p>
-              </div>
-
-              {/* Divisor */}
-              <div className={`border-t ${borda}`} />
-
-              {/* Parcelas em aberto */}
-              <div className="flex items-center justify-between">
-                <span className={`text-xs ${textoS}`}>Parcelas em aberto</span>
-                <span className={`text-sm font-bold ${textoM}`}>
-                  {String(dados.parcelas).padStart(2, "0")}
-                </span>
-              </div>
-
-              {/* Barra de progresso */}
-              <div className={`w-full h-1 rounded-full ${modoEscuro ? "bg-gray-700" : "bg-gray-100"}`}>
-                <div
-                  className="h-1 rounded-full bg-blue-600 transition-all duration-500"
-                  style={{ width: `${Math.min((dados.comissoesLiberadas / (dados.totalVendas || 1)) * 100, 100)}%` }}
+              {/* Cards de métricas */}
+              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-3">
+                <CardMetrica
+                  icone={<IconCarrinho />}
+                  rotulo="Total de Vendas"
+                  valor={dados.totalVendas}
+                  badge={`${dados.tendencia} vs mês ant.`}
+                  ativo={cardAtivo === "vendas"}
+                  aoClicar={() => alternarCard("vendas")}
+                  dark={modoEscuro}
+                />
+                <CardMetrica
+                  icone={<IconConfirmado />}
+                  rotulo="Comissões Liberadas"
+                  valor={dados.comissoesLiberadas}
+                  badge={`${dados.tendencia} vs mês ant.`}
+                  ativo={cardAtivo === "liberadas"}
+                  aoClicar={() => alternarCard("liberadas")}
+                  dark={modoEscuro}
+                />
+                <CardMetrica
+                  icone={<IconRelogio />}
+                  rotulo="Pagamentos Pendentes"
+                  valor={dados.pagamentosPendentes}
+                  sub="Aguardando conciliação"
+                  ativo={cardAtivo === "pendentes"}
+                  aoClicar={() => alternarCard("pendentes")}
+                  dark={modoEscuro}
                 />
               </div>
 
-              {/* Lista de parcelas com scroll interno e Pedido ID por item */}
-              <div className="flex flex-col gap-1.5 overflow-y-auto max-h-48 lg:max-h-none lg:flex-1 lg:min-h-0 pr-1" style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(156,163,175,0.35) transparent" }}>                {todasParcelas.length === 0 && (
-                <p className={`text-xs text-center py-2 ${textoS}`}>Sem parcelas liberadas.</p>
-              )}
-                {todasParcelas.map((p, i) => (
-                  <div
-                    key={i}
-                    className={`flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg
-                      ${modoEscuro ? "bg-gray-700/50" : "bg-gray-50"}`}
-                  >
-                    {/* Pedido ID + label da parcela */}
-                    <div className="flex flex-col gap-0.5 min-w-0">
-                      <span className={`text-[10px] font-bold whitespace-nowrap ${textoM}`}>
-                        Pedido: {p.pedidoId}
-                      </span>
-                      <span className={`text-[10px] ${textoS}`}>{p.label}</span>
-                    </div>
-
-                    {/* Valor */}
-                    <span className={`text-xs font-bold whitespace-nowrap ${textoM}`}>
-                      {p.valor}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Projeção bruta */}
-            <div
-              className="rounded-2xl p-4 flex flex-col gap-1.5"
-              style={{ background: "linear-gradient(135deg, #0f2557 0%, #1a3a7a 60%, #1e4d9b 100%)" }}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[9px] font-bold tracking-widest text-blue-200 uppercase">Projeção Bruta</p>
-                  <p className="text-[9px] font-bold tracking-widest text-blue-200 uppercase">à Receber</p>
-                  <p className="text-[9px] text-blue-300 uppercase mt-0.5">{mesSelecionado}</p>
+              {/* Tabela */}
+              <div className={`${cardBg} rounded-2xl shadow-sm p-5 flex flex-col lg:flex-1 lg:min-h-0`}>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-1 h-5 rounded-full bg-blue-700" />
+                  <h2 className={`text-base font-bold ${textoM}`}>{tituloTabela}</h2>
+                  {cardAtivo && (
+                    <button
+                      onClick={() => setCardAtivo(null)}
+                      className={`ml-auto text-xs font-semibold tracking-wider uppercase transition-colors ${textoS} hover:text-blue-500`}
+                    >
+                      Limpar filtro ×
+                    </button>
+                  )}
                 </div>
-                <button
-                  onClick={() => setOcultarProjecao((p) => !p)}
-                  className="w-7 h-7 flex items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25 transition-all"
-                  aria-label={ocultarProjecao ? "Mostrar valor" : "Ocultar valor"}
-                >
-                  <IconOlho desligado={ocultarProjecao} />
-                </button>
+
+                {/* Cabeçalho */}
+                <div className="hidden sm:grid grid-cols-[2fr_2fr_2fr_auto] gap-4 px-2 mb-2">
+                  <span className={`text-[9px] font-bold tracking-widest uppercase ${textoS}`}>Identificação da Venda</span>
+                  <span className={`text-[9px] font-bold tracking-widest uppercase text-center ${textoS}`}>Comissão Total</span>
+                  <span className={`text-[9px] font-bold tracking-widest uppercase text-center ${textoS}`}>Status Atual</span>
+                  <span />
+                </div>
+                {/* Cabeçalho mobile */}
+                <div className="grid sm:hidden grid-cols-[1fr_auto] gap-2 px-2 mb-2">
+                  <span className={`text-[9px] font-bold tracking-widest uppercase ${textoS}`}>Identificação da Venda</span>
+                  <span />
+                </div>
+
+                {/* Linhas */}
+                <div className="flex flex-col gap-0.5 lg:flex-1 overflow-y-auto max-h-72 lg:max-h-none pr-2 lg:min-h-0" style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(156,163,175,0.35) transparent" }}>                {vendasExibidas.length === 0 && (
+                  <p className={`text-sm text-center py-6 ${textoS}`}>Nenhuma venda encontrada para este filtro.</p>
+                )}
+
+                  {vendasExibidas.map((v) => (
+                    <button
+                      key={v.id}
+                      onClick={() => setVendaNoModal({ ...v, parcelas: v.parcelasDaVenda || v.parcelas })}
+                      className={`w-full grid grid-cols-[auto_1fr] sm:grid-cols-[2fr_2fr_2fr_auto] gap-2 sm:gap-4 items-center px-2 py-3 rounded-xl transition-colors text-left group ${hover}`}
+                    >
+                      {/* Identificação + info mobile */}
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0
+                        ${modoEscuro ? "bg-blue-900/50" : "bg-blue-50"}`}>
+                          <span className="text-[10px] font-bold text-blue-700">{v.id}</span>
+                        </div>
+                        <div className="min-w-0">
+                          <p className={`text-xs font-bold truncate ${textoM}`}>{v.nome}</p>
+                          <p className={`text-[10px] truncate ${textoS}`}>{v.cliente}</p>
+                          {/* Comissão + status visíveis só no mobile */}
+                          <div className="flex items-center gap-2 mt-0.5 sm:hidden">
+                            <span className={`text-xs font-bold ${textoM}`}>{v.comissao}</span>
+                            <span className={`text-[9px] font-bold tracking-wider px-2 py-0.5 rounded-full uppercase border
+                            ${v.tipo === "paga"
+                                ? "bg-green-50 text-green-600 border-green-200"
+                                : v.tipo === "liberada"
+                                  ? "bg-blue-50 text-blue-600 border-blue-200"
+                                  : "bg-orange-50 text-orange-500 border-orange-200"
+                              }`}>
+                              {v.status}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Comissão — só desktop */}
+                      <div className="hidden sm:flex text-center justify-center">
+                        <span className={`text-sm font-bold ${textoM}`}>{v.comissao}</span>
+                      </div>
+
+                      {/* Status — só desktop */}
+                      <div className="hidden sm:flex justify-center">
+                        <span className={`text-[9px] font-bold tracking-wider px-2.5 py-0.5 rounded-full uppercase border
+                        ${v.tipo === "paga"
+                            ? "bg-green-50 text-green-600 border-green-200"
+                            : v.tipo === "liberada"
+                              ? "bg-blue-50 text-blue-600 border-blue-200"
+                              : "bg-orange-50 text-orange-500 border-orange-200"
+                          }`}>
+                          {v.status}
+                        </span>
+                      </div>
+
+                      {/* Seta */}
+                      <div className={`transition-transform duration-200 ${textoS} group-hover:text-blue-400`}>
+                        <IconSetaDireita />
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
-              <p className="text-2xl font-extrabold text-white transition-all duration-300">
-                {ocultarProjecao ? "••••••••" : dados.projecao}
-              </p>
             </div>
 
-            {/* Emitir PDF */}
-            <button
-              onClick={gerarPDFRelatorio}
-              className="w-full py-2.5 rounded-xl text-sm font-bold text-white tracking-wide transition-all duration-200 hover:opacity-90 active:scale-[0.98] shadow-md"
-              style={{ background: "linear-gradient(135deg, #1a3a7a 0%, #2d5fa6 100%)" }}
-            >
-              Emitir PDF
-            </button>
-          </div>
+            {/* ── Coluna direita ── */}
+            <div className="w-full lg:w-64 flex-shrink-0 flex flex-col gap-3 lg:min-h-0">
 
-        </div>
+              {/* ── Resumo de comissões ── */}
+              <div className={`${cardBg} rounded-2xl shadow-sm p-4 flex flex-col gap-2 lg:flex-1 lg:min-h-0`}>
+                {/* Cabeçalho do card */}
+                <div>
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <IconRelatorio dark={modoEscuro} />
+                    <h3 className={`text-xs font-extrabold tracking-widest uppercase ${textoM}`}>
+                      Resumo de Comissões
+                    </h3>
+                  </div>
+                  <p className={`text-[9px] tracking-wider uppercase ${textoS}`}>
+                    Relatório Mensal de Projeção
+                  </p>
+                </div>
+
+                {/* Tendência */}
+                <div className="flex flex-col gap-0.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className={tendenciaPositiva ? "text-green-500" : "text-red-400"}>
+                      {tendenciaPositiva ? <IconTendenciaAlta /> : <IconTendenciaBaixa />}
+                    </span>
+                    <span className={`text-[9px] font-bold tracking-wider ${tendenciaPositiva ? "text-green-500" : "text-red-400"}`}>
+                      {dados.tendencia}
+                    </span>
+                    <span className={`text-[9px] uppercase tracking-wider ml-auto ${textoS}`}>Previsão</span>
+                  </div>
+                  <p className={`text-sm font-extrabold ${textoP}`}>{mesSelecionado} de {ANO_ATUAL}</p>
+                </div>
+
+                {/* Divisor */}
+                <div className={`border-t ${borda}`} />
+
+                {/* Parcelas em aberto */}
+                <div className="flex items-center justify-between">
+                  <span className={`text-xs ${textoS}`}>Parcelas em aberto</span>
+                  <span className={`text-sm font-bold ${textoM}`}>
+                    {String(dados.parcelas).padStart(2, "0")}
+                  </span>
+                </div>
+
+                {/* Barra de progresso */}
+                <div className={`w-full h-1 rounded-full ${modoEscuro ? "bg-gray-700" : "bg-gray-100"}`}>
+                  <div
+                    className="h-1 rounded-full bg-blue-600 transition-all duration-500"
+                    style={{ width: `${Math.min((dados.comissoesLiberadas / (dados.totalVendas || 1)) * 100, 100)}%` }}
+                  />
+                </div>
+
+                {/* Lista de parcelas com scroll interno e Pedido ID por item */}
+                <div className="flex flex-col gap-1.5 overflow-y-auto max-h-48 lg:max-h-none lg:flex-1 lg:min-h-0 pr-1" style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(156,163,175,0.35) transparent" }}>                {todasParcelas.length === 0 && (
+                  <p className={`text-xs text-center py-2 ${textoS}`}>Sem parcelas liberadas.</p>
+                )}
+                  {todasParcelas.map((p, i) => (
+                    <div
+                      key={i}
+                      className={`flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg
+                      ${modoEscuro ? "bg-gray-700/50" : "bg-gray-50"}`}
+                    >
+                      {/* Pedido ID + label da parcela */}
+                      <div className="flex flex-col gap-0.5 min-w-0">
+                        <span className={`text-[10px] font-bold whitespace-nowrap ${textoM}`}>
+                          Pedido: {p.pedidoId}
+                        </span>
+                        <span className={`text-[10px] ${textoS}`}>{p.label}</span>
+                      </div>
+
+                      {/* Valor */}
+                      <span className={`text-xs font-bold whitespace-nowrap ${textoM}`}>
+                        {p.valor}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Projeção bruta */}
+              <div
+                className="rounded-2xl p-4 flex flex-col gap-1.5"
+                style={{ background: "linear-gradient(135deg, #0f2557 0%, #1a3a7a 60%, #1e4d9b 100%)" }}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[9px] font-bold tracking-widest text-blue-200 uppercase">Projeção Bruta</p>
+                    <p className="text-[9px] font-bold tracking-widest text-blue-200 uppercase">à Receber</p>
+                    <p className="text-[9px] text-blue-300 uppercase mt-0.5">{mesSelecionado}</p>
+                  </div>
+                  <button
+                    onClick={() => setOcultarProjecao((p) => !p)}
+                    className="w-7 h-7 flex items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25 transition-all"
+                    aria-label={ocultarProjecao ? "Mostrar valor" : "Ocultar valor"}
+                  >
+                    <IconOlho desligado={ocultarProjecao} />
+                  </button>
+                </div>
+                <p className="text-2xl font-extrabold text-white transition-all duration-300">
+                  {ocultarProjecao ? "••••••••" : dados.projecao}
+                </p>
+              </div>
+
+              {/* Emitir PDF */}
+              <button
+                onClick={gerarPDFRelatorio}
+                className="w-full py-2.5 rounded-xl text-sm font-bold text-white tracking-wide transition-all duration-200 hover:opacity-90 active:scale-[0.98] shadow-md"
+                style={{ background: "linear-gradient(135deg, #1a3a7a 0%, #2d5fa6 100%)" }}
+              >
+                Emitir PDF
+              </button>
+            </div>
+
+          </div>
         </div>{/* fim flex flex-col h-full */}
       </div>
     </div>
