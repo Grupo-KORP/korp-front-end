@@ -171,8 +171,19 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
     const [entrega, setEntrega] = useState(detalhes?.produto?.entrega ?? "");
     const [entregaAntes, setEntregaAntes] = useState(entrega);
 
-    const formatarDataBR = (data) =>
-        new Intl.DateTimeFormat("pt-BR").format(new Date(data));
+    const formatarDataBR = (data) => {
+        if (!data) return "-";
+
+        if (typeof data === "string") {
+            const partes = data.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (partes) {
+                const [, ano, mes, dia] = partes;
+                return `${dia}/${mes}/${ano}`;
+            }
+        }
+
+        return new Intl.DateTimeFormat("pt-BR").format(new Date(data));
+    };
 
     // Atualiza os dados quando troca a venda aberta.
     useEffect(() => {

@@ -214,11 +214,11 @@ export async function atualizarPedido(idPedido, pedidoEditRequest) {
 
 // ─── Painel do vendedor ─────────────────────────────────────────────────────
 
-export async function buscarPainelVendedor({ ano, mes, dia} = {}) {
+export async function buscarPainelVendedor({ ano, mes, dia } = {}) {
   const params = {};
-  if (ano) params.ano = ano;
-  if (mes) params.mes = mes;
-  if(dia) params.dia = dia;
+  if (ano !== null && ano !== undefined) params.ano = ano;
+  if (mes !== null && mes !== undefined) params.mes = mes;
+  if (dia !== null && dia !== undefined) params.dia = dia;
 
   try {
     const { data } = await api.get("/vendedor/home", { params });
