@@ -312,12 +312,19 @@ export default function HomeVendedor() {
     .flatMap((v) => v.parcelas);
 
   const tendenciaPositiva = dados.tendencia.startsWith("+");
+  const periodoSelecionado = tipoFiltroPeriodo === "day" && diaSelecionado
+    ? `${diaSelecionado} de ${mesSelecionado} de ${anoSelecionado}`
+    : `${mesSelecionado} de ${anoSelecionado}`;
+  const periodoArquivo = periodoSelecionado
+    .toLowerCase()
+    .replace(/\s+de\s+/g, "-")
+    .replace(/\s+/g, "-");
 
   async function gerarPDF() {
     const pdfHtml = `
       <html>
         <head>
-          <title>Relatório de Comissões – ${mesSelecionado} ${ANO_ATUAL}</title>
+          <title>Relatório de Comissões – ${periodoSelecionado}</title>
           <style>
             * { box-sizing: border-box; }
             body { margin: 0; background: #ffffff; font-family: Arial, sans-serif; color: #1e293b; }
@@ -342,7 +349,7 @@ export default function HomeVendedor() {
         <body>
           <main class="pdf-document">
           <p class="sub">Operações de Venda</p>
-          <h1>Painel do Consultor – ${mesSelecionado} ${ANO_ATUAL}</h1>
+          <h1>Painel do Consultor – ${periodoSelecionado}</h1>
           <div class="resumo">
             <div class="caixa"><div class="rotulo">Total de Vendas</div><div class="valor">${dados.totalVendas}</div></div>
             <div class="caixa"><div class="rotulo">Comissões Liberadas</div><div class="valor">${dados.comissoesLiberadas}</div></div>
@@ -388,7 +395,7 @@ export default function HomeVendedor() {
     const pdfElement = iframeDocument.querySelector(".pdf-document") || iframeDocument.body;
     const opt = {
       margin: 10,
-      filename: `relatorio-comissoes-${mesSelecionado.toLowerCase()}-${ANO_ATUAL}.pdf`,
+      filename: `relatorio-comissoes-${periodoArquivo}.pdf`,
       image: { type: "jpeg", quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
       pagebreak: { mode: ["css", "legacy"] },
@@ -491,7 +498,7 @@ export default function HomeVendedor() {
 
     doc.setFillColor(15, 37, 87); doc.rect(0, 0, pageWidth, 22, "F");
     doc.setFont("helvetica", "bold"); doc.setFontSize(13); doc.setTextColor(255, 255, 255);
-    doc.text(`Painel do Consultor – ${mesSelecionado} ${ANO_ATUAL}`, margin, 13);
+    doc.text(`Painel do Consultor – ${periodoSelecionado}`, margin, 13);
     doc.setFontSize(7.5); doc.setTextColor(147, 174, 219);
     doc.text("OPERAÇÕES DE VENDA", pageWidth - margin, 13, { align: "right" });
     y = 32;
@@ -511,7 +518,7 @@ export default function HomeVendedor() {
       doc.text(`Página ${i} de ${totalPages}`, pageWidth - margin, pageHeight - 7, { align: "right" });
     }
 
-    doc.save(`relatorio-comissoes-${mesSelecionado.toLowerCase()}-${ANO_ATUAL}.pdf`);
+    doc.save(`relatorio-comissoes-${periodoArquivo}.pdf`);
   }
 
   function alternarCard(chave) {
@@ -751,7 +758,7 @@ export default function HomeVendedor() {
                     </span>
                     <span className={`text-[9px] uppercase tracking-wider ml-auto ${textoS}`}>Previsão</span>
                   </div>
-                  <p className={`text-sm font-extrabold ${textoP}`}>{mesSelecionado} de {ANO_ATUAL}</p>
+                  <p className={`text-sm font-extrabold ${textoP}`}>{periodoSelecionado}</p>
                 </div>
 
                 {/* Divisor */}
@@ -809,7 +816,7 @@ export default function HomeVendedor() {
                   <div>
                     <p className="text-[9px] font-bold tracking-widest text-blue-200 uppercase">Projeção Bruta</p>
                     <p className="text-[9px] font-bold tracking-widest text-blue-200 uppercase">à Receber</p>
-                    <p className="text-[9px] text-blue-300 uppercase mt-0.5">{mesSelecionado}</p>
+                    <p className="text-[9px] text-blue-300 uppercase mt-0.5">{periodoSelecionado}</p>
                   </div>
                   <button
                     onClick={() => setOcultarProjecao((p) => !p)}
