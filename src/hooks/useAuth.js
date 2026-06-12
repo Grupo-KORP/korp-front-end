@@ -15,9 +15,11 @@ export function useAuth() {
       return data
     } catch (err) {
       const mensagem =
-        err.status === 401 || err.status === 403
-          ? 'Usuário ou senha incorretos'
-          : 'Erro inesperado. Tente novamente.'
+        err.status === 401
+        ? 'Usuário ou senha incorretos.'
+        : err.status === 403
+        ? err.message || 'Acesso negado.'
+        : 'Erro inesperado. Tente novamente.'
 
       setError(mensagem)
       throw new Error(mensagem) // relança para o componente tratar se quiser
