@@ -111,6 +111,41 @@ export function verificarSeAdmin() {
   return decodeJWT(token).roles.includes("ROLE_ADMIN");
 }
 
+export async function verificarPrimeiroAcesso() {
+  const token = localStorage.getItem("korp_token");
+  const id = decodeJWT(token).id;
+
+  const { data } = await api.get(`/usuario/${id}`);
+  if (!data) throw new Error("Usuário não encontrado");
+  console.log("API: verificarPrimeiroAcesso", data);
+
+  const primeiroAcesso = Boolean(data.primeiroAcesso);
+
+  return primeiroAcesso;
+}
+
+// ─── Troca de Senha ───────────────────────────────────────────────────────
+
+export async function alterarSenha({ senhaAtual, novaSenha }) {
+  const { data } = await api.post(`/usuario/trocar-senha-primeiro-acesso`, {
+    senhaAtual,
+    novaSenha,
+  });
+  return data;
+}
+
+export async function solicitarRecuperacaoSenha(email) {
+  const { data } = await api.post('/usuario/esqueci-senha', { email });
+  return data;
+}
+
+export async function redefinirSenha({ token, novaSenha, confirmaSenha }) {
+  const { data } = await api.patch('/usuario/troca-senha', 
+    { novaSenha, confirmaSenha },           
+    { params: { token } }    
+  );
+  return data;
+}
 // ─── Colaboradores ───────────────────────────────────────────────────────────
 
 export async function cadastrarColaborador(dados) {
@@ -162,6 +197,7 @@ export async function cadastrarProduto(produto) {
 // ─── Pedidos ─────────────────────────────────────────────────────────
 
 export async function cadastrarPedido(pedidoRequest) {
+  console.log("API: cadastrarPedido", pedidoRequest);
   const { data } = await api.post("/pedidos/cadastrar", pedidoRequest);
   return data;
 }
@@ -169,4 +205,30 @@ export async function cadastrarPedido(pedidoRequest) {
 export async function criarComissao(idPedido, pagamentoDTO) {
   const { data } = await api.post(`/pedidos/${idPedido}/comissao`, pagamentoDTO);
   return data;
+}
+
+export async function atualizarPedido(idPedido, pedidoEditRequest) {
+  const { data } = await api.put(`/pedidos/atualizar/${idPedido}`, pedidoEditRequest);
+  return data;
+}
+
+// ─── Painel do vendedor ─────────────────────────────────────────────────────
+
+export async function buscarPainelVendedor({ ano, mes } = {}) {
+  const params = {};
+  if (ano) params.ano = ano;
+  if (mes) params.mes = mes;
+
+  try {
+    const { data } = await api.get("/vendedor/home", { params });
+    return data;
+  } catch (err) {
+    const status = err?.status ?? err?.response?.status;
+
+    if (status === 404) throw new Error("Painel do vendedor sem dados.");
+    if (status === 403) throw new Error("Sem permissão para acessar o painel.");
+    if (status === 401) throw new Error("Sessão expirada. Faça login novamente.");
+
+    throw new Error("Erro ao carregar o painel. Tente novamente.");
+  }
 }
