@@ -560,7 +560,7 @@ export default function HomeVendedor() {
             <h1 className={`text-xl sm:text-2xl font-extrabold ${textoP}`}>Painel do Vendedor</h1>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
             <DatePickerCalendar
               selecao={selecao}
               aoSelecionar={(s) => {
@@ -632,6 +632,11 @@ export default function HomeVendedor() {
                 <span className={`text-[9px] font-bold tracking-widest uppercase ${textoS}`}>Identificação da Venda</span>
                 <span className={`text-[9px] font-bold tracking-widest uppercase text-center ${textoS}`}>Comissão Total</span>
                 <span className={`text-[9px] font-bold tracking-widest uppercase text-center ${textoS}`}>Status Atual</span>
+                <span />
+              </div>
+              {/* Cabeçalho mobile */}
+              <div className="grid sm:hidden grid-cols-[1fr_auto] gap-2 px-2 mb-2">
+                <span className={`text-[9px] font-bold tracking-widest uppercase ${textoS}`}>Identificação da Venda</span>
                 <span />
               </div>
 
