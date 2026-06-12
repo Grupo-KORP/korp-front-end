@@ -872,7 +872,7 @@ export default function HomeVendedor() {
   const hover = modoEscuro ? "hover:bg-gray-700" : "hover:bg-gray-50";
 
   return (
-    <div className={`h-screen overflow-hidden flex flex-col ${bg} transition-colors duration-300`}>
+    <div className={`min-h-screen flex flex-col ${bg} transition-colors duration-300`}>
       <Navbar />
 
       {/* ── Modal de detalhe da venda ── */}
@@ -886,7 +886,7 @@ export default function HomeVendedor() {
         />
       )}
 
-      <div className="flex-1 overflow-y-auto w-full px-6 py-6">
+      <div className="flex-1 w-full px-3 py-4 sm:px-6 sm:py-6">
 
         {/* ── Header ── */}
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
@@ -894,10 +894,10 @@ export default function HomeVendedor() {
             <p className="text-xs font-semibold tracking-widest text-blue-500 uppercase mb-0.5">
               Operações de Venda
             </p>
-            <h1 className={`text-2xl font-extrabold ${textoP}`}>Painel do Vendedor</h1>
+            <h1 className={`text-xl sm:text-2xl font-extrabold ${textoP}`}>Painel do Vendedor</h1>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
             <DatePickerCalendar
               selecao={selecao}
               aoSelecionar={(s) => {
@@ -919,7 +919,7 @@ export default function HomeVendedor() {
           <div className="flex-1 flex flex-col gap-4">
 
             {/* Cards de métricas */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-3">
               <CardMetrica
                 icone={<IconCarrinho />}
                 rotulo="Total de Vendas"
@@ -950,7 +950,7 @@ export default function HomeVendedor() {
             </div>
 
             {/* Tabela */}
-            <div className={`${cardBg} rounded-2xl shadow-sm p-5`}>
+            <div className={`${cardBg} rounded-2xl shadow-sm p-3 sm:p-5`}>
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-1 h-5 rounded-full bg-blue-700" />
                 <h2 className={`text-base font-bold ${textoM}`}>{tituloTabela}</h2>
@@ -965,10 +965,15 @@ export default function HomeVendedor() {
               </div>
 
               {/* Cabeçalho */}
-              <div className="grid grid-cols-[2fr_2fr_2fr_auto] gap-4 px-2 mb-2">
+              <div className="hidden sm:grid grid-cols-[2fr_2fr_2fr_auto] gap-4 px-2 mb-2">
                 <span className={`text-[9px] font-bold tracking-widest uppercase ${textoS}`}>Identificação da Venda</span>
                 <span className={`text-[9px] font-bold tracking-widest uppercase text-center ${textoS}`}>Comissão Total</span>
                 <span className={`text-[9px] font-bold tracking-widest uppercase text-center ${textoS}`}>Status Atual</span>
+                <span />
+              </div>
+              {/* Cabeçalho mobile */}
+              <div className="grid sm:hidden grid-cols-[1fr_auto] gap-2 px-2 mb-2">
+                <span className={`text-[9px] font-bold tracking-widest uppercase ${textoS}`}>Identificação da Venda</span>
                 <span />
               </div>
 
@@ -981,27 +986,39 @@ export default function HomeVendedor() {
                   <button
                     key={v.id}
                     onClick={() => setVendaNoModal(v)}
-                    className={`w-full grid grid-cols-[2fr_2fr_2fr_auto] gap-4 items-center px-2 py-3 rounded-xl transition-colors text-left group ${hover}`}
+                    className={`w-full items-center px-2 py-3 rounded-xl transition-colors text-left group ${hover}
+                      grid grid-cols-[1fr_auto] sm:grid-cols-[2fr_2fr_2fr_auto] gap-2 sm:gap-4`}
                   >
                     {/* Identificação */}
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2.5 min-w-0">
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0
                         ${modoEscuro ? "bg-blue-900/50" : "bg-blue-50"}`}>
                         <span className="text-[10px] font-bold text-blue-700">{v.id}</span>
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <p className={`text-xs font-bold truncate ${textoM}`}>{v.nome}</p>
                         <p className={`text-[10px] truncate ${textoS}`}>{v.cliente}</p>
+                        {/* Comissão e status visíveis só no mobile, abaixo do nome */}
+                        <div className="flex items-center gap-2 mt-1 sm:hidden">
+                          <span className={`text-[10px] font-bold ${textoM}`}>{v.comissao}</span>
+                          <span className={`text-[9px] font-bold tracking-wider px-2 py-0.5 rounded-full uppercase border
+                            ${v.tipo === "liberada"
+                              ? "bg-green-50 text-green-600 border-green-200"
+                              : "bg-orange-50 text-orange-500 border-orange-200"
+                            }`}>
+                            {v.status}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Comissão */}
-                    <div className="text-center">
+                    {/* Comissão — só desktop */}
+                    <div className="hidden sm:flex text-center justify-center">
                       <span className={`text-sm font-bold ${textoM}`}>{v.comissao}</span>
                     </div>
 
-                    {/* Status */}
-                    <div className="flex justify-center">
+                    {/* Status — só desktop */}
+                    <div className="hidden sm:flex justify-center">
                       <span className={`text-[9px] font-bold tracking-wider px-2.5 py-0.5 rounded-full uppercase border
                         ${v.tipo === "liberada"
                           ? "bg-green-50 text-green-600 border-green-200"
@@ -1025,7 +1042,7 @@ export default function HomeVendedor() {
           <div className="w-full lg:w-64 flex-shrink-0 flex flex-col gap-3">
 
             {/* ── Resumo de comissões ── */}
-<div className={`${cardBg} rounded-2xl shadow-sm p-4 flex flex-col gap-2 h-[304px]`}>
+<div className={`${cardBg} rounded-2xl shadow-sm p-4 flex flex-col gap-2 lg:h-[304px]`}>
                 {/* Cabeçalho do card */}
               <div>
                 <div className="flex items-center gap-1.5 mb-0.5">
@@ -1073,7 +1090,7 @@ export default function HomeVendedor() {
               </div>
 
               {/* Lista de parcelas com scroll interno e Pedido ID por item */}
-              <div className="flex flex-col gap-1.5 overflow-y-auto flex-1 min-h-0 pr-1" style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(156,163,175,0.35) transparent" }}>                {todasParcelas.length === 0 && (
+              <div className="flex flex-col gap-1.5 overflow-y-auto max-h-32 lg:flex-1 lg:min-h-0 lg:max-h-none pr-1" style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(156,163,175,0.35) transparent" }}>                {todasParcelas.length === 0 && (
                 <p className={`text-xs text-center py-2 ${textoS}`}>Sem parcelas liberadas.</p>
               )}
                 {todasParcelas.map((p, i) => (
