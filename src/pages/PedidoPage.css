@@ -1,23 +1,34 @@
 .pedido-page {
-  --pedido-bg: linear-gradient(120deg, #f3f5ff, #f8fafc);
+  --pedido-bg: #f3f4f6;
+
   --pedido-card-bg: #ffffff;
   --pedido-card-soft-bg: #f8fafc;
-  --pedido-field-bg: var(--app-input-bg);
-  --pedido-field-readonly-bg: var(--app-input-bg);
-  --pedido-border: var(--app-input-border);
-  --pedido-border-soft: #f1f5f9;
-  --pedido-text-strong: #111827;
-  --pedido-text-main: var(--app-input-text);
+
+  --pedido-field-bg: #ffffff;
+  --pedido-field-readonly-bg: #f7fbff;
+
+  --pedido-border: #dbe2ea;
+  --pedido-border-soft: #e5e7eb;
+
+  --pedido-text-strong: #0f2557;
+  --pedido-text-main: #1f2937;
   --pedido-text-muted: #64748b;
-  --pedido-text-soft: #8a96a7;
-  --pedido-placeholder: var(--app-input-placeholder);
-  --pedido-blue: #0a3490;
+  --pedido-text-soft: #94a3b8;
+
+  --pedido-placeholder: #94a3b8;
+
+  --pedido-blue: #1e4d9b;
   --pedido-blue-soft: #eff6ff;
+
   --pedido-scrollbar: rgba(100, 116, 139, 0.25);
-  --pedido-focus-ring: rgba(0, 55, 143, 0.192);
-  --pedido-shadow: rgba(0, 0, 0, 0.04);
+
+  --pedido-focus-ring: rgba(30, 77, 155, 0.12);
+
+  --pedido-shadow: rgba(15, 37, 87, 0.08);
+
   --pedido-modal-bg: #ffffff;
-  --pedido-danger-bg: #fee2e2;
+
+  --pedido-danger-bg: #fef2f2;
   --pedido-danger-text: #dc2626;
 
   min-height: 100vh;
@@ -29,24 +40,35 @@
 
 .pedido-page-dark {
   --pedido-bg: #111827;
+
   --pedido-card-bg: #1f2937;
   --pedido-card-soft-bg: #111827;
-  --pedido-field-bg: var(--app-input-bg);
-  --pedido-field-readonly-bg: var(--app-input-bg);
-  --pedido-border: var(--app-input-border);
-  --pedido-border-soft: #334155;
+
+  --pedido-field-bg: #374151;
+  --pedido-field-readonly-bg: #2d3748;
+
+  --pedido-border: #4b5563;
+  --pedido-border-soft: #374151;
+
   --pedido-text-strong: #ffffff;
-  --pedido-text-main: var(--app-input-text);
+  --pedido-text-main: #d1d5db;
   --pedido-text-muted: #9ca3af;
-  --pedido-text-soft: #9ca3af;
-  --pedido-placeholder: var(--app-input-placeholder);
+  --pedido-text-soft: #6b7280;
+
+  --pedido-placeholder: #6b7280;
+
   --pedido-blue: #60a5fa;
-  --pedido-blue-soft: rgba(30, 58, 138, 0.28);
+  --pedido-blue-soft: rgba(30, 58, 138, 0.5);
+
   --pedido-scrollbar: rgba(148, 163, 184, 0.35);
-  --pedido-focus-ring: rgba(96, 165, 250, 0.22);
-  --pedido-shadow: rgba(0, 0, 0, 0.22);
+
+  --pedido-focus-ring: rgba(96, 165, 250, 0.18);
+
+  --pedido-shadow: rgba(0, 0, 0, 0.35);
+
   --pedido-modal-bg: #1f2937;
-  --pedido-danger-bg: rgba(127, 29, 29, 0.35);
+
+  --pedido-danger-bg: rgba(127, 29, 29, 0.3);
   --pedido-danger-text: #fca5a5;
 }
 
@@ -56,50 +78,62 @@
   border: 1px solid #4b5563;
 }
 
+.pedido-page-dark .pedido-header h1 {
+  color: #ffffff;
+}
+
+.pedido-page-dark .pedido-header p {
+  color: #60a5fa;
+}
+
 .pedido-wrapper {
   margin: 0 22.2px;
   padding: 18px 0 0;
 
-  min-height: calc(100vh - 80px); /* respeita navbar real */
+  min-height: calc(100vh - 80px);
+  /* respeita navbar real */
   display: flex;
   flex-direction: column;
 }
 
 .pedido-header {
-  margin-bottom: 18px;
+  margin-bottom: 16px;
   flex-shrink: 0;
 }
 
 .pedido-header p {
-  margin: 0 0 4px;
-  color: #00609e;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 1.8px;
-  line-height: 1;
+  margin: 0;
+
+  color: #2563eb;
+
+  font-size: 12px;
+
+  font-weight: 600;
+
+  letter-spacing: 1.5px;
+
   text-transform: uppercase;
 }
 
 .pedido-header h1 {
-  margin: 0;
-  color: #173265;
-  font-size: 25px;
+  margin-top: 4px;
+  margin-bottom: 0;
+
+  color: #040d24;
+
+  font-size: clamp(1.25rem, 1.2rem + 2vw, 2rem);
+
   font-weight: 800;
-  letter-spacing: 0;
-  line-height: 1.1;
+
+  line-height: 1;
 }
 
-.pedido-page-dark .pedido-header h1 {
-  color: var(--pedido-text-strong);
-}
 
-.pedido-page-dark .pedido-header p {
-  color: #7dd3fc;
-}
 
 .pedido-content {
   display: grid;
-  grid-template-columns: 1.6fr 1fr; /* antes 2fr 1fr */
+  grid-template-columns: 1.6fr 1fr;
+  /* antes 2fr 1fr */
   gap: 20px;
   align-items: flex-start;
   flex: 1;
@@ -111,13 +145,15 @@
   overflow-y: auto;
   padding-right: 6px;
 
-  max-height: calc(100vh - 120px); /* ajusta com navbar + header */
+  max-height: calc(100vh - 120px);
+  /* ajusta com navbar + header */
 }
 
 /* FIXO na direita */
 .resumo-area {
   position: sticky;
-  top: 80px; /* respeita navbar */
+  top: 80px;
+  /* respeita navbar */
   height: calc(100vh - 100px);
   overflow-y: auto;
   padding-right: 1.1px;
@@ -135,7 +171,8 @@
 }
 
 .pdf-mode .form-section {
-  break-inside: avoid; /* evita cortar no meio */
+  break-inside: avoid;
+  /* evita cortar no meio */
 }
 
 .pdf-mode input {
@@ -144,7 +181,8 @@
 }
 
 .pdf-mode button {
-  display: none !important; /* remove botões no PDF */
+  display: none !important;
+  /* remove botões no PDF */
 }
 
 .pdf-mode .form-area {
