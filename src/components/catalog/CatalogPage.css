@@ -66,13 +66,13 @@ body.dark {
 
 /* ─── Shell ──────────────────────────────────────────────────────────────────── */
 body.catalog-body {
-  background: #f3f4f6;
+  background: var(--cat-bg);
   overflow: auto;
 }
 
 .catalog-shell {
   min-height: 100vh;
-  background: #f3f4f6;
+  background: var(--cat-bg);
   color: var(--cat-text-p);
   transition: background 0.3s, color 0.3s;
 }
@@ -196,34 +196,22 @@ body.catalog-body {
 }
 
 .catalog-title-block h1 {
-  color: #040d24;
-  font-size: clamp(1.25rem,
-      1.2rem + 2vw,
-      2rem);
+  color: var(--cat-text-p);
+  font-size: clamp(1.25rem, 1.2rem + 2vw, 2rem);
   font-weight: 800;
   line-height: 1;
 }
 
 /* ─── Search ─────────────────────────────────────────────────────────────────── */
 .catalog-search {
-
   width: min(100%, 360px);
-
   height: 48px;
-
   padding: 0 16px;
-
-  border: 1px solid #dbe2ea;
-
+  border: 1px solid var(--cat-input-border);
   border-radius: 14px;
-
-  background: #ffffff;
-
-  box-shadow:
-    0 2px 8px rgba(15, 37, 87, .04);
-
+  background: var(--cat-input-bg);
+  box-shadow: 0 2px 8px rgba(15, 37, 87, .04);
   transition: .2s;
-
   display: flex;
   align-items: center;
   gap: 10px;
@@ -231,7 +219,7 @@ body.catalog-body {
 
 .catalog-search:focus-within {
 
-  border-color: #1e4d9b;
+  border-color: var(--cat-input-focus-border);
 
   box-shadow:
     0 0 0 4px rgba(30, 77, 155, .12);
@@ -379,7 +367,7 @@ body.catalog-body {
 
 .catalog-row:hover {
 
-  background: #f8fafc;
+  background: var(--cat-row-hover);
 
   transform: translateY(-1px);
 }
@@ -779,23 +767,14 @@ body.dark .catalog-tools button:last-child:hover {
 
 .catalog-form-field input,
 .catalog-form-field select {
-
   width: 100%;
-
-  height: clamp(44px,
-      2.8vw,
-      52px);
-
-  border: 1px solid #dbe2ea;
-
+  height: clamp(44px, 2.8vw, 52px);
+  border: 1px solid var(--cat-input-border);
   border-radius: 14px;
-
-  background: #ffffff;
-
+  background: var(--cat-input-bg);
+  color: var(--cat-input-text);
   padding: 0 14px;
-
   font-size: 14px;
-
   transition: .2s;
 }
 
@@ -841,31 +820,21 @@ body.dark .catalog-tools button:last-child:hover {
 
 /* Cancelar */
 .catalog-cancel {
-
   flex: 1;
-
   height: 48px;
-
-  border: 1px solid #dbe2ea;
-
+  border: 1px solid var(--cat-input-border);
   border-radius: 14px;
-
-  background: white;
-
-  color: #475569;
-
+  background: var(--cat-card-bg);
+  color: var(--cat-text-m);
   font-size: 14px;
-
   font-weight: 700;
-
   cursor: pointer;
-
   transition: .2s;
 }
 
 .catalog-cancel:hover {
 
-  background: #f8fafc;
+  background: var(--cat-row-hover);
 }
 
 /* Submit */
@@ -1096,15 +1065,10 @@ body.dark .catalog-tools button:last-child:hover {
 }
 
 .catalog-contact-card {
-
   padding: 16px;
-
-  border: 1px solid #e2e8f0;
-
+  border: 1px solid var(--cat-border);
   border-radius: 16px;
-
-  background: #f8fafc;
-
+  background: var(--cat-auto-bg);
   transition: .2s;
 }
 
@@ -1152,6 +1116,31 @@ body.dark .catalog-tools button:last-child:hover {
   width: 15px;
   height: 15px;
   fill: currentColor;
+}
+
+body.dark .catalog-title-block p {
+  color: #60a5fa;
+}
+
+body.dark .catalog-search svg {
+  fill: var(--cat-text-s);
+}
+
+body.dark .produto-close-btn {
+  background: #374151;
+  color: #f3f4f6;
+}
+
+body.dark .catalog-contact-delete:hover {
+  background: rgba(127, 29, 29, 0.3);
+  border-color: rgba(220, 38, 38, 0.4);
+}
+
+body.dark .catalog-table-card,
+body.dark .catalog-form-card,
+body.dark .catalog-confirm-modal,
+body.dark .produto-modal-card {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
 }
 
 @media (max-width: 1400px) {
