@@ -1,5 +1,7 @@
 // Importa os hooks do React usados para guardar estado e executar efeitos.
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
+import { atualizarPedido } from "../../services/api";
 
 // Cria um componente pequeno para mostrar o icone de lapis.
 const IconeLapis = () => (
@@ -49,7 +51,8 @@ function CampoLeitura({ rotulo, valor, escuro, colSpan = 1 }) {
 }
 
 /* ── Campo de quantidade editável ── */
-function CampoQuantidade({ valor, modoEdicao, aoAlterar, escuro }) {
+function CampoQuantidade({ valor, modoEdicao, aoAlterar, escuro, rotulo = "Quantidade" }) {
+    // Define a cor do label conforme o tema.
     const classeLabel = escuro ? "text-gray-500" : "text-gray-400";
     const classeBase = "w-full px-3 py-1.5 rounded-lg border text-xs font-semibold focus:outline-none transition-all duration-200";
     const classeLeitura = escuro
@@ -62,7 +65,8 @@ function CampoQuantidade({ valor, modoEdicao, aoAlterar, escuro }) {
     return (
         <div>
             <label className={`block text-[9px] font-bold tracking-widest uppercase mb-1 ${classeLabel}`}>
-                Quantidade
+                {rotulo}
+                {/* Mostra a etiqueta apenas quando o campo esta editavel. */}
                 {modoEdicao && (
                     <span className={`ml-1.5 text-[8px] font-bold tracking-wider normal-case px-1.5 py-0.5 rounded-full
             ${escuro ? "bg-blue-900/60 text-blue-300" : "bg-blue-100 text-blue-600"}`}>
@@ -131,7 +135,8 @@ function CabecalhoSecao({ titulo, cor, escuro }) {
 /* ══════════════════════════════════════════
    MODAL PRINCIPAL
 ══════════════════════════════════════════ */
-export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar, escuro }) {
+export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar, aoAtualizar, escuro }) {
+    // Cria uma chave juntando o mes e o id da venda.
     const chave = `${mes}-${venda.id}`;
     const detalhes = detalhesVenda?.[chave];
 
@@ -144,11 +149,23 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
 
     // Nome fantasia do cliente
     const [nomeFantasiaCliente, setNomeFantasiaCliente] = useState(detalhes?.cliente?.nomeFantasia ?? "");
+    const [nomeFantasiaDistribuidor, setNomeFantasiaDistribuidor] = useState(detalhes?.distribuidor?.nomeFantasia ?? "");
+    const [numeroNotaDistribuidor, setNumeroNotaDistribuidor] = useState(detalhes?.pedido?.numeroNotaDistribuidor ?? "");
+    const [observacoes, setObservacoes] = useState(detalhes?.pedido?.observacoes ?? "");
+    const [metodoPagamento, setMetodoPagamento] = useState(detalhes?.pedido?.metodoPagamento ?? "CARTAO_CREDITO");
+    const [quantidadeParcelas, setQuantidadeParcelas] = useState(detalhes?.pedido?.quantidadeParcelas ?? 1);
+    const [salvando, setSalvando] = useState(false);
+    // Guarda se cliente e distribuidor estao em modo de edicao.
+    // Guarda os valores antigos para cancelar alteracoes.
     const [nomeFantasiaClienteAntes, setNomeFantasiaClienteAntes] = useState(nomeFantasiaCliente);
 
     // Nome fantasia do distribuidor
-    const [nomeFantasiaDistribuidor, setNomeFantasiaDistribuidor] = useState(detalhes?.distribuidor?.nomeFantasia ?? "");
     const [nomeFantasiaDistribuidorAntes, setNomeFantasiaDistribuidorAntes] = useState(nomeFantasiaDistribuidor);
+    const [numeroNotaDistribuidorAntes, setNumeroNotaDistribuidorAntes] = useState(numeroNotaDistribuidor);
+    const [observacoesAntes, setObservacoesAntes] = useState(observacoes);
+    const [metodoPagamentoAntes, setMetodoPagamentoAntes] = useState(metodoPagamento);
+    const [quantidadeParcelasAntes, setQuantidadeParcelasAntes] = useState(quantidadeParcelas);
+    const pedidoEmAndamento = (detalhes?.pedido?.statusPedido ?? "").toUpperCase() === "EM_ANDAMENTO";
 
     // Entrega
     const [entrega, setEntrega] = useState(detalhes?.produto?.entrega ?? "");
@@ -162,15 +179,28 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
 
         const clienteFantasia = detalhes?.cliente?.nomeFantasia ?? "";
         const distribuidorFantasia = detalhes?.distribuidor?.nomeFantasia ?? "";
+        const nota = detalhes?.pedido?.numeroNotaDistribuidor ?? "";
+        const obs = detalhes?.pedido?.observacoes ?? "";
+        const metodo = detalhes?.pedido?.metodoPagamento ?? "CARTAO_CREDITO";
+        const parcelas = detalhes?.pedido?.quantidadeParcelas ?? 1;
         setNomeFantasiaCliente(clienteFantasia);
         setNomeFantasiaDistribuidor(distribuidorFantasia);
         setNomeFantasiaClienteAntes(clienteFantasia);
         setNomeFantasiaDistribuidorAntes(distribuidorFantasia);
+        setNumeroNotaDistribuidor(nota);
+        setObservacoes(obs);
+        setMetodoPagamento(metodo);
+        setQuantidadeParcelas(parcelas);
+        setNumeroNotaDistribuidorAntes(nota);
+        setObservacoesAntes(obs);
+        setMetodoPagamentoAntes(metodo);
+        setQuantidadeParcelasAntes(parcelas);
 
         const entregaVal = detalhes?.produto?.entrega ?? "";
         setEntrega(entregaVal);
         setEntregaAntes(entregaVal);
 
+        // Sai do modo de edicao.
         setModoEdicao(false);
     }, [chave]);
 
@@ -179,29 +209,74 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
         function aoApertarTecla(e) { if (e.key === "Escape") tentarFechar(); }
         document.addEventListener("keydown", aoApertarTecla);
         return () => document.removeEventListener("keydown", aoApertarTecla);
-    }, [modoEdicao, quantidadeAntes, nomeFantasiaClienteAntes, nomeFantasiaDistribuidorAntes, entregaAntes]);
+    }, [modoEdicao, quantidadeAntes, nomeFantasiaClienteAntes, nomeFantasiaDistribuidorAntes, numeroNotaDistribuidorAntes, observacoesAntes, metodoPagamentoAntes, quantidadeParcelasAntes, entregaAntes]);
 
     function iniciarEdicao() {
+        if (!pedidoEmAndamento) return;
         setQuantidadeAntes(quantidade);
         setNomeFantasiaClienteAntes(nomeFantasiaCliente);
         setNomeFantasiaDistribuidorAntes(nomeFantasiaDistribuidor);
+        setNumeroNotaDistribuidorAntes(numeroNotaDistribuidor);
+        setObservacoesAntes(observacoes);
+        setMetodoPagamentoAntes(metodoPagamento);
+        setQuantidadeParcelasAntes(quantidadeParcelas);
         setEntregaAntes(entrega);
         setModoEdicao(true);
     }
+    // Confirma a edicao e fecha o modo editavel.
+    async function confirmarEdicao(finalizarPedido = false) {
+        if (!pedidoEmAndamento) return;
 
-    function confirmarEdicao() {
-        setModoEdicao(false);
-        /* chamada à API aqui — incluir: quantidade, nomeFantasiaCliente, nomeFantasiaDistribuidor, entrega */
+        if (finalizarPedido && (!numeroNotaDistribuidor.trim() || !observacoes.trim())) {
+            toast.error("Informe nota e observações para finalizar o pedido.");
+            return;
+        }
+
+        try {
+            setSalvando(true);
+            await atualizarPedido(detalhes.pedido.idPedido, criarPayload(finalizarPedido));
+            toast.success(finalizarPedido ? "Pedido finalizado com sucesso." : "Pedido atualizado com sucesso.");
+            setModoEdicao(false);
+            aoAtualizar?.();
+            if (finalizarPedido) aoFechar();
+        } catch (error) {
+            toast.error(error.message || "Não foi possível atualizar o pedido.");
+        } finally {
+            setSalvando(false);
+        }
     }
-
+    // Cancela a edicao e volta para o valor anterior.
+        /* chamada à API aqui — incluir: quantidade, nomeFantasiaCliente, nomeFantasiaDistribuidor, entrega */
     function cancelarEdicao() {
         setQuantidade(quantidadeAntes);
         setNomeFantasiaCliente(nomeFantasiaClienteAntes);
         setNomeFantasiaDistribuidor(nomeFantasiaDistribuidorAntes);
+        setNumeroNotaDistribuidor(numeroNotaDistribuidorAntes);
+        setObservacoes(observacoesAntes);
+        setMetodoPagamento(metodoPagamentoAntes);
+        setQuantidadeParcelas(quantidadeParcelasAntes);
         setEntrega(entregaAntes);
         setModoEdicao(false);
     }
-
+    function criarPayload(finalizarPedido) {
+        return {
+            idPedido: detalhes.pedido.idPedido,
+            idCliente: detalhes.cliente.id,
+            nomeFantasiaCliente,
+            idDistribuidor: detalhes.distribuidor.id,
+            nomeFantasiaDistribuidor,
+            idItemPedido: detalhes.produto.idItemPedido,
+            quantidade,
+            numeroNotaDistribuidor,
+            observacoes,
+            metodoPagamento,
+            parcelado: Number(quantidadeParcelas) > 1,
+            quantidadeParcelas: Number(quantidadeParcelas),
+            entrega,
+            finalizarPedido,
+        };
+    }
+    // Fecha normalmente ou pergunta se deve descartar alteracoes em andamento.
     function tentarFechar() {
         if (!modoEdicao) {
             aoFechar();
@@ -213,12 +288,32 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
             aoFechar();
         }
     }
-
+    // Define o fundo e a borda do card principal.
     const classeCard = escuro
         ? "bg-gray-800 border-gray-700"
         : "bg-gray-100 border-gray-300";
     const classeSecao = escuro ? "bg-gray-900/60 border-gray-700" : "bg-gray-50 border-gray-100";
     const classeSeparador = escuro ? "border-gray-700" : "border-gray-100";
+    const parcelaEstaPaga = (parcela) => ["PAGA"].includes(String(parcela?.status || "").toUpperCase());
+    const parcelaEstaLiberada = (parcela) => ["LIBERADA"].includes(String(parcela?.status || "").toUpperCase());
+    const classesParcela = (parcela) => {
+        if (parcelaEstaPaga(parcela)) {
+            return escuro
+                ? "bg-emerald-950/40 border-emerald-700/70 text-emerald-300"
+                : "bg-emerald-50 border-emerald-200 text-emerald-700";
+        }
+
+        if (parcelaEstaLiberada(parcela)) {
+            return escuro
+                ? "bg-blue-950/40 border-blue-700/70 text-blue-300"
+                : "bg-blue-50 border-blue-200 text-blue-700";
+        }
+
+
+        return escuro
+            ? "bg-orange-950/40 border-orange-700/70 text-orange-300"
+            : "bg-orange-50 border-orange-200 text-orange-600";
+    };
 
     return (
         <div
@@ -246,9 +341,11 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
                     </div>
                     <div className="flex items-center gap-3">
                         <span className={`text-[9px] font-bold tracking-wider px-3 py-1 rounded-full uppercase border
-              ${venda.tipo === "liberada"
+              ${venda.tipo === "paga"
                                 ? "bg-green-500/20 text-green-300 border-green-500/40"
-                                : "bg-orange-500/20 text-orange-300 border-orange-500/40"}`}>
+                                : venda.tipo === "liberada"
+                                    ? "bg-blue-500/20 text-blue-300 border-blue-500/40"
+                                    : "bg-orange-500/20 text-orange-300 border-orange-500/40"}`}>
                             {venda.status}
                         </span>
                     </div>
@@ -311,6 +408,60 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
                                         <CampoLeitura rotulo="Contato" valor={detalhes.distribuidor.contato} escuro={escuro} />
                                         <CampoLeitura rotulo="E-mail" valor={detalhes.distribuidor.email} escuro={escuro} colSpan={2} />
                                     </div>
+                                </div>
+                            </div>
+
+                            {/* Dados do Pedido */}
+                            <div className={`rounded-xl border p-5 ${classeSecao}`}>
+                                <CabecalhoSecao titulo="Dados do Pedido" cor="bg-sky-500" escuro={escuro} />
+                                <div className="grid grid-cols-4 gap-x-5 gap-y-3">
+                                    <CampoTextoEditavel
+                                        rotulo="Número da Nota"
+                                        valor={numeroNotaDistribuidor}
+                                        modoEdicao={modoEdicao}
+                                        aoAlterar={setNumeroNotaDistribuidor}
+                                        escuro={escuro}
+                                    />
+                                    <CampoTextoEditavel
+                                        rotulo="Observações"
+                                        valor={observacoes}
+                                        modoEdicao={modoEdicao}
+                                        aoAlterar={setObservacoes}
+                                        escuro={escuro}
+                                        colSpan={2}
+                                    />
+                                    <CampoLeitura rotulo="Status" valor={detalhes.pedido?.statusPedido} escuro={escuro} />
+
+                                    <div>
+                                        <label className={`block text-[9px] font-bold tracking-widest uppercase mb-1 ${escuro ? "text-gray-500" : "text-gray-400"}`}>
+                                            Método de Pagamento
+                                        </label>
+                                        <select
+                                            value={metodoPagamento}
+                                            disabled={!modoEdicao}
+                                            onChange={(e) => setMetodoPagamento(e.target.value)}
+                                            className={`w-full px-3 py-1.5 rounded-lg border text-xs font-semibold focus:outline-none transition-all duration-200
+                                                ${modoEdicao
+                                                    ? escuro ? "bg-blue-950/60 border-blue-500 text-white ring-1 ring-blue-500/40" : "bg-blue-50 border-blue-400 text-blue-900 ring-1 ring-blue-300/50"
+                                                    : escuro ? "bg-gray-800/80 border-gray-700 text-gray-200 cursor-default" : "bg-white border-gray-200 text-gray-700 cursor-default"
+                                                }`}
+                                        >
+                                            <option value="PIX">PIX</option>
+                                            <option value="BOLETO">Boleto</option>
+                                            <option value="CARTAO_CREDITO">Cartão de crédito</option>
+                                            <option value="CARTAO_DEBITO">Cartão de débito</option>
+                                            <option value="TRANSFERENCIA">Transferência</option>
+                                            <option value="DINHEIRO">Dinheiro</option>
+                                        </select>
+                                    </div>
+
+                                    <CampoQuantidade
+                                        valor={quantidadeParcelas}
+                                        modoEdicao={modoEdicao}
+                                        aoAlterar={setQuantidadeParcelas}
+                                        escuro={escuro}
+                                        rotulo="Parcelas"
+                                    />
                                 </div>
                             </div>
 
@@ -385,11 +536,13 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
                                         {venda.parcelas.map((parcela, indice) => (
                                             <div
                                                 key={indice}
-                                                className={`flex items-center justify-between px-4 py-2.5 rounded-lg border ${classeSeparador}
-                          ${escuro ? "bg-gray-800" : "bg-white"}`}
+                                                className={`flex items-center justify-between px-4 py-2.5 rounded-lg border ${classesParcela(parcela)}`}
                                             >
-                                                <span className={`text-xs ${escuro ? "text-gray-400" : "text-gray-400"}`}>{parcela.label}</span>
-                                                <span className={`text-sm font-bold ${escuro ? "text-gray-200" : "text-gray-700"}`}>{parcela.valor}</span>
+                                                <span className="flex items-center gap-2 text-xs">
+                                                    {parcelaEstaPaga(parcela) && <IconeCheck />}
+                                                    {parcela.label}
+                                                </span>
+                                                <span className="text-sm font-bold">{parcela.valor}</span>
                                             </div>
                                         ))}
                                     </div>
@@ -403,29 +556,42 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
                     )}
                 </div>
 
-                {/* ── Rodapé ── */}
+                {/* Rodape */}
                 <div className={`flex justify-end gap-2 px-8 py-4 border-t flex-shrink-0 ${classeSeparador}`}>
                     {modoEdicao && (
                         <p className={`text-[10px] mr-auto flex items-center gap-1.5
               ${escuro ? "text-blue-400" : "text-blue-500"}`}>
                             <IconeLapis />
-                            Nome fantasia, entrega e quantidade podem ser editados
+                            Nome fantasia, quantidade, nota e observações podem ser editados
                         </p>
                     )}
                     {modoEdicao ? (
-                        <button
-                            onClick={confirmarEdicao}
-                            className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all
-              bg-blue-600 text-white hover:bg-blue-700"
-                        >
-                            <IconeCheck />
-                            Salvar
-                        </button>
+                        <>
+                            <button
+                                onClick={() => confirmarEdicao(true)}
+                                disabled={salvando || !numeroNotaDistribuidor.trim() || !observacoes.trim()}
+                                className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all
+              bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <IconeCheck />
+                                Finalizar Pedido
+                            </button>
+                            <button
+                                onClick={() => confirmarEdicao(false)}
+                                disabled={salvando}
+                                className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all
+              bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <IconeCheck />
+                                Salvar
+                            </button>
+                        </>
                     ) : (
                         <button
                             onClick={iniciarEdicao}
+                            disabled={!pedidoEmAndamento}
                             className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all border
-              bg-white border-gray-200 text-gray-600 hover:bg-gray-100"
+              bg-white border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <IconeLapis />
                             Editar Informações
@@ -492,8 +658,8 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
 
         .modal-detalhe-scroll::-webkit-scrollbar-thumb {
           background: ${escuro
-                ? "linear-gradient(180deg, #9ca3af 0%, #6b7280 100%)"
-                : "linear-gradient(180deg, #d1d5db 0%, #9ca3af 100%)"};
+                    ? "linear-gradient(180deg, #9ca3af 0%, #6b7280 100%)"
+                    : "linear-gradient(180deg, #d1d5db 0%, #9ca3af 100%)"};
           border: 2px solid ${escuro ? "#1f2937" : "#e5e7eb"};
           border-radius: 999px;
           min-height: 42px;
@@ -501,8 +667,8 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
 
         .modal-detalhe-scroll::-webkit-scrollbar-thumb:hover {
           background: ${escuro
-                ? "linear-gradient(180deg, #d1d5db 0%, #9ca3af 100%)"
-                : "linear-gradient(180deg, #9ca3af 0%, #6b7280 100%)"};
+                    ? "linear-gradient(180deg, #d1d5db 0%, #9ca3af 100%)"
+                    : "linear-gradient(180deg, #9ca3af 0%, #6b7280 100%)"};
         }
       `}</style>
         </div>

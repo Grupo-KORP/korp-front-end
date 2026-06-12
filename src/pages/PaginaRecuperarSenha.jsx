@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import bgLogin from './../assets/bg-azul-preto.png'
+import { solicitarRecuperacaoSenha } from '../services/api'
 
 const IcoRaio = ({ tamanho = 22 }) => (
   <svg width={tamanho} height={tamanho} viewBox="0 0 24 24" fill="none"
@@ -24,6 +25,7 @@ export default function PaginaRecuperarSenha() {
   const [email, setEmail]         = useState('')
   const [erroEmail, setErroEmail] = useState('')
   const [passo, setPasso]         = useState(1)
+  const [carregando, setCarregando] = useState(false)
 
   function validarEmail(valor) {
     if (!valor.trim()) return 'E-mail obrigatório.'
@@ -31,12 +33,21 @@ export default function PaginaRecuperarSenha() {
     return ''
   }
 
-  function handleProximo() {
-    const erro = validarEmail(email)
-    setErroEmail(erro)
-    if (erro) return
+  async function handleProximo() {
+  const erro = validarEmail(email)
+  setErroEmail(erro)
+  if (erro) return
+
+  setCarregando(true)
+  try {
+    await solicitarRecuperacaoSenha(email)
     setPasso(2)
+  } catch (err) {
+    setErroEmail(err.message || 'Erro ao enviar o e-mail. Tente novamente.')
+  } finally {
+    setCarregando(false)
   }
+}
 
   function handleCancelar() {
     navegar(-1)
@@ -132,12 +143,14 @@ export default function PaginaRecuperarSenha() {
               <button
                 type="button"
                 onClick={handleProximo}
+                disabled={carregando}  
                 className="px-5 h-9 rounded-xl text-[13px] font-bold text-white transition-all duration-200 active:scale-[0.98]"
-                style={{ background: '#0a3490', boxShadow: '0 4px 14px rgba(10,52,144,0.3)' }}
-                onMouseEnter={e => e.currentTarget.style.background = '#082a75'}
-                onMouseLeave={e => e.currentTarget.style.background = '#0a3490'}
+                style={{ background: carregando ? '#94a3b8' : '#0a3490',  
+                          boxShadow: carregando ? 'none' : '0 4px 14px rgba(10,52,144,0.3)', }}
+                onMouseEnter={e => { if (!carregando) e.currentTarget.style.background = '#082a75' }}
+                onMouseLeave={e => { e.currentTarget.style.background = carregando ? '#94a3b8' : '#0a3490' }}
               >
-                Próximo
+                {carregando ? 'Enviando...' : 'Próximo'} 
               </button>
             </div>
           </div>
