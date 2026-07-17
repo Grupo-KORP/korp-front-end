@@ -7,6 +7,7 @@ import HomeVendedor from '../pages/HomeVendedor'
 import ClientePage from '../pages/ClientePage'
 import DistribuidorPage from '../pages/DistribuidorPage'
 import ProdutoPage from '../pages/ProdutoPage'
+import ComissoesPage from '../pages/ComissoesPage'
 import PaginaRecuperarSenha from './../pages/PaginaRecuperarSenha'
 import PaginaRedefinirSenha from './../pages/PaginaRedefinirSenha'
 
@@ -22,6 +23,7 @@ function AppRoutes() {
       <Route path="/vendedores/produtos" element={<ProdutoPage />} />
       <Route path="/vendedores/pedido"     element={<PedidoPage />} />
       <Route path="/vendedores/home"     element={<HomeVendedor/>}   />
+      <Route path="/comissoes" element={<ComissoesPage />} />
       <Route path="/vendedores/recuperar-senha" element={<PaginaRecuperarSenha />} />
       <Route path="/vendedores/redefinir-senha" element={<PaginaRedefinirSenha />} />
     </Routes>
