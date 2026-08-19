@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import "./NavbarVendedor.css";
+import "./NavbarFinanceiro.css";
 import logo from "../assets/logo-tnd.webp";
 import lua from "../assets/lua.png";
 import logout from "../assets/logout.png";
@@ -8,7 +8,7 @@ import sun from "../assets/sun.png";
 import { useDarkMode } from "../hooks/useDarkMode";
 import { useAuth } from '../hooks/useAuth'
 
-export default function NavbarVendedor() {
+export default function NavbarFinanceiro() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
 
@@ -16,8 +16,8 @@ export default function NavbarVendedor() {
   const [showModal, setShowModal] = useState(false);
 
   const menu = [
-    { name: "HOME", path: "/" },
-    { name: "VENDEDORES", path: "/vendedores" },
+    { name: "HOME", path: "/financeiro/home" },
+    { name: "VENDEDORES", path: "/financeiro/vendedores" },
     { name: "COMISSÕES", path: "/comissoes" },
   ];
 
