@@ -214,11 +214,14 @@ export async function atualizarPedido(idPedido, pedidoEditRequest) {
 
 // ─── Painel do vendedor ─────────────────────────────────────────────────────
 
-export async function buscarPainelVendedor({ ano, mes, dia } = {}) {
+export async function buscarPainelVendedor({ ano, mes, dia, tipo, pagina = 0, tamanho = 10 } = {}) {
   const params = {};
   if (ano !== null && ano !== undefined) params.ano = ano;
   if (mes !== null && mes !== undefined) params.mes = mes;
   if (dia !== null && dia !== undefined) params.dia = dia;
+  if (tipo !== null && tipo !== undefined) params.tipo = tipo;
+  params.pagina = pagina;
+  params.tamanho = tamanho;
 
   try {
     const { data } = await api.get("/vendedor/home", { params });
@@ -233,3 +236,4 @@ export async function buscarPainelVendedor({ ano, mes, dia } = {}) {
     throw new Error("Erro ao carregar o painel. Tente novamente.");
   }
 }
+
