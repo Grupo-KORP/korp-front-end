@@ -4,12 +4,14 @@ import logo from "../assets/logo-tnd.webp";
 import lua from "../assets/lua.png";
 import logout from "../assets/logout.png";
 import sun from "../assets/sun.png";
+import { useAuth } from "../hooks/useAuth";
 
 export default function Navbar() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const { sair } = useAuth();
 
   const menu = [
     { name: "HOME", path: "/" },
@@ -83,7 +85,10 @@ export default function Navbar() {
             <p className="text-gray-800 font-semibold text-lg text-center">Deseja sair da plataforma?</p>
             <div className="flex gap-4 w-full">
               <button
-                onClick={() => navigate("/login")}
+                onClick={async () => {
+                  await sair();
+                  navigate("/login");
+                }}
                 className="flex-1 py-2.5 rounded-xl bg-brand-blue text-white font-semibold hover:bg-brand-blue-dark transition-colors"
               >
                 Sim
