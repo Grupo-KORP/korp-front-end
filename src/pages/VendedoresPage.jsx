@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import Alert from "../components/ui/Alert";
-import { api, verificarSeFinanceiroEAdmin, verificarToken } from "../services/api.js";
+import { api } from "../services/api.js";
+import { useAuth } from "../hooks/useAuth.js";
 import NavbarVendedor from "../layout/NavbarFinanceiro.jsx";
 import { useDarkMode } from "../hooks/useDarkMode.jsx";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -141,10 +142,12 @@ export default function VendedoresPage() {
   const [currentPage, setCurrentPage] = useState(isNaN(pageFromUrl) || pageFromUrl < 1 ? 1 : pageFromUrl);
 
   const { darkMode: modoEscuro } = useDarkMode();
+  const { initialized, isAuthenticated, hasRole } = useAuth();
 
   useEffect(() => {
     if (toastShown.current) return;
-    if (!verificarToken()) {
+    if (!initialized) return;
+    if (!isAuthenticated) {
       toastShown.current = true;
       toast.error("Sessão expirada. Faça login novamente.", {
         duration: 500,
@@ -152,12 +155,12 @@ export default function VendedoresPage() {
       });
       return;
     }
-    if (!verificarSeFinanceiroEAdmin()) {
+    if (!hasRole("ROLE_FINAN") && !hasRole("ROLE_ADMIN")) {
       toastShown.current = true;
       toast.error("Acesso negado. Você não tem permissão para acessar esta página.");
       navigate("/vendedores/home");
     }
-  }, []);
+  }, [initialized, isAuthenticated, hasRole, navigate]);
 
   const fetchVendedores = useCallback(async (page, busca) => {
     setLoadingList(true);
@@ -180,9 +183,9 @@ export default function VendedoresPage() {
   }, []);
 
   useEffect(() => {
-    if (!verificarToken()) return;
+    if (!initialized || !isAuthenticated) return;
     fetchVendedores(currentPage, search);
-  }, [currentPage, search, fetchVendedores]);
+  }, [initialized, isAuthenticated, currentPage, search, fetchVendedores]);
 
   const syncUrl = useCallback(
     (page, busca) => {
