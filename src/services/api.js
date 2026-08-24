@@ -36,7 +36,6 @@ api.interceptors.response.use(
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
 export async function login({ email, senha }) {
-  console.log("API: login", { email, senha });
   const { data } = await api.post("/auth/login", { email, senha });
   // data = { token, nome, email }
   localStorage.setItem("korp_token", data.token);
@@ -117,7 +116,6 @@ export async function verificarPrimeiroAcesso() {
 
   const { data } = await api.get(`/usuario/${id}`);
   if (!data) throw new Error("Usuário não encontrado");
-  console.log("API: verificarPrimeiroAcesso", data);
 
   const primeiroAcesso = Boolean(data.primeiroAcesso);
 
