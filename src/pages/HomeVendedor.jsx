@@ -254,7 +254,7 @@
     const [atualizacaoPainel, setAtualizacaoPainel] = useState(0);
     const [primeiroAcesso, setPrimeiroAcesso] = useState(null);
     const [paginaAtual, setPaginaAtual] = useState(estadoInicial.paginaAtual);
-    const [tamanhoPagina] = useState(10);
+    const [tamanhoPagina] = useState(5);
     const [gerandoPdf, setGerandoPdf] = useState(false);
 
     const refDropdown = useRef(null);
@@ -369,7 +369,7 @@
       vendas: [],
       detalhesVenda: {},
       paginaAtual: 0,
-      tamanhoPagina: 10,
+      tamanhoPagina: 5,
       totalPaginasVendas: 0,
       totalVendasFiltradas: 0,
     };

@@ -214,7 +214,7 @@ export async function atualizarPedido(idPedido, pedidoEditRequest) {
 
 // ─── Painel do vendedor ─────────────────────────────────────────────────────
 
-export async function buscarPainelVendedor({ ano, mes, dia, tipo, pagina = 0, tamanho = 10 } = {}) {
+export async function buscarPainelVendedor({ ano, mes, dia, tipo, pagina = 0, tamanho = 5 } = {}) {
   const params = {};
   if (ano !== null && ano !== undefined) params.ano = ano;
   if (mes !== null && mes !== undefined) params.mes = mes;
@@ -225,6 +225,7 @@ export async function buscarPainelVendedor({ ano, mes, dia, tipo, pagina = 0, ta
 
   try {
     const { data } = await api.get("/vendedor/home", { params });
+    console.log("API: buscarPainelVendedor", data);
     return data;
   } catch (err) {
     const status = err?.status ?? err?.response?.status;
