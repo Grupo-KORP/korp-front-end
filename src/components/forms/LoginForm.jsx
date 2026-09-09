@@ -5,7 +5,6 @@ import Button from '../ui/Button'
 import Alert from '../ui/Alert'
 import { useForm } from '../../hooks/useForm'
 import { useAuth } from '../../hooks/useAuth'
-import { decodeJWT } from '../../services/api'
 // import ModalAlterarSenha from '../modal/ModalAlterarSenha'
 
 /**
@@ -41,9 +40,8 @@ function LoginForm() {
     if (!validate()) return
 
     try {
-      await entrar({ email: values.email, senha: values.senha })
-      const token = localStorage.getItem('korp_token')
-      const isVendedor = decodeJWT(token).roles.includes('ROLE_VEND')
+      const data = await entrar({ email: values.email, senha: values.senha })
+      const isVendedor = data.usuario.roles.includes('ROLE_VEND')
 
       if (isVendedor) {
         navegar('/vendedores/home')

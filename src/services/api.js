@@ -6,18 +6,13 @@ import axios from "axios";
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
+  withCredentials: true,
+  xsrfCookieName: "XSRF-TOKEN",
+  xsrfHeaderName: "X-XSRF-TOKEN",
+  withXSRFToken: true,
   headers: {
     "Content-Type": "application/json",
   },
-});
-
-// Interceptor: injeta o token em todas as requisições autenticadas
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("korp_token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
 });
 
 // Interceptor: trata erros HTTP de forma centralizada
@@ -26,6 +21,10 @@ api.interceptors.response.use(
   (error) => {
     const status = error.response?.status;
     const message = error.response?.data?.message || `Erro HTTP ${status}`;
+
+    if (status === 401 && typeof window !== "undefined") {
+      window.dispatchEvent(new Event("korp:session-expired"));
+    }
 
     const err = new Error(message);
     err.status = status;
@@ -36,88 +35,29 @@ api.interceptors.response.use(
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
 export async function login({ email, senha }) {
-  console.log("API: login", { email, senha });
   const { data } = await api.post("/auth/login", { email, senha });
-  // data = { token, nome, email }
-  localStorage.setItem("korp_token", data.token);
-  return { usuario: { nome: data.nome, email: data.email } };
+  return data;
 }
 
-export function logout() {
-  localStorage.removeItem("korp_token");
+export async function initializeCsrf() {
+  await api.get("/auth/csrf");
 }
 
-export function verificarToken() {
-  const token = localStorage.getItem("korp_token");
-  if (!token) return false;
-
-  try {
-    const { expiresAt } = decodeJWT(token);
-    return new Date() < expiresAt;
-  } catch {
-    return false;
-  }
+export async function loadSession() {
+  const { data } = await api.get("/auth/session");
+  return data.usuario;
 }
 
-export function decodeJWT(token) {
-  try {
-    const [header, payload, signature] = token.split(".");
-
-    if (!header || !payload || !signature) {
-      throw new Error("Token JWT inválido: formato incorreto.");
-    }
-
-    const base64Decode = (str) => {
-      const base64 = str.replace(/-/g, "+").replace(/_/g, "/");
-      const padded = base64.padEnd(
-        base64.length + ((4 - (base64.length % 4)) % 4),
-        "=",
-      );
-      return JSON.parse(atob(padded));
-    };
-
-    const { sub, roles, id, iat, exp } = base64Decode(payload);
-
-    return {
-      email: sub,
-      roles: roles.map((r) => r.authority),
-      id,
-      issuedAt: new Date(iat * 1000),
-      expiresAt: new Date(exp * 1000),
-    };
-  } catch (error) {
-    throw new Error(`Falha ao decodificar o JWT: ${error.message}`);
-  }
+export async function logout() {
+  await api.post("/auth/logout");
 }
 
-export function verificarSeVendedor() {
-  if (!verificarToken()) return false;
-  const token = localStorage.getItem("korp_token");
-  return decodeJWT(token).roles.includes("ROLE_VEND");
-}
+export async function verificarPrimeiroAcesso(usuario) {
+  const sessao = usuario || await loadSession();
+  if (!sessao?.id) throw new Error("Sessão não encontrada");
 
-export function verificarSeFinanceiroEAdmin() {
-  if (!verificarToken()) return false;
-  const token = localStorage.getItem("korp_token");
-  return (
-    decodeJWT(token).roles.includes("ROLE_FINAN") ||
-    decodeJWT(token).roles.includes("ROLE_ADMIN")
-  );
-}
-
-export function verificarSeAdmin() {
-  if (!verificarToken()) return false;
-  const token = localStorage.getItem("korp_token");
-  return decodeJWT(token).roles.includes("ROLE_ADMIN");
-}
-
-export async function verificarPrimeiroAcesso() {
-  const token = localStorage.getItem("korp_token");
-  const id = decodeJWT(token).id;
-
-  const { data } = await api.get(`/usuario/${id}`);
+  const { data } = await api.get(`/usuario/${sessao.id}`);
   if (!data) throw new Error("Usuário não encontrado");
-  console.log("API: verificarPrimeiroAcesso", data);
 
   const primeiroAcesso = Boolean(data.primeiroAcesso);
 

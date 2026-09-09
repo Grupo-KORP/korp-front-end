@@ -7,9 +7,8 @@ import {
   alterarSenha,
   buscarPainelVendedor,
   verificarPrimeiroAcesso,
-  verificarSeVendedor,
-  verificarToken,
 } from "../services/api";
+import { useAuth } from "../hooks/useAuth";
 import ModalDetalheVenda from "../components/modal/Modaldetalhevenda";
 import DatePickerCalendar from "../components/ui/DatePickerCalendar";
 import ModalAlterarSenha from "../components/modal/ModalAlterarSenha";
@@ -198,6 +197,7 @@ function CardMetrica({ icone, rotulo, valor, badge, sub, ativo, aoClicar, dark }
 ══════════════════════════════════════════ */
 export default function HomeVendedor() {
   const { darkMode: modoEscuro } = useDarkMode();
+  const { usuario, initialized, isAuthenticated, hasRole } = useAuth();
   const navigate = useNavigate();
   const [anoSelecionado, setAnoSelecionado] = useState(ANO_ATUAL);
   const [mesSelecionado, setMesSelecionado] = useState(MES_ATUAL);
@@ -227,22 +227,23 @@ export default function HomeVendedor() {
 
   useEffect(() => {
     if (toastShown.current) return;
-    if (!verificarToken()) {
+    if (!initialized) return;
+    if (!isAuthenticated) {
       toastShown.current = true;
       toast.error("Sessão expirada. Faça login novamente.");
       navigate("/login");
       return;
     }
-    if (!verificarSeVendedor()) {
+    if (!hasRole("ROLE_VEND")) {
       toastShown.current = true;
       toast.error("Acesso negado. Você não tem permissão para acessar esta página.");
       navigate("/financeiro/vendedores");
     }
 
-    verificarPrimeiroAcesso()
+    verificarPrimeiroAcesso(usuario)
       .then((isPrimeiro) => setPrimeiroAcesso(isPrimeiro))
       .catch(() => setPrimeiroAcesso(false));
-  }, [navigate]);
+  }, [initialized, isAuthenticated, hasRole, usuario, navigate]);
 
   async function handleAlterarSenha({ senhaAtual, novaSenha }) {
     try {
@@ -255,7 +256,7 @@ export default function HomeVendedor() {
   }
 
   useEffect(() => {
-    if (!verificarToken() || !verificarSeVendedor()) return;
+    if (!initialized || !isAuthenticated || !hasRole("ROLE_VEND")) return;
 
     let ativo = true;
     const mes = MESES.indexOf(mesSelecionado) + 1;
@@ -281,7 +282,7 @@ export default function HomeVendedor() {
     return () => {
       ativo = false;
     };
-  }, [diaSelecionado, mesSelecionado, anoSelecionado, tipoFiltroPeriodo, atualizacaoPainel]);
+  }, [initialized, isAuthenticated, hasRole, diaSelecionado, mesSelecionado, anoSelecionado, tipoFiltroPeriodo, atualizacaoPainel]);
 
   const dados = painelVendedor || {
     totalVendas: 0,
