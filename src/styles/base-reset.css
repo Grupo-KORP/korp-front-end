@@ -1,0 +1,55 @@
+/*
+  base-reset.css
+  ------------------------------------------------------------------
+  Tailwind's "Preflight" base layer normally resets default browser
+  styling (box-sizing, button/input appearance, heading/paragraph
+  margins, etc.) globally, before any utility classes are applied.
+
+  Since Tailwind is being removed, this file replaces that base
+  layer for the elements actually used by the 4 migrated pages
+  (button, input, h1, p, svg). Import this once (it is already
+  imported by each of the 4 component CSS files below via the
+  component files themselves — see note in the chat response).
+  ------------------------------------------------------------------
+*/
+
+*, ::before, ::after {
+  box-sizing: border-box;
+}
+
+button, input {
+  font-family: inherit;
+  font-size: 100%;
+  font-weight: inherit;
+  line-height: inherit;
+  color: inherit;
+  margin: 0;
+  padding: 0;
+}
+
+button {
+  text-transform: none;
+  background-color: transparent;
+  background-image: none;
+  border: 0;
+  cursor: pointer;
+}
+
+input {
+  border: 0;
+}
+
+h1, p {
+  margin: 0;
+}
+
+svg {
+  display: block;
+  vertical-align: middle;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}

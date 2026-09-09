@@ -4,6 +4,7 @@ import LoginPage from '../pages/LoginPage'
 import VendedoresPage from '../pages/VendedoresPage'
 import PedidoPage from '../pages/PedidoPage'
 import HomeVendedor from '../pages/HomeVendedor'
+import HomeFinanceiro from '../pages/HomeFinanceiro'
 import ClientePage from '../pages/ClientePage'
 import DistribuidorPage from '../pages/DistribuidorPage'
 import ProdutoPage from '../pages/ProdutoPage'
@@ -27,6 +28,7 @@ function AppRoutes() {
         <Route path="/vendedores/home" element={<HomeVendedor />} />
         <Route path="/comissoes" element={<ComissoesPage />} />
       </Route>
+      <Route path="/financeiro/home" element={<HomeFinanceiro />} />
       <Route path="/vendedores/recuperar-senha" element={<PaginaRecuperarSenha />} />
       <Route path="/vendedores/redefinir-senha" element={<PaginaRedefinirSenha />} />
     </Routes>

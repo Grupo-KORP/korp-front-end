@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { redefinirSenha } from '../services/api'
 import bgLogin from './../assets/bg-azul-preto.png'
+import '../styles/base-reset.css'
+import './PaginaRedefinirSenha.css'
 
 /* ══════════════════════════════════════════
    REGRAS E VALIDAÇÕES

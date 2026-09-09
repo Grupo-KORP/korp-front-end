@@ -1,4 +1,6 @@
 ﻿import React, { useState, useRef, useEffect } from "react";
+import "../styles/base-reset.css";
+import "./HomeVendedor.css";
 import Navbar from "../layout/NavbarVendedor";
 import { useDarkMode } from "../hooks/useDarkMode";
 import { toast } from "sonner";

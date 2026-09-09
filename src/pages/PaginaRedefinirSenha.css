@@ -1,0 +1,342 @@
+/* Auto-generated static CSS replacing Tailwind utility classes used in PaginaRedefinirSenha.jsx */
+/* Generated 1:1 from the original Tailwind class names so the JSX did not need to change. */
+
+@keyframes tw-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .5; }
+}
+
+.absolute {
+  position: absolute;
+}
+.active\:scale-\[0\.98\]:active {
+  transform: scale(0.98);
+}
+.bg-amber-400 {
+  background-color: #fbbf24;
+}
+.bg-blue-400 {
+  background-color: #60a5fa;
+}
+.bg-emerald-500 {
+  background-color: #10b981;
+}
+.bg-gray-200 {
+  background-color: #e5e7eb;
+}
+.bg-red-400 {
+  background-color: #f87171;
+}
+.bg-transparent {
+  background-color: transparent;
+}
+.bg-white {
+  background-color: #ffffff;
+}
+.border {
+  border-width: 1px;
+}
+.border-gray-200 {
+  border-color: #e5e7eb;
+}
+.border-red-300 {
+  border-color: #fca5a5;
+}
+.cursor-not-allowed {
+  cursor: not-allowed;
+}
+.cursor-pointer {
+  cursor: pointer;
+}
+.disabled\:cursor-not-allowed:disabled {
+  cursor: not-allowed;
+}
+.disabled\:opacity-50:disabled {
+  opacity: 0.5;
+}
+.duration-150 {
+  transition-duration: 150ms;
+}
+.duration-200 {
+  transition-duration: 200ms;
+}
+.duration-300 {
+  transition-duration: 300ms;
+}
+.flex {
+  display: flex;
+}
+.flex-1 {
+  flex: 1 1 0%;
+}
+.flex-col {
+  flex-direction: column;
+}
+.flex-shrink-0 {
+  flex-shrink: 0;
+}
+.focus-within\:border-blue-400:focus-within {
+  border-color: #60a5fa;
+}
+.focus-within\:ring-1:focus-within {
+  --tw-ring-width: 1px;
+  box-shadow: 0 0 0 1px var(--tw-ring-color, rgba(59,130,246,0.5));
+}
+.focus-within\:ring-blue-100:focus-within {
+  --tw-ring-color: #dbeafe;
+  box-shadow: 0 0 0 var(--tw-ring-width, 1px) #dbeafe;
+}
+.font-black {
+  font-weight: 900;
+}
+.font-bold {
+  font-weight: 700;
+}
+.font-medium {
+  font-weight: 500;
+}
+.font-semibold {
+  font-weight: 600;
+}
+.gap-1 {
+  gap: 0.25rem;
+}
+.gap-1\.5 {
+  gap: 0.375rem;
+}
+.gap-2 {
+  gap: 0.5rem;
+}
+.gap-3 {
+  gap: 0.75rem;
+}
+.gap-5 {
+  gap: 1.25rem;
+}
+.gap-x-4 {
+  column-gap: 1rem;
+}
+.gap-y-1 {
+  row-gap: 0.25rem;
+}
+.grid {
+  display: grid;
+}
+.grid-cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.h-1 {
+  height: 0.25rem;
+}
+.h-10 {
+  height: 2.5rem;
+}
+.h-3 {
+  height: 0.75rem;
+}
+.h-9 {
+  height: 2.25rem;
+}
+.h-full {
+  height: 100%;
+}
+.hover\:bg-gray-50:hover {
+  background-color: #f9fafb;
+}
+.inset-0 {
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+}
+.items-center {
+  align-items: center;
+}
+.justify-center {
+  justify-content: center;
+}
+.justify-end {
+  justify-content: flex-end;
+}
+.leading-relaxed {
+  line-height: 1.625;
+}
+.leading-tight {
+  line-height: 1.25;
+}
+.m-0 {
+  margin: 0px;
+}
+.min-h-screen {
+  min-height: 100vh;
+}
+.mt-1 {
+  margin-top: 0.25rem;
+}
+.mx-4 {
+  margin-left: 1rem;
+  margin-right: 1rem;
+}
+.object-cover {
+  object-fit: cover;
+}
+.opacity-50 {
+  opacity: 0.5;
+}
+.outline-none {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+.overflow-hidden {
+  overflow: hidden;
+}
+.pl-1 {
+  padding-left: 0.25rem;
+}
+.placeholder\:text-gray-300::placeholder {
+  color: #d1d5db;
+}
+.px-3 {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+.px-5 {
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+.px-6 {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+.px-7 {
+  padding-left: 1.75rem;
+  padding-right: 1.75rem;
+}
+.py-8 {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+.relative {
+  position: relative;
+}
+.ring-1 {
+  --tw-ring-width: 1px;
+  box-shadow: 0 0 0 1px var(--tw-ring-color, rgba(59,130,246,0.5));
+}
+.ring-red-300 {
+  --tw-ring-color: #fca5a5;
+  box-shadow: 0 0 0 var(--tw-ring-width, 1px) #fca5a5;
+}
+.rounded-2xl {
+  border-radius: 1rem;
+}
+.rounded-full {
+  border-radius: 9999px;
+}
+.rounded-xl {
+  border-radius: 0.75rem;
+}
+.select-none {
+  user-select: none;
+}
+.shadow-2xl {
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+}
+.text-\[11px\] {
+  font-size: 11px;
+}
+.text-\[12px\] {
+  font-size: 12px;
+}
+.text-\[13px\] {
+  font-size: 13px;
+}
+.text-\[14px\] {
+  font-size: 14px;
+}
+.text-\[18px\] {
+  font-size: 18px;
+}
+.text-amber-500 {
+  color: #f59e0b;
+}
+.text-blue-500 {
+  color: #3b82f6;
+}
+.text-center {
+  text-align: center;
+}
+.text-emerald-500 {
+  color: #10b981;
+}
+.text-emerald-600 {
+  color: #059669;
+}
+.text-emerald-700 {
+  color: #047857;
+}
+.text-gray-300 {
+  color: #d1d5db;
+}
+.text-gray-400 {
+  color: #9ca3af;
+}
+.text-gray-500 {
+  color: #6b7280;
+}
+.text-gray-600 {
+  color: #4b5563;
+}
+.text-gray-700 {
+  color: #374151;
+}
+.text-gray-900 {
+  color: #111827;
+}
+.text-red-400 {
+  color: #f87171;
+}
+.text-red-500 {
+  color: #ef4444;
+}
+.text-white {
+  color: #ffffff;
+}
+.tracking-\[0\.1em\] {
+  letter-spacing: 0.1em;
+}
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.transition-colors {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.uppercase {
+  text-transform: uppercase;
+}
+.w-3 {
+  width: 0.75rem;
+}
+.w-9 {
+  width: 2.25rem;
+}
+.w-full {
+  width: 100%;
+}
+
+.\[\&\:\:-ms-reveal\]\:hidden::-ms-reveal {
+  display: none;
+}
+.\[\&\:\:-ms-clear\]\:hidden::-ms-clear {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .sm\:w-\[420px\] {
+    width: 420px;
+  }
+}
