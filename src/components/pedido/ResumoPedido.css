@@ -24,7 +24,7 @@
 }
 
 .resumo-card:last-child {
-  max-height: 230px; 
+  min-height: 230px;
   flex-shrink: 0;
 }
 
@@ -231,9 +231,15 @@
 
 .botoes-resumo {
   display: flex;
-  gap: 10px;
+  gap: 6px;
   margin-top: 8px;
 }
+
+.botoes-resumo button { min-width: 0; padding: 0 8px; }
+.botoes-resumo .btn-pdf-icon { flex: 0 0 40px; position: relative; }
+.btn-pdf-icon svg { width: 22px; height: 22px; }
+.pdf-tooltip { position: absolute; bottom: calc(100% + 8px); right: 0; padding: 7px 10px; border-radius: 6px; background: var(--pedido-text-strong, #0f2557); color: var(--pedido-card-bg, #fff); white-space: nowrap; font-size: 11px; pointer-events: none; visibility: hidden; z-index: 2; }
+.btn-pdf-icon:hover .pdf-tooltip, .btn-pdf-icon:focus-visible .pdf-tooltip { visibility: visible; }
 
 .botoes-resumo button {
   flex: 1;

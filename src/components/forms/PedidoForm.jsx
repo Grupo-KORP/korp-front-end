@@ -197,7 +197,7 @@ const readonlyInputProps = {
   className: "readonly",
 };
 
-function ClienteSection({ onChange }) {
+function ClienteSection({ onChange, initialData }) {
   const [open, setOpen] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [data, setData] = useState({
@@ -212,6 +212,7 @@ function ClienteSection({ onChange }) {
     uf: "",
     contato: "",
     email: "",
+    ...initialData,
   });
   const [search, setSearch] = useState("");
   const [newCadastroCnpj, setNewCadastroCnpj] = useState("");
@@ -781,7 +782,7 @@ function ClienteSection({ onChange }) {
   );
 }
 
-function DistribuidorSection({ onChange }) {
+function DistribuidorSection({ onChange, initialData }) {
   const [open, setOpen] = useState(true);
   const [data, setData] = useState({
     nomeFantasia: "",
@@ -795,6 +796,7 @@ function DistribuidorSection({ onChange }) {
     uf: "",
     contato: "",
     email: "",
+    ...initialData,
   });
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState("");
@@ -1716,10 +1718,10 @@ function ProdutoSection({ onChange, initialData }) {
   );
 }
 
-export default function PedidoForm({ onFormChange }) {
-  const [cliente, setCliente] = useState({});
-  const [distribuidor, setDistribuidor] = useState({});
-  const [produtos, setProdutos] = useState([]);
+export default function PedidoForm({ onFormChange, initialData }) {
+  const [cliente, setCliente] = useState(initialData?.cliente || {});
+  const [distribuidor, setDistribuidor] = useState(initialData?.distribuidor || {});
+  const [produtos, setProdutos] = useState(initialData?.produtos || []);
 
   const notify = (patch) => {
     onFormChange?.({ ...{ cliente, distribuidor, produtos }, ...patch });
@@ -1733,7 +1735,7 @@ export default function PedidoForm({ onFormChange }) {
   };
 
   const addProduto = () => {
-    setProdutos([
+    const novos = [
       ...produtos,
       {
         descricao: "",
@@ -1746,7 +1748,9 @@ export default function PedidoForm({ onFormChange }) {
         totalFaturado: "",
         fkProduto: "",
       },
-    ]);
+    ];
+    setProdutos(novos);
+    notify({ produtos: novos });
   };
 
   const removeProduto = (index) => {
@@ -1758,12 +1762,14 @@ export default function PedidoForm({ onFormChange }) {
   return (
     <div className="pedido-form">
       <ClienteSection
+        initialData={cliente}
         onChange={(d) => {
           setCliente(d);
           notify({ cliente: d });
         }}
       />
       <DistribuidorSection
+        initialData={distribuidor}
         onChange={(d) => {
           setDistribuidor(d);
           notify({ distribuidor: d });

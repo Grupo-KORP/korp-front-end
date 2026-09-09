@@ -6,7 +6,7 @@ import perfilDistribuidor from "../../assets/distribuidor.png";
 import { cadastrarPedido } from "../../services/api";
 import { mapperFormDataToPedidoRequest } from "../../services/pedidoRequestMapper";
 
-export default function ResumoPedido({ formData }) {
+export default function ResumoPedido({ formData, onSaveDraft, onPedidoSaved, onBusyChange }) {
   const cliente = formData?.cliente || {};
   const distribuidor = formData?.distribuidor || {};
   const produtos = formData?.produtos || [];
@@ -416,6 +416,7 @@ const gerarPDFBase64 = async () => {
 
   const salvarPedido = async (enviarPdf = false) => {
   setLoading(true);
+  onBusyChange?.(true);
   setError(null);
 
   try {
@@ -429,12 +430,15 @@ const gerarPDFBase64 = async () => {
     const response = await cadastrarPedido(pedidoRequest);
 
     if (response && response.idPedido) {
+      onPedidoSaved?.();
       navigate("/vendedores/home");
     }
   } catch (err) {
     console.error("Erro ao salvar pedido:", err);
     setError(err.message || "Erro ao salvar pedido. Tente novamente.");
+  } finally {
     setLoading(false);
+    onBusyChange?.(false);
   }
 };
 
@@ -534,8 +538,16 @@ const gerarPDFBase64 = async () => {
           <button className="btn-primary" onClick={adicionarPedido} disabled={loading}>
             {loading ? "Salvando..." : "Adicionar Pedido"}
           </button>
-          <button className="btn-secondary" onClick={gerarPDF}>
-            Pré visualizar PDF
+          <button type="button" className="btn-secondary" onClick={onSaveDraft} disabled={loading}>
+            Salvar rascunho
+          </button>
+          <button type="button" className="btn-secondary btn-pdf-icon" onClick={gerarPDF}
+            disabled={loading} aria-label="Pré visualizar PDF">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+              <path d="M14 2v6h6M12 11v7m-3-3 3 3 3-3" />
+            </svg>
+            <span className="pdf-tooltip" role="tooltip">Pré visualizar PDF</span>
           </button>
         </div>
       </div>
