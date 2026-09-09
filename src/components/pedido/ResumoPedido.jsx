@@ -5,6 +5,7 @@ import dinheiroIcon from "../../assets/dinheiro.png";
 import perfilDistribuidor from "../../assets/distribuidor.png";
 import { cadastrarPedido } from "../../services/api";
 import { mapperFormDataToPedidoRequest } from "../../services/pedidoRequestMapper";
+import { validarCamposPedido } from "../../services/pedidoValidation";
 
 export default function ResumoPedido({ formData, onSaveDraft, onPedidoSaved, onBusyChange }) {
   const cliente = formData?.cliente || {};
@@ -26,6 +27,7 @@ export default function ResumoPedido({ formData, onSaveDraft, onPedidoSaved, onB
   const [showEnviarPdfModal, setShowEnviarPdfModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [camposError, setCamposError] = useState("");
 
   // Sincronizar com formData quando entrega mudar
   useEffect(() => {
@@ -455,6 +457,9 @@ const gerarPDFBase64 = async () => {
   };
 
   const adicionarPedido = () => {
+    const message = validarCamposPedido(formData);
+    setCamposError(message);
+    if (message) return;
     if (!validarFormaPagamento()) {
       return;
     }
@@ -463,6 +468,9 @@ const gerarPDFBase64 = async () => {
   };
 
   const finalizarPedido = async (enviarPdf) => {
+    const message = validarCamposPedido(formData);
+    setCamposError(message);
+    if (message) { setShowEnviarPdfModal(false); return; }
     if (!validarFormaPagamento()) {
       return;
     }
@@ -479,7 +487,7 @@ const gerarPDFBase64 = async () => {
   return (
     <div className="resumo-wrapper">
       {/* ── Resumo do Pedido ── */}
-      <div className="resumo-card">
+      <div className="resumo-card resumo-dados-card">
         <div className="resumo-card-title">
           <span className="resumo-title-icon"><img src={perfilDistribuidor} alt="Dinehiro" /></span>
           Resumo do Pedido
@@ -556,7 +564,7 @@ const gerarPDFBase64 = async () => {
       </div>
 
       {/* ── Resumo Financeiro ── */}
-      <div className="resumo-card">
+      <div className="resumo-card resumo-financeiro-card">
         <div className="resumo-card-title">
           <span className="resumo-title-icon"><img src={dinheiroIcon} alt="icone-dinheiro" /></span>
           Resumo Financeiro
@@ -594,6 +602,7 @@ const gerarPDFBase64 = async () => {
             <span className="pdf-tooltip" role="tooltip">Pré visualizar PDF</span>
           </button>
         </div>
+        {camposError && <p className="resumo-field-error" role="alert">{camposError}</p>}
       </div>
 
       {error && (

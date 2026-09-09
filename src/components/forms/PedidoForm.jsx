@@ -428,9 +428,11 @@ function ClienteSection({ onChange, initialData }) {
         <div className="section-body">
           <div className="form-row">
             <div className="form-group grow-1">
-              <label>NOME FANTASIA</label>
+              <label>NOME FANTASIA<span className="pedido-required" aria-hidden="true">*</span></label>
               <input
                 name="nomeFantasia"
+                required
+                aria-required="true"
                 value={data.nomeFantasia}
                 onChange={handle}
                 placeholder="Ex: Tech Solutions"
@@ -1024,9 +1026,11 @@ function DistribuidorSection({ onChange, initialData }) {
         <div className="section-body">
           <div className="form-row">
             <div className="form-group grow-1">
-              <label>NOME FANTASIA</label>
+              <label>NOME FANTASIA<span className="pedido-required" aria-hidden="true">*</span></label>
               <input
                 name="nomeFantasia"
+                required
+                aria-required="true"
                 value={data.nomeFantasia}
                 onChange={handle}
                 placeholder="Ex: Tech Solutions"
@@ -1443,6 +1447,9 @@ function ProdutoSection({ onChange, initialData, onRemove }) {
 
   const handle = (e) => {
     const field = e.target.name;
+    if (["quantidade", "valorUnitario", "unitFaturado"].includes(field) && Number(e.target.value) < 0) {
+      return;
+    }
     let updated = { ...data, [field]: e.target.value };
 
     const qty = parseFloat(updated.quantidade) || 0;
@@ -1573,9 +1580,11 @@ function ProdutoSection({ onChange, initialData, onRemove }) {
         <div className="section-body">
           <div className="form-row">
             <div className="form-group grow-2">
-              <label>DESCRICAO DO PRODUTO</label>
+              <label>DESCRICAO DO PRODUTO<span className="pedido-required" aria-hidden="true">*</span></label>
               <input
                 name="descricao"
+                required
+                aria-required="true"
                 value={data.descricao || ""}
                 onChange={handle}
                 placeholder="Ex: Pacote Office 365"
@@ -1605,9 +1614,12 @@ function ProdutoSection({ onChange, initialData, onRemove }) {
               />
             </div>
             <div className="form-group grow-1">
-              <label>QUANTIDADE</label>
+              <label>QUANTIDADE<span className="pedido-required" aria-hidden="true">*</span></label>
               <input
                 name="quantidade"
+                min="1"
+                required
+                aria-required="true"
                 type="number"
                 value={data.quantidade || ""}
                 onChange={handle}
@@ -1615,9 +1627,12 @@ function ProdutoSection({ onChange, initialData, onRemove }) {
               />
             </div>
             <div className="form-group grow-1">
-              <label>VALOR UNITARIO</label>
+              <label>VALOR UNITARIO<span className="pedido-required" aria-hidden="true">*</span></label>
               <input
                 name="valorUnitario"
+                min="0"
+                required
+                aria-required="true"
                 type="number"
                 step="0.01"
                 value={data.valorUnitario || ""}
@@ -1637,9 +1652,12 @@ function ProdutoSection({ onChange, initialData, onRemove }) {
 
           <div className="form-row">
             <div className="form-group grow-1">
-              <label>VALOR UNIT. FATURADO</label>
+              <label>VALOR UNIT. FATURADO<span className="pedido-required" aria-hidden="true">*</span></label>
               <input
                 name="unitFaturado"
+                min="0"
+                required
+                aria-required="true"
                 type="number"
                 step="0.01"
                 value={data.unitFaturado || ""}
@@ -1803,6 +1821,7 @@ export default function PedidoForm({ onFormChange, initialData }) {
 
   return (
     <div className="pedido-form">
+      <p className="pedido-form-hint">* Campos obrigatórios para adicionar o pedido. Rascunhos podem ficar incompletos.</p>
       <DistribuidorSection
         initialData={distribuidor}
         onChange={(d) => {

@@ -21,7 +21,19 @@ export default function PedidoPage() {
     const [formVersion, setFormVersion] = useState(0);
     const [dirty, setDirty] = useState(false);
     const [busy, setBusy] = useState(false);
+    const [pendingDraft, setPendingDraft] = useState(null);
+    const discardDialogRef = useRef(null);
+    const keepChangesButtonRef = useRef(null);
     const getKey = () => draftStorageKey(localStorage.getItem("korp_token"));
+
+    useEffect(() => {
+        const dialog = discardDialogRef.current;
+        if (pendingDraft && !dialog.open) {
+            dialog.showModal();
+            keepChangesButtonRef.current?.focus();
+        }
+        else if (!pendingDraft && dialog.open) dialog.close();
+    }, [pendingDraft]);
 
     useEffect(() => {
         try { setDrafts(readDrafts(localStorage, getKey())); }
@@ -78,13 +90,17 @@ export default function PedidoPage() {
         } catch (error) { toast.error(`Não foi possível salvar o rascunho. ${error.message}`); }
     };
 
-    const abrirPedido = (draft) => {
-        if (dirty && !window.confirm("Há alterações não salvas. Deseja descartá-las e continuar?")) return;
+    const carregarPedido = (draft) => {
         setFormData(draft?.data || { cliente: {}, distribuidor: {}, produtos: [], entrega: {} });
         setActiveDraft(draft?.id || null);
         setFormVersion(version => version + 1);
         setDirty(false);
         setShowDrafts(false);
+    };
+
+    const abrirPedido = (draft) => {
+        if (dirty) { setPendingDraft(draft); return; }
+        carregarPedido(draft);
     };
 
     const excluirRascunho = (id) => {
@@ -176,6 +192,24 @@ export default function PedidoPage() {
                         />                    </div>
                 </div>
             </div>
+            <dialog
+                ref={discardDialogRef}
+                className="pedido-discard-dialog"
+                aria-labelledby="pedido-discard-title"
+                aria-describedby="pedido-discard-description"
+                onCancel={(event) => { event.preventDefault(); setPendingDraft(null); }}
+            >
+                <h2 id="pedido-discard-title">Descartar alterações?</h2>
+                <p id="pedido-discard-description">Há alterações não salvas neste pedido. Deseja descartá-las e abrir o rascunho selecionado?</p>
+                <div className="resumo-modal-actions">
+                    <button type="button" className="btn-primary" onClick={() => {
+                        const draft = pendingDraft;
+                        setPendingDraft(null);
+                        if (draft) carregarPedido(draft);
+                    }}>Sim</button>
+                    <button ref={keepChangesButtonRef} type="button" className="btn-secondary" onClick={() => setPendingDraft(null)}>Não</button>
+                </div>
+            </dialog>
         </div>
     );
 }
