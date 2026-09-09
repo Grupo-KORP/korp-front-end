@@ -22,6 +22,7 @@ export default function ResumoPedido({ formData }) {
   const [cidadeEntrega, setCidadeEntrega] = useState(entrega.cidade);
   const [cepEntrega, setCepEntrega] = useState(entrega.cep);
   const [formaPagamento, setFormaPagamento] = useState("");
+  const [formaPagamentoError, setFormaPagamentoError] = useState("");
   const [showEnviarPdfModal, setShowEnviarPdfModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -439,11 +440,29 @@ const gerarPDFBase64 = async () => {
   }
 };
 
+  const validarFormaPagamento = () => {
+    if (!formaPagamento || !String(formaPagamento).trim()) {
+      setFormaPagamentoError("Selecione a forma de pagamento.");
+      return false;
+    }
+
+    setFormaPagamentoError("");
+    return true;
+  };
+
   const adicionarPedido = () => {
+    if (!validarFormaPagamento()) {
+      return;
+    }
+
     setShowEnviarPdfModal(true);
   };
 
   const finalizarPedido = async (enviarPdf) => {
+    if (!validarFormaPagamento()) {
+      return;
+    }
+
     setShowEnviarPdfModal(false);
 
     if (enviarPdf) {
@@ -471,14 +490,21 @@ const gerarPDFBase64 = async () => {
             <select
               className={formaPagamento ? "resumo-select filled" : "resumo-select empty"}
               value={formaPagamento}
-              onChange={(e) => setFormaPagamento(e.target.value)}
+              onChange={(e) => {
+                setFormaPagamento(e.target.value);
+                if (formaPagamentoError) setFormaPagamentoError("");
+              }}
               required
               aria-label="Forma de pagamento"
+              aria-invalid={!!formaPagamentoError}
             >
               <option value="">Selecione</option>
               <option value="AVISTA">À vista</option>
               <option value="BOLETO">Boleto</option>
             </select>
+            {formaPagamentoError && (
+              <span className="resumo-field-error">{formaPagamentoError}</span>
+            )}
           </div>
 
           <div className="resumo-field">
