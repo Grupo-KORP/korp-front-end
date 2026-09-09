@@ -21,6 +21,8 @@ export default function ResumoPedido({ formData, onSaveDraft, onPedidoSaved, onB
   const [localEntrega, setLocalEntrega] = useState(entrega.endereco);
   const [cidadeEntrega, setCidadeEntrega] = useState(entrega.cidade);
   const [cepEntrega, setCepEntrega] = useState(entrega.cep);
+  const [formaPagamento, setFormaPagamento] = useState(formData?.formaPagamento || "");
+  const [formaPagamentoError, setFormaPagamentoError] = useState("");
   const [showEnviarPdfModal, setShowEnviarPdfModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -442,11 +444,29 @@ const gerarPDFBase64 = async () => {
   }
 };
 
+  const validarFormaPagamento = () => {
+    if (!formaPagamento || !String(formaPagamento).trim()) {
+      setFormaPagamentoError("Selecione a forma de pagamento.");
+      return false;
+    }
+
+    setFormaPagamentoError("");
+    return true;
+  };
+
   const adicionarPedido = () => {
+    if (!validarFormaPagamento()) {
+      return;
+    }
+
     setShowEnviarPdfModal(true);
   };
 
   const finalizarPedido = async (enviarPdf) => {
+    if (!validarFormaPagamento()) {
+      return;
+    }
+
     setShowEnviarPdfModal(false);
 
     if (enviarPdf) {
@@ -466,6 +486,30 @@ const gerarPDFBase64 = async () => {
         </div>
 
         <div className="resumo-scroll-content">
+
+          <div className="resumo-field">
+            <span className="resumo-label">
+              FORMA DE PAGAMENTO <span className="resumo-required">*</span>
+            </span>
+            <select
+              className={formaPagamento ? "resumo-select filled" : "resumo-select empty"}
+              value={formaPagamento}
+              onChange={(e) => {
+                setFormaPagamento(e.target.value);
+                if (formaPagamentoError) setFormaPagamentoError("");
+              }}
+              required
+              aria-label="Forma de pagamento"
+              aria-invalid={!!formaPagamentoError}
+            >
+              <option value="">Selecione</option>
+              <option value="AVISTA">À vista</option>
+              <option value="BOLETO">Boleto</option>
+            </select>
+            {formaPagamentoError && (
+              <span className="resumo-field-error">{formaPagamentoError}</span>
+            )}
+          </div>
 
           <div className="resumo-field">
             <span className="resumo-label">DISTRIBUIDOR RESPONSÁVEL</span>
@@ -538,7 +582,7 @@ const gerarPDFBase64 = async () => {
           <button className="btn-primary" onClick={adicionarPedido} disabled={loading}>
             {loading ? "Salvando..." : "Adicionar Pedido"}
           </button>
-          <button type="button" className="btn-secondary" onClick={onSaveDraft} disabled={loading}>
+          <button type="button" className="btn-secondary" onClick={() => onSaveDraft?.({ formaPagamento })} disabled={loading}>
             Salvar rascunho
           </button>
           <button type="button" className="btn-secondary btn-pdf-icon" onClick={gerarPDF}

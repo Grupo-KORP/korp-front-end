@@ -265,10 +265,33 @@
 .pedido-header-actions button { padding: 0 12px; }
 .pedido-drafts { background: var(--pedido-card-bg); border: 1px solid var(--pedido-border); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
 .pedido-drafts h2 { font-size: 15px; font-weight: 700; margin: 0 0 6px; }
+.pedido-drafts-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+.pedido-drafts-header h2 { margin: 0; }
+.pedido-drafts-close { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 32px; width: 32px; height: 32px; padding: 6px; border: none; border-radius: 6px; background: transparent; color: var(--pedido-text-muted); cursor: pointer; transition: background 0.15s, color 0.15s; }
+.pedido-drafts-close svg { width: 18px; height: 18px; }
+.pedido-drafts-close:hover { background: var(--pedido-card-soft-bg); color: var(--pedido-text-strong); }
 .pedido-drafts p, .pedido-draft span { font-size: 12px; color: var(--pedido-text-muted); }
-.pedido-draft { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 14px 0; border-top: 1px solid var(--pedido-border); margin-top: 12px; }
-.pedido-draft > div:first-child { display: grid; gap: 4px; min-width: 0; overflow-wrap: anywhere; }
+.pedido-drafts-list { --draft-row-height: 112px; max-height: calc(var(--draft-row-height) * 2); overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--pedido-scrollbar) transparent; scrollbar-gutter: stable; overscroll-behavior-y: contain; margin-top: 12px; padding: 0 6px; }
+.pedido-drafts-list::-webkit-scrollbar { width: 5px; }
+.pedido-drafts-list::-webkit-scrollbar-thumb { background: var(--pedido-scrollbar); border-radius: 10px; }
+.pedido-drafts-list:focus-visible { outline: 2px solid var(--pedido-blue); outline-offset: 2px; border-radius: 6px; }
+.pedido-draft { box-sizing: border-box; height: var(--draft-row-height); display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; border-top: 1px solid var(--pedido-border); }
+.pedido-draft > div:first-child { display: grid; flex: 1; gap: 4px; min-width: 0; }
+.pedido-draft > div:first-child > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pedido-draft > .pedido-header-actions { flex-shrink: 0; }
 .pedido-draft strong { font-size: 13px; }
-.pedido-draft .draft-delete { color: var(--pedido-danger-text); }
+.pedido-draft .pedido-header-actions { align-items: center; }
+.pedido-draft .draft-delete { position: relative; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 28px; width: 28px; height: 28px; padding: 5px; border: none; border-radius: 6px; background: transparent; color: var(--pedido-text-muted); cursor: pointer; transition: color 0.15s, background 0.15s; }
+.draft-delete svg { width: 15px; height: 15px; }
+.pedido-draft .draft-delete:hover, .pedido-draft .draft-delete:focus-visible { background: var(--pedido-card-soft-bg); color: var(--pedido-danger-text); }
+.pedido-draft .draft-delete-tooltip { position: absolute; top: calc(100% + 8px); right: 0; z-index: 2; padding: 7px 10px; border-radius: 6px; background: var(--pedido-text-strong); color: var(--pedido-card-bg); font-size: 11px; white-space: nowrap; pointer-events: none; visibility: hidden; }
+.draft-delete:hover .draft-delete-tooltip, .draft-delete:focus-visible .draft-delete-tooltip { visibility: visible; }
 .pedido-page button:disabled { opacity: .55; cursor: not-allowed; }
 .pedido-page button:focus-visible { outline: 2px solid var(--pedido-blue); outline-offset: 3px; }
+
+@media (max-width: 600px) {
+  .pedido-drafts-list { --draft-row-height: 156px; }
+  .pedido-draft { flex-direction: column; align-items: stretch; gap: 8px; }
+  .pedido-draft > div:first-child { flex: initial; }
+  .pedido-draft > .pedido-header-actions { justify-content: flex-end; }
+}

@@ -2,7 +2,7 @@ import NavbarVendedor from "../layout/NavbarVendedor";
 import "./PedidoPage.css";
 import PedidoForm from "../components/forms/PedidoForm";
 import ResumoPedido from "../components/pedido/ResumoPedido";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { draftStorageKey, readDrafts, saveDraft, removeDraft } from "../services/pedidoDrafts";
 import { useDarkMode } from "../hooks/useDarkMode";
@@ -13,6 +13,11 @@ export default function PedidoPage() {
     const [drafts, setDrafts] = useState([]);
     const [activeDraft, setActiveDraft] = useState(null);
     const [showDrafts, setShowDrafts] = useState(false);
+    const draftsButtonRef = useRef(null);
+    const fecharRascunhos = () => {
+        setShowDrafts(false);
+        draftsButtonRef.current?.focus();
+    };
     const [formVersion, setFormVersion] = useState(0);
     const [dirty, setDirty] = useState(false);
     const [busy, setBusy] = useState(false);
@@ -60,12 +65,15 @@ export default function PedidoPage() {
         });
     };
 
-    const salvarRascunho = () => {
+    const salvarRascunho = (resumoData = {}) => {
         try {
-            const { draft, drafts: next } = saveDraft(localStorage, getKey(), formData, activeDraft || undefined);
+            const { drafts: next } = saveDraft(localStorage, getKey(), { ...formData, ...resumoData }, activeDraft || undefined);
             setDrafts(next);
-            setActiveDraft(draft.id);
+            setFormData({ cliente: {}, distribuidor: {}, produtos: [], entrega: {} });
+            setActiveDraft(null);
+            setFormVersion(version => version + 1);
             setDirty(false);
+            setShowDrafts(false);
             toast.success("Rascunho salvo. Você pode continuar depois em Rascunhos.");
         } catch (error) { toast.error(`Não foi possível salvar o rascunho. ${error.message}`); }
     };
@@ -80,9 +88,10 @@ export default function PedidoPage() {
     };
 
     const excluirRascunho = (id) => {
-        if (!window.confirm("Excluir este rascunho? Esta ação não pode ser desfeita.")) return;
         try {
-            setDrafts(removeDraft(localStorage, getKey(), id));
+            const remaining = removeDraft(localStorage, getKey(), id);
+            setDrafts(remaining);
+            if (remaining.length === 0) setShowDrafts(false);
             if (id === activeDraft) { setActiveDraft(null); setDirty(true); }
             toast.success("Rascunho excluído.");
         } catch (error) { toast.error(error.message); }
@@ -109,16 +118,28 @@ export default function PedidoPage() {
                             <h1>{activeDraft ? "Editar rascunho" : "Novo Pedido"}</h1>
                           </div>
                           <div className="pedido-header-actions">
-                            {activeDraft && <button type="button" className="btn-secondary" disabled={busy} onClick={() => abrirPedido(null)}>Novo pedido</button>}
-                            <button type="button" className="btn-secondary" disabled={busy} aria-expanded={showDrafts} aria-controls="pedido-rascunhos" onClick={() => setShowDrafts(!showDrafts)}>
+                            {drafts.length > 0 && <button ref={draftsButtonRef} type="button" className="btn-secondary" disabled={busy} aria-expanded={showDrafts} aria-controls="pedido-rascunhos" onClick={() => setShowDrafts(!showDrafts)}>
                                 Rascunhos ({drafts.length})
-                            </button>
+                            </button>}
                           </div>
                         </div>
-                        {showDrafts && <section className="pedido-drafts" id="pedido-rascunhos" aria-label="Rascunhos salvos">
-                            <h2>Continue de onde parou</h2>
+                        {showDrafts && drafts.length > 0 && <section className="pedido-drafts" id="pedido-rascunhos" aria-label="Rascunhos salvos"
+                            onKeyDown={(event) => {
+                                if (event.key === "Escape") {
+                                    event.stopPropagation();
+                                    fecharRascunhos();
+                                }
+                            }}>
+                            <div className="pedido-drafts-header">
+                                <h2>Continue de onde parou</h2>
+                                <button type="button" className="pedido-drafts-close" aria-label="Fechar rascunhos" onClick={fecharRascunhos}>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+                                        <path d="m6 6 12 12M18 6 6 18" />
+                                    </svg>
+                                </button>
+                            </div>
                             <p>Salvos neste navegador para sua conta. Use Salvar rascunho para guardar as alterações.</p>
-                            {drafts.length === 0 && <p>Nenhum rascunho salvo ainda.</p>}
+                            <div className="pedido-drafts-list" role="region" aria-label="Lista de rascunhos" tabIndex={0}>
                             {drafts.map(draft => <article className="pedido-draft" key={draft.id}>
                                 <div>
                                     <strong>{draft.data.cliente.nomeFantasia || draft.data.cliente.razaoSocial || "Pedido sem cliente"}</strong>
@@ -127,9 +148,15 @@ export default function PedidoPage() {
                                 </div>
                                 <div className="pedido-header-actions">
                                     <button type="button" className="btn-secondary" disabled={busy} onClick={() => abrirPedido(draft)}>Continuar</button>
-                                    <button type="button" className="btn-secondary draft-delete" disabled={busy} onClick={() => excluirRascunho(draft.id)}>Excluir</button>
+                                    <button type="button" className="draft-delete" disabled={busy} aria-label="Apagar rascunho" onClick={() => excluirRascunho(draft.id)}>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                            <path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6M14 10v6" />
+                                        </svg>
+                                        <span className="draft-delete-tooltip" role="tooltip">Apagar rascunho</span>
+                                    </button>
                                 </div>
                             </article>)}
+                            </div>
                         </section>}
                         <PedidoForm
                             key={formVersion}
@@ -141,6 +168,7 @@ export default function PedidoPage() {
                     {/* DIREITA (FIXO) */}
                     <div className="resumo-area">
                         <ResumoPedido
+                            key={formVersion}
                             formData={formData}
                             onSaveDraft={salvarRascunho}
                             onPedidoSaved={pedidoSalvo}

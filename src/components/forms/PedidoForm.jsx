@@ -289,7 +289,10 @@ function ClienteSection({ onChange, initialData }) {
               .includes(normalizedSearch) ||
             String(cliente.razaoSocial || "")
               .toLowerCase()
-              .includes(normalizedSearch)
+              .includes(normalizedSearch) ||
+            getEntityContacts(cliente).some((contact) =>
+              String(contact.nome || "").toLowerCase().includes(normalizedSearch)
+            )
           );
         })
       : [];
@@ -330,7 +333,7 @@ function ClienteSection({ onChange, initialData }) {
 
     if (!search.trim()) {
       setSearchError(
-        "Informe um nome fantasia ou CNPJ para pesquisar clientes.",
+        "Informe nome fantasia, CNPJ ou contato para pesquisar clientes.",
       );
       setSearched(false);
       return;
@@ -413,7 +416,7 @@ function ClienteSection({ onChange, initialData }) {
               setShowModal(true);
             }}
           >
-            Adicionar cliente
+            Selecionar cliente
           </CnpjSearchButton>
           <span className="chevron">
             <ChevronIcon open={open} />
@@ -603,15 +606,21 @@ function ClienteSection({ onChange, initialData }) {
               <>
                 <h3 id="cliente-modal-title">Buscar Cliente</h3>
                 <p className="modal-hint">
-                  A pesquisa pode ser feita por Nome Fantasia ou CNPJ.
+                  Pesquise por nome fantasia, CNPJ ou nome do contato.
                 </p>
 
                 <div className="modal-search-row">
                   <input
                     type="text"
-                    placeholder="Nome fantasia ou CNPJ"
+                    placeholder="Nome fantasia, CNPJ ou contato"
                     value={search}
                     onChange={(e) => handleSearchChange(e.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+                        event.preventDefault();
+                        handleSearch();
+                      }
+                    }}
                     className="input-busca"
                   />
                   <button
@@ -876,7 +885,10 @@ function DistribuidorSection({ onChange, initialData }) {
               .includes(normalizedSearch) ||
             String(distribuidor.razaoSocial || "")
               .toLowerCase()
-              .includes(normalizedSearch)
+              .includes(normalizedSearch) ||
+            getEntityContacts(distribuidor).some((contact) =>
+              String(contact.nome || "").toLowerCase().includes(normalizedSearch)
+            )
           );
         })
       : [];
@@ -917,7 +929,7 @@ function DistribuidorSection({ onChange, initialData }) {
 
     if (!search.trim()) {
       setSearchError(
-        "Informe um nome fantasia ou CNPJ para pesquisar distribuidores.",
+        "Informe nome fantasia, CNPJ ou contato para pesquisar distribuidores.",
       );
       setSearched(false);
       return;
@@ -1000,7 +1012,7 @@ function DistribuidorSection({ onChange, initialData }) {
               setShowModal(true);
             }}
           >
-            Adicionar distribuidor
+            Selecionar distribuidor
           </CnpjSearchButton>
           <span className="chevron">
             <ChevronIcon open={open} />
@@ -1190,15 +1202,21 @@ function DistribuidorSection({ onChange, initialData }) {
               <>
                 <h3 id="distribuidor-modal-title">Buscar Distribuidor</h3>
                 <p className="modal-hint">
-                  A pesquisa pode ser feita por Nome Fantasia ou CNPJ.
+                  Pesquise por nome fantasia, CNPJ ou nome do contato.
                 </p>
 
                 <div className="modal-search-row">
                   <input
                     type="text"
-                    placeholder="Nome fantasia ou CNPJ"
+                    placeholder="Nome fantasia, CNPJ ou contato"
                     value={search}
                     onChange={(e) => handleSearchChange(e.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+                        event.preventDefault();
+                        handleSearch();
+                      }
+                    }}
                     className="input-busca"
                   />
                   <button
@@ -1372,7 +1390,7 @@ function DistribuidorSection({ onChange, initialData }) {
   );
 }
 
-function ProdutoSection({ onChange, initialData }) {
+function ProdutoSection({ onChange, initialData, onRemove }) {
   const [open, setOpen] = useState(true);
 
   const defaultValues = {
@@ -1521,13 +1539,29 @@ function ProdutoSection({ onChange, initialData }) {
           Dados do Produto
         </div>
         <div className="section-header-right">
+          {onRemove && (
+            <button
+              type="button"
+              className="btn-remover-produto"
+              aria-label="Remover produto"
+              onClick={(event) => {
+                event.stopPropagation();
+                onRemove();
+              }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6M14 10v6" />
+              </svg>
+              <span className="remover-produto-tooltip" role="tooltip">Remover produto</span>
+            </button>
+          )}
           <CnpjSearchButton
             onClick={(e) => {
               e.stopPropagation();
               setShowModal(true);
             }}
           >
-            Adicionar produto
+            Selecionar produto
           </CnpjSearchButton>
           <span className="chevron">
             <ChevronIcon open={open} />
@@ -1650,6 +1684,12 @@ function ProdutoSection({ onChange, initialData }) {
                 placeholder="Digite o nome do produto"
                 value={search}
                 onChange={(e) => handleSearchChange(e.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+                    event.preventDefault();
+                    handleSearch();
+                  }
+                }}
                 className="input-busca"
               />
               <button
@@ -1721,7 +1761,9 @@ function ProdutoSection({ onChange, initialData }) {
 export default function PedidoForm({ onFormChange, initialData }) {
   const [cliente, setCliente] = useState(initialData?.cliente || {});
   const [distribuidor, setDistribuidor] = useState(initialData?.distribuidor || {});
-  const [produtos, setProdutos] = useState(initialData?.produtos || []);
+  const [produtos, setProdutos] = useState(() =>
+    initialData?.produtos?.length ? initialData.produtos : [{}]
+  );
 
   const notify = (patch) => {
     onFormChange?.({ ...{ cliente, distribuidor, produtos }, ...patch });
@@ -1761,13 +1803,6 @@ export default function PedidoForm({ onFormChange, initialData }) {
 
   return (
     <div className="pedido-form">
-      <ClienteSection
-        initialData={cliente}
-        onChange={(d) => {
-          setCliente(d);
-          notify({ cliente: d });
-        }}
-      />
       <DistribuidorSection
         initialData={distribuidor}
         onChange={(d) => {
@@ -1775,22 +1810,20 @@ export default function PedidoForm({ onFormChange, initialData }) {
           notify({ distribuidor: d });
         }}
       />
+      <ClienteSection
+        initialData={cliente}
+        onChange={(d) => {
+          setCliente(d);
+          notify({ cliente: d });
+        }}
+      />
       {produtos.map((prod, index) => (
         <div key={index}>
           <ProdutoSection 
             initialData={prod}
             onChange={(d) => updateProduto(index, d)} 
+            onRemove={index > 0 ? () => removeProduto(index) : undefined}
           />
-
-          {index > 0 && (
-            <button
-              type="button"
-              className="btn-remover-produto"
-              onClick={() => removeProduto(index)}
-            >
-              Remover produto
-            </button>
-          )}
         </div>
       ))}
 
