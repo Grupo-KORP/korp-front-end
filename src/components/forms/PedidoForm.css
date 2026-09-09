@@ -369,14 +369,53 @@
 }
 
 .btn-remover-produto {
-  margin: 6px 0 6px;
-  padding: 4px 8px;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  padding: 5px;
   border: none;
-  background: var(--pedido-danger-bg, #fee2e2);
-  color: var(--pedido-danger-text, #dc2626);
-  border-radius: 8px;
+  background: transparent;
+  color: var(--pedido-text-muted, #64748b);
+  border-radius: 6px;
   cursor: pointer;
+  transition: color 0.15s, background 0.15s;
 }
+
+.btn-remover-produto svg { width: 15px; height: 15px; }
+
+.btn-remover-produto:hover,
+.btn-remover-produto:focus-visible {
+  background: var(--pedido-card-soft-bg, #f8fafc);
+  color: var(--pedido-danger-text, #dc2626);
+}
+
+.btn-remover-produto:focus-visible {
+  outline: 2px solid var(--pedido-blue, #0a3490);
+  outline-offset: 2px;
+}
+
+.remover-produto-tooltip {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 2;
+  padding: 7px 10px;
+  border-radius: 6px;
+  background: var(--pedido-text-strong, #0f2557);
+  color: var(--pedido-card-bg, #fff);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.btn-remover-produto:hover .remover-produto-tooltip,
+.btn-remover-produto:focus-visible .remover-produto-tooltip { visibility: visible; }
 
 .btn-salvar-cadastro {
   align-self: flex-end;
