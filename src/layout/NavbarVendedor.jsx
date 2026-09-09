@@ -66,10 +66,17 @@ export default function NavbarVendedor() {
       {showModal && (
         <div className="modal-overlay">
           <div className="modal">
-            <p>Deseja sair?</p>
+            <div className="modal-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 7V5.5C9 4.67 9.67 4 10.5 4H17.5C18.33 4 19 4.67 19 5.5V18.5C19 19.33 18.33 20 17.5 20H10.5C9.67 20 9 19.33 9 18.5V17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M14 12H4M4 12L7 9M4 12L7 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <h2>Deseja sair?</h2>
+            <p className="modal-subtitle">Você será desconectado da sua conta.</p>
             <div className="modal-buttons">
-              <button onClick={confirmLogout}>Sim</button>
-              <button onClick={() => setShowModal(false)}>Não</button>
+              <button className="modal-btn modal-btn-primary" onClick={confirmLogout}>Sair</button>
+              <button className="modal-btn modal-btn-secondary" onClick={() => setShowModal(false)}>Cancelar</button>
             </div>
           </div>
         </div>
