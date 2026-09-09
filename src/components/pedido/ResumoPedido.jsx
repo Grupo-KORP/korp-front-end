@@ -21,6 +21,7 @@ export default function ResumoPedido({ formData }) {
   const [localEntrega, setLocalEntrega] = useState(entrega.endereco);
   const [cidadeEntrega, setCidadeEntrega] = useState(entrega.cidade);
   const [cepEntrega, setCepEntrega] = useState(entrega.cep);
+  const [formaPagamento, setFormaPagamento] = useState("");
   const [showEnviarPdfModal, setShowEnviarPdfModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -462,6 +463,23 @@ const gerarPDFBase64 = async () => {
         </div>
 
         <div className="resumo-scroll-content">
+
+          <div className="resumo-field">
+            <span className="resumo-label">
+              FORMA DE PAGAMENTO <span className="resumo-required">*</span>
+            </span>
+            <select
+              className={formaPagamento ? "resumo-select filled" : "resumo-select empty"}
+              value={formaPagamento}
+              onChange={(e) => setFormaPagamento(e.target.value)}
+              required
+              aria-label="Forma de pagamento"
+            >
+              <option value="">Selecione</option>
+              <option value="AVISTA">À vista</option>
+              <option value="BOLETO">Boleto</option>
+            </select>
+          </div>
 
           <div className="resumo-field">
             <span className="resumo-label">DISTRIBUIDOR RESPONSÁVEL</span>

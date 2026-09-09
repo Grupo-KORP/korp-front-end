@@ -76,12 +76,22 @@
   color: var(--pedido-text-main, var(--app-input-text));
   background: var(--pedido-field-bg, var(--app-input-bg));
   appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
   padding-right: 28px;
   cursor: pointer;
   outline: none;
   width: 100%;
   box-sizing: border-box;
   transition: border-color 0.15s;
+  background-image: linear-gradient(45deg, transparent 50%, #64748b 50%), linear-gradient(135deg, #64748b 50%, transparent 50%);
+  background-position: calc(100% - 14px) calc(50% - 2px), calc(100% - 9px) calc(50% - 2px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.resumo-field select.empty {
+  color: var(--pedido-text-soft, #8a96a7);
 }
 
 .resumo-field select:focus {
