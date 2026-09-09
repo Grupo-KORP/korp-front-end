@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import bgLogin from './../assets/bg-azul-preto.png'
 import { solicitarRecuperacaoSenha } from '../services/api'
+import '../styles/base-reset.css'
+import './PaginaRecuperarSenha.css'
 
 const IcoRaio = ({ tamanho = 22 }) => (
   <svg width={tamanho} height={tamanho} viewBox="0 0 24 24" fill="none"

@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
+import "../styles/base-reset.css";
+import "./VendedoresPage.css";
 import Alert from "../components/ui/Alert";
 import { api, verificarSeFinanceiroEAdmin, verificarToken } from "../services/api.js";
 import NavbarVendedor from "../layout/NavbarFinanceiro.jsx";
