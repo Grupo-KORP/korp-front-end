@@ -1757,16 +1757,16 @@ export default function PedidoForm({ onFormChange }) {
 
   return (
     <div className="pedido-form">
-      <ClienteSection
-        onChange={(d) => {
-          setCliente(d);
-          notify({ cliente: d });
-        }}
-      />
       <DistribuidorSection
         onChange={(d) => {
           setDistribuidor(d);
           notify({ distribuidor: d });
+        }}
+      />
+      <ClienteSection
+        onChange={(d) => {
+          setCliente(d);
+          notify({ cliente: d });
         }}
       />
       {produtos.map((prod, index) => (
