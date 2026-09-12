@@ -3,7 +3,6 @@ import NavbarFinanceiro from "../layout/NavbarFinanceiro.jsx";
 import { useDarkMode } from "../hooks/useDarkMode.jsx";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { verificarSeFinanceiroEAdmin, verificarToken } from "../services/api.js";
 import {
   ResponsiveContainer,
   LineChart,

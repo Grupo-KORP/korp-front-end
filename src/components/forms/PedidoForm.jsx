@@ -197,7 +197,7 @@ const readonlyInputProps = {
   className: "readonly",
 };
 
-function ClienteSection({ onChange }) {
+function ClienteSection({ onChange, initialData }) {
   const [open, setOpen] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [data, setData] = useState({
@@ -212,6 +212,7 @@ function ClienteSection({ onChange }) {
     uf: "",
     contato: "",
     email: "",
+    ...initialData,
   });
   const [search, setSearch] = useState("");
   const [newCadastroCnpj, setNewCadastroCnpj] = useState("");
@@ -288,7 +289,10 @@ function ClienteSection({ onChange }) {
               .includes(normalizedSearch) ||
             String(cliente.razaoSocial || "")
               .toLowerCase()
-              .includes(normalizedSearch)
+              .includes(normalizedSearch) ||
+            getEntityContacts(cliente).some((contact) =>
+              String(contact.nome || "").toLowerCase().includes(normalizedSearch)
+            )
           );
         })
       : [];
@@ -329,7 +333,7 @@ function ClienteSection({ onChange }) {
 
     if (!search.trim()) {
       setSearchError(
-        "Informe um nome fantasia ou CNPJ para pesquisar clientes.",
+        "Informe nome fantasia, CNPJ ou contato para pesquisar clientes.",
       );
       setSearched(false);
       return;
@@ -412,7 +416,7 @@ function ClienteSection({ onChange }) {
               setShowModal(true);
             }}
           >
-            Adicionar cliente
+            Selecionar cliente
           </CnpjSearchButton>
           <span className="chevron">
             <ChevronIcon open={open} />
@@ -424,9 +428,11 @@ function ClienteSection({ onChange }) {
         <div className="section-body">
           <div className="form-row">
             <div className="form-group grow-1">
-              <label>NOME FANTASIA</label>
+              <label>NOME FANTASIA<span className="pedido-required" aria-hidden="true">*</span></label>
               <input
                 name="nomeFantasia"
+                required
+                aria-required="true"
                 value={data.nomeFantasia}
                 onChange={handle}
                 placeholder="Ex: Tech Solutions"
@@ -602,15 +608,21 @@ function ClienteSection({ onChange }) {
               <>
                 <h3 id="cliente-modal-title">Buscar Cliente</h3>
                 <p className="modal-hint">
-                  A pesquisa pode ser feita por Nome Fantasia ou CNPJ.
+                  Pesquise por nome fantasia, CNPJ ou nome do contato.
                 </p>
 
                 <div className="modal-search-row">
                   <input
                     type="text"
-                    placeholder="Nome fantasia ou CNPJ"
+                    placeholder="Nome fantasia, CNPJ ou contato"
                     value={search}
                     onChange={(e) => handleSearchChange(e.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+                        event.preventDefault();
+                        handleSearch();
+                      }
+                    }}
                     className="input-busca"
                   />
                   <button
@@ -781,7 +793,7 @@ function ClienteSection({ onChange }) {
   );
 }
 
-function DistribuidorSection({ onChange }) {
+function DistribuidorSection({ onChange, initialData }) {
   const [open, setOpen] = useState(true);
   const [data, setData] = useState({
     nomeFantasia: "",
@@ -795,6 +807,7 @@ function DistribuidorSection({ onChange }) {
     uf: "",
     contato: "",
     email: "",
+    ...initialData,
   });
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState("");
@@ -874,7 +887,10 @@ function DistribuidorSection({ onChange }) {
               .includes(normalizedSearch) ||
             String(distribuidor.razaoSocial || "")
               .toLowerCase()
-              .includes(normalizedSearch)
+              .includes(normalizedSearch) ||
+            getEntityContacts(distribuidor).some((contact) =>
+              String(contact.nome || "").toLowerCase().includes(normalizedSearch)
+            )
           );
         })
       : [];
@@ -915,7 +931,7 @@ function DistribuidorSection({ onChange }) {
 
     if (!search.trim()) {
       setSearchError(
-        "Informe um nome fantasia ou CNPJ para pesquisar distribuidores.",
+        "Informe nome fantasia, CNPJ ou contato para pesquisar distribuidores.",
       );
       setSearched(false);
       return;
@@ -998,7 +1014,7 @@ function DistribuidorSection({ onChange }) {
               setShowModal(true);
             }}
           >
-            Adicionar distribuidor
+            Selecionar distribuidor
           </CnpjSearchButton>
           <span className="chevron">
             <ChevronIcon open={open} />
@@ -1010,9 +1026,11 @@ function DistribuidorSection({ onChange }) {
         <div className="section-body">
           <div className="form-row">
             <div className="form-group grow-1">
-              <label>NOME FANTASIA</label>
+              <label>NOME FANTASIA<span className="pedido-required" aria-hidden="true">*</span></label>
               <input
                 name="nomeFantasia"
+                required
+                aria-required="true"
                 value={data.nomeFantasia}
                 onChange={handle}
                 placeholder="Ex: Tech Solutions"
@@ -1188,15 +1206,21 @@ function DistribuidorSection({ onChange }) {
               <>
                 <h3 id="distribuidor-modal-title">Buscar Distribuidor</h3>
                 <p className="modal-hint">
-                  A pesquisa pode ser feita por Nome Fantasia ou CNPJ.
+                  Pesquise por nome fantasia, CNPJ ou nome do contato.
                 </p>
 
                 <div className="modal-search-row">
                   <input
                     type="text"
-                    placeholder="Nome fantasia ou CNPJ"
+                    placeholder="Nome fantasia, CNPJ ou contato"
                     value={search}
                     onChange={(e) => handleSearchChange(e.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+                        event.preventDefault();
+                        handleSearch();
+                      }
+                    }}
                     className="input-busca"
                   />
                   <button
@@ -1370,7 +1394,7 @@ function DistribuidorSection({ onChange }) {
   );
 }
 
-function ProdutoSection({ onChange, initialData }) {
+function ProdutoSection({ onChange, initialData, onRemove }) {
   const [open, setOpen] = useState(true);
 
   const defaultValues = {
@@ -1423,6 +1447,9 @@ function ProdutoSection({ onChange, initialData }) {
 
   const handle = (e) => {
     const field = e.target.name;
+    if (["quantidade", "valorUnitario", "unitFaturado"].includes(field) && Number(e.target.value) < 0) {
+      return;
+    }
     let updated = { ...data, [field]: e.target.value };
 
     const qty = parseFloat(updated.quantidade) || 0;
@@ -1519,13 +1546,29 @@ function ProdutoSection({ onChange, initialData }) {
           Dados do Produto
         </div>
         <div className="section-header-right">
+          {onRemove && (
+            <button
+              type="button"
+              className="btn-remover-produto"
+              aria-label="Remover produto"
+              onClick={(event) => {
+                event.stopPropagation();
+                onRemove();
+              }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6M14 10v6" />
+              </svg>
+              <span className="remover-produto-tooltip" role="tooltip">Remover produto</span>
+            </button>
+          )}
           <CnpjSearchButton
             onClick={(e) => {
               e.stopPropagation();
               setShowModal(true);
             }}
           >
-            Adicionar produto
+            Selecionar produto
           </CnpjSearchButton>
           <span className="chevron">
             <ChevronIcon open={open} />
@@ -1537,9 +1580,11 @@ function ProdutoSection({ onChange, initialData }) {
         <div className="section-body">
           <div className="form-row">
             <div className="form-group grow-2">
-              <label>DESCRICAO DO PRODUTO</label>
+              <label>DESCRICAO DO PRODUTO<span className="pedido-required" aria-hidden="true">*</span></label>
               <input
                 name="descricao"
+                required
+                aria-required="true"
                 value={data.descricao || ""}
                 onChange={handle}
                 placeholder="Ex: Pacote Office 365"
@@ -1569,9 +1614,12 @@ function ProdutoSection({ onChange, initialData }) {
               />
             </div>
             <div className="form-group grow-1">
-              <label>QUANTIDADE</label>
+              <label>QUANTIDADE<span className="pedido-required" aria-hidden="true">*</span></label>
               <input
                 name="quantidade"
+                min="1"
+                required
+                aria-required="true"
                 type="number"
                 value={data.quantidade || ""}
                 onChange={handle}
@@ -1579,9 +1627,12 @@ function ProdutoSection({ onChange, initialData }) {
               />
             </div>
             <div className="form-group grow-1">
-              <label>VALOR UNITARIO</label>
+              <label>VALOR UNITARIO<span className="pedido-required" aria-hidden="true">*</span></label>
               <input
                 name="valorUnitario"
+                min="0"
+                required
+                aria-required="true"
                 type="number"
                 step="0.01"
                 value={data.valorUnitario || ""}
@@ -1601,9 +1652,12 @@ function ProdutoSection({ onChange, initialData }) {
 
           <div className="form-row">
             <div className="form-group grow-1">
-              <label>VALOR UNIT. FATURADO</label>
+              <label>VALOR UNIT. FATURADO<span className="pedido-required" aria-hidden="true">*</span></label>
               <input
                 name="unitFaturado"
+                min="0"
+                required
+                aria-required="true"
                 type="number"
                 step="0.01"
                 value={data.unitFaturado || ""}
@@ -1648,6 +1702,12 @@ function ProdutoSection({ onChange, initialData }) {
                 placeholder="Digite o nome do produto"
                 value={search}
                 onChange={(e) => handleSearchChange(e.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+                    event.preventDefault();
+                    handleSearch();
+                  }
+                }}
                 className="input-busca"
               />
               <button
@@ -1716,10 +1776,12 @@ function ProdutoSection({ onChange, initialData }) {
   );
 }
 
-export default function PedidoForm({ onFormChange }) {
-  const [cliente, setCliente] = useState({});
-  const [distribuidor, setDistribuidor] = useState({});
-  const [produtos, setProdutos] = useState([]);
+export default function PedidoForm({ onFormChange, initialData }) {
+  const [cliente, setCliente] = useState(initialData?.cliente || {});
+  const [distribuidor, setDistribuidor] = useState(initialData?.distribuidor || {});
+  const [produtos, setProdutos] = useState(() =>
+    initialData?.produtos?.length ? initialData.produtos : [{}]
+  );
 
   const notify = (patch) => {
     onFormChange?.({ ...{ cliente, distribuidor, produtos }, ...patch });
@@ -1733,7 +1795,7 @@ export default function PedidoForm({ onFormChange }) {
   };
 
   const addProduto = () => {
-    setProdutos([
+    const novos = [
       ...produtos,
       {
         descricao: "",
@@ -1746,7 +1808,9 @@ export default function PedidoForm({ onFormChange }) {
         totalFaturado: "",
         fkProduto: "",
       },
-    ]);
+    ];
+    setProdutos(novos);
+    notify({ produtos: novos });
   };
 
   const removeProduto = (index) => {
@@ -1757,13 +1821,16 @@ export default function PedidoForm({ onFormChange }) {
 
   return (
     <div className="pedido-form">
+      <p className="pedido-form-hint">* Campos obrigatórios para adicionar o pedido. Rascunhos podem ficar incompletos.</p>
       <DistribuidorSection
+        initialData={distribuidor}
         onChange={(d) => {
           setDistribuidor(d);
           notify({ distribuidor: d });
         }}
       />
       <ClienteSection
+        initialData={cliente}
         onChange={(d) => {
           setCliente(d);
           notify({ cliente: d });
@@ -1774,17 +1841,8 @@ export default function PedidoForm({ onFormChange }) {
           <ProdutoSection 
             initialData={prod}
             onChange={(d) => updateProduto(index, d)} 
+            onRemove={index > 0 ? () => removeProduto(index) : undefined}
           />
-
-          {index > 0 && (
-            <button
-              type="button"
-              className="btn-remover-produto"
-              onClick={() => removeProduto(index)}
-            >
-              Remover produto
-            </button>
-          )}
         </div>
       ))}
 
