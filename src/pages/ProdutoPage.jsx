@@ -7,7 +7,7 @@ import "../components/catalog/CatalogPage.css";
 
 const PAGE_SIZE = 5;
 
-const emptyForm = { nome: "" };
+const emptyForm = { nome: "", pn: "" };
 
 // ─── Paginação ─────────────────────────────────────────────────────────────────
 function Pagination({ currentPage, totalPages, onPageChange }) {
@@ -82,8 +82,8 @@ export default function ProdutoPage() {
   const [isModalOpen,  setIsModalOpen]  = useState(false);
   const [modalMode,    setModalMode]    = useState("create"); // "create" | "edit"
   const [editingId,    setEditingId]    = useState(null);
-  const [originalName, setOriginalName] = useState("");
-  const [dirty,        setDirty]        = useState(false);
+  const [originalForm, setOriginalForm] = useState(emptyForm);
+  const dirty = Object.keys(emptyForm).some((campo) => form[campo].trim() !== originalForm[campo].trim());
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting,     setDeleting]     = useState(false);
 
@@ -154,9 +154,7 @@ export default function ProdutoPage() {
       delete next[name];
       return next;
     });
-    const trimmed = value.trim();
-    setDirty(trimmed !== "" && trimmed !== originalName);
-  }, [originalName]);
+  }, []);
 
   function validate() {
     const errs = {};
@@ -169,7 +167,7 @@ export default function ProdutoPage() {
   async function handleSubmit() {
     if (!validate() || !dirty) return;
 
-    const payload = { nome: form.nome };
+    const payload = { nome: form.nome.trim(), pn: form.pn.trim() };
     setLoading(true);
     try {
       if (modalMode === "edit" && editingId) {
@@ -211,33 +209,32 @@ export default function ProdutoPage() {
   const openCreateModal = () => {
     setModalMode("create");
     setEditingId(null);
-    setOriginalName("");
+    setOriginalForm(emptyForm);
     setForm(emptyForm);
     setErrors({});
-    setDirty(false);
     setIsModalOpen(true);
   };
 
   const openEditModal = (produto) => {
     setModalMode("edit");
     setEditingId(produto.idProduto);
-    setOriginalName(produto.nome);
-    setForm({ nome: produto.nome });
+    const valores = { nome: produto.nome || "", pn: produto.pn || "" };
+    setOriginalForm(valores);
+    setForm(valores);
     setErrors({});
-    setDirty(false);
     setIsModalOpen(true);
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
-    setDirty(false);
     setEditingId(null);
-    setOriginalName("");
+    setOriginalForm(emptyForm);
     setErrors({});
   };
 
   const fields = [
     { name: "nome", label: "Nome do Produto", placeholder: "Ex: Pacote Office 365", value: form.nome, error: errors.nome },
+    { name: "pn", label: "P/N (Part Number)", placeholder: "Ex: ABC-001", value: form.pn, error: errors.pn },
   ];
 
   return (
@@ -303,6 +300,7 @@ export default function ProdutoPage() {
                     <div>
                       <strong>{produto.nome}</strong>
                       {produto.codigoProduto && <small>{produto.codigoProduto}</small>}
+                      <small>P/N: {produto.pn || "—"}</small>
                     </div>
                   </div>
 

@@ -8,10 +8,6 @@ const REGRAS_SENHA = [
   { id: "especial", label: "Um caractere especial",  validar: (s) => /[^A-Za-z0-9]/.test(s) },
 ];
 
-function validarSenhaAtual(v) {
-  if (!v.trim()) return "Informe sua senha atual.";
-  return "";
-}
 function validarNovaSenha(v) {
   if (!v) return "Informe a nova senha.";
   if (!REGRAS_SENHA.every((r) => r.validar(v))) return "A senha não atende aos requisitos abaixo.";
@@ -149,21 +145,18 @@ function IndicadorForca({ senha }) {
 }
 
 export default function ModalAlterarSenha({ aoConfirmar, aoFechar, obrigatorio = false }) {
-  const [senhaAtual,       setSenhaAtual]       = useState("");
   const [novaSenha,        setNovaSenha]        = useState("");
   const [confirmacaoSenha, setConfirmacaoSenha] = useState("");
 
-  const [erroAtual,       setErroAtual]       = useState("");
   const [erroNova,        setErroNova]        = useState("");
   const [erroConfirmacao, setErroConfirmacao] = useState("");
 
-  const [visivelAtual,       setVisivelAtual]       = useState(false);
   const [visivelNova,        setVisivelNova]        = useState(false);
   const [visivelConfirmacao, setVisivelConfirmacao] = useState(false);
 
   const senhaForte    = REGRAS_SENHA.every((r) => r.validar(novaSenha));
   const confirmacaoOk = novaSenha === confirmacaoSenha && confirmacaoSenha.length > 0;
-  const podeSalvar    = senhaAtual.trim() && senhaForte && confirmacaoOk;
+  const podeSalvar    = senhaForte && confirmacaoOk;
   const temPendencia  = !podeSalvar;
 
   useEffect(() => {
@@ -181,10 +174,9 @@ export default function ModalAlterarSenha({ aoConfirmar, aoFechar, obrigatorio =
 }, [obrigatorio, temPendencia, aoFechar]);
 
   const dispararErros = useCallback(() => {
-    setErroAtual(validarSenhaAtual(senhaAtual));
     setErroNova(validarNovaSenha(novaSenha));
     setErroConfirmacao(validarConfirmacao(novaSenha, confirmacaoSenha));
-  }, [senhaAtual, novaSenha, confirmacaoSenha]);
+  }, [novaSenha, confirmacaoSenha]);
 
   const tentarFechar = () => {
   if (obrigatorio) return;   
@@ -199,7 +191,7 @@ const handleSubmit = async () => {
 
   setCarregando(true);
   try {
-    await aoConfirmar?.({ senhaAtual, novaSenha });
+    await aoConfirmar?.({ novaSenha });
   } finally {
     setCarregando(false);
   }
@@ -256,18 +248,6 @@ const handleSubmit = async () => {
 
         {/* ── Corpo ── */}
         <div className="px-5 py-4 flex flex-col gap-3">
-          <CampoSenha
-            id="senha-atual"
-            label="Senha atual"
-            valor={senhaAtual}
-            onChange={setSenhaAtual}
-            onBlur={() => setErroAtual(validarSenhaAtual(senhaAtual))}
-            erro={erroAtual}
-            visivel={visivelAtual}
-            onToggleVisivel={() => setVisivelAtual((p) => !p)}
-            placeholder="Digite sua senha atual"
-          />
-
           <CampoSenha
             id="nova-senha"
             label="Nova senha"

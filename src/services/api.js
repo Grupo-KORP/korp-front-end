@@ -124,9 +124,8 @@ export async function verificarPrimeiroAcesso() {
 
 // ─── Troca de Senha ───────────────────────────────────────────────────────
 
-export async function alterarSenha({ senhaAtual, novaSenha }) {
+export async function alterarSenha({ novaSenha }) {
   const { data } = await api.post(`/usuario/trocar-senha-primeiro-acesso`, {
-    senhaAtual,
     novaSenha,
   });
   return data;

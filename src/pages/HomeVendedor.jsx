@@ -246,9 +246,9 @@ export default function HomeVendedor() {
       .catch(() => setPrimeiroAcesso(false));
   }, [navigate]);
 
-  async function handleAlterarSenha({ senhaAtual, novaSenha }) {
+  async function handleAlterarSenha({ novaSenha }) {
     try {
-      await alterarSenha({ senhaAtual, novaSenha });
+      await alterarSenha({ novaSenha });
       toast.success("Senha alterada com sucesso!");
       setPrimeiroAcesso(false);
     } catch (err) {
