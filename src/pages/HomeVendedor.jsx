@@ -1,19 +1,21 @@
-﻿import React, { useState, useRef, useEffect } from "react";
+﻿import React, { useState, useEffect, useMemo, useRef } from "react";
 import "../styles/base-reset.css";
 import "./HomeVendedor.css";
 import Navbar from "../layout/NavbarVendedor";
 import { useDarkMode } from "../hooks/useDarkMode";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   alterarSenha,
   buscarPainelVendedor,
+  buscarDetalheVenda,
   verificarPrimeiroAcesso,
 } from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 import ModalDetalheVenda from "../components/modal/Modaldetalhevenda";
 import DatePickerCalendar from "../components/ui/DatePickerCalendar";
 import ModalAlterarSenha from "../components/modal/ModalAlterarSenha";
+import Pagination from "../components/pagination/pagination";
 
 const MESES = [
   "Janeiro", "Fevereiro", "Março", "Abril",
@@ -22,9 +24,24 @@ const MESES = [
 ];
 
 const HOJE = new Date();
-const MES_ATUAL = MESES[HOJE.getMonth()];
 const ANO_ATUAL = HOJE.getFullYear();
+const MES_ATUAL_NUM = HOJE.getMonth() + 1;
 const DIA_ATUAL = HOJE.getDate();
+
+const TAMANHO_PAGINA = 5;
+const TAMANHO_PAGINA_PDF = 100;
+
+/* Valor do card na URL (?status=liberadas) -> valor esperado pela API */
+const STATUS_API = {
+  vendas: "TODAS",
+  liberadas: "LIBERADAS",
+  pendentes: "PENDENTES",
+};
+
+const inteiroOuNulo = (valor) => {
+  const n = parseInt(valor, 10);
+  return Number.isNaN(n) ? null : n;
+};
 
 const formatarMoedaBR = (valor) =>
   Number(valor || 0).toLocaleString("pt-BR", {
@@ -52,36 +69,30 @@ const normalizarProduto = (produto = {}) => ({
 });
 
 const normalizarPainelVendedor = (painel) => {
-  if (!painel) return null;
+  const resumo = painel?.resumo || {};
+  const pagina = painel?.vendas || {};
 
-  const vendas = (painel.vendas || []).map((venda) => ({
+  const vendas = (pagina.content || []).map((venda) => ({
     ...venda,
     status: venda.tipo === "liberada" && String(venda.status || "").toUpperCase().startsWith("PAGO")
       ? String(venda.status).replace(/^PAGO/i, "LIBERADA")
       : venda.status,
     comissao: venda.comissao || formatarValorMoeda(venda.valorComissao),
     parcelas: (venda.parcelas || []).map(normalizarParcela),
+    parcelasDaVenda: (venda.parcelasDaVenda || []).map(normalizarParcela),
   }));
 
-  const detalhesVenda = Object.fromEntries(
-    Object.entries(painel.detalhesVenda || {}).map(([chave, detalhe]) => [
-      chave,
-      {
-        ...detalhe,
-        produto: normalizarProduto(detalhe?.produto),
-      },
-    ]),
-  );
-
   return {
-    totalVendas: painel.totalVendas || 0,
-    comissoesLiberadas: painel.comissoesLiberadas || 0,
-    pagamentosPendentes: painel.pagamentosPendentes || 0,
-    projecao: formatarValorMoeda(painel.projecao),
-    parcelas: painel.parcelas || 0,
-    tendencia: painel.tendencia || "0%",
+    totalVendas: resumo.totalVendas || 0,
+    comissoesLiberadas: resumo.comissoesLiberadas || 0,
+    pagamentosPendentes: resumo.pagamentosPendentes || 0,
+    projecao: formatarValorMoeda(resumo.projecao),
+    parcelas: resumo.parcelas || 0,
+    tendencia: resumo.tendencia || "0%",
+    parcelasLiberadas: (painel?.parcelasLiberadas || []).map(normalizarParcela),
     vendas,
-    detalhesVenda,
+    totalPages: pagina.totalPages ?? 1,
+    totalElements: pagina.totalElements ?? 0,
   };
 };
 
@@ -201,32 +212,54 @@ export default function HomeVendedor() {
   const { darkMode: modoEscuro } = useDarkMode();
   const { usuario, initialized, isAuthenticated, hasRole } = useAuth();
   const navigate = useNavigate();
-  const [anoSelecionado, setAnoSelecionado] = useState(ANO_ATUAL);
-  const [mesSelecionado, setMesSelecionado] = useState(MES_ATUAL);
-  const [diaSelecionado, setDiaSelecionado] = useState(DIA_ATUAL);
-  const [tipoFiltroPeriodo, setTipoFiltroPeriodo] = useState("day");
-  const [mostrarMeses, setMostrarMeses] = useState(false);
-  const [selecao, setSelecao] = useState(null);
-  const [cardAtivo, setCardAtivo] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [ocultarProjecao, setOcultarProjecao] = useState(false);
   const [vendaNoModal, setVendaNoModal] = useState(null);
+  const [abrindoVendaId, setAbrindoVendaId] = useState(null);
   const [painelVendedor, setPainelVendedor] = useState(null);
+  const [carregandoPainel, setCarregandoPainel] = useState(false);
+  const [gerandoPdf, setGerandoPdf] = useState(false);
   const [atualizacaoPainel, setAtualizacaoPainel] = useState(0);
   const [primeiroAcesso, setPrimeiroAcesso] = useState(null);
 
-  const refDropdown = useRef(null);
   const toastShown = useRef(false);
 
-  useEffect(() => {
-    function fecharAoClicarFora(e) {
-      if (refDropdown.current && !refDropdown.current.contains(e.target)) {
-        setMostrarMeses(false);
-      }
-    }
-    document.addEventListener("mousedown", fecharAoClicarFora);
-    return () => document.removeEventListener("mousedown", fecharAoClicarFora);
-  }, []);
+  /* ── Estado vindo da URL: ?status=&pagina=&ano=&mes=&dia= ── */
+  const statusParam = searchParams.get("status");
+  const cardAtivo = Object.hasOwn(STATUS_API, statusParam) ? statusParam : null;
+  const paginaAtual = Math.max(inteiroOuNulo(searchParams.get("pagina")) ?? 1, 1);
+  const mesParam = inteiroOuNulo(searchParams.get("mes"));
+  const anoParam = inteiroOuNulo(searchParams.get("ano"));
+  const diaParam = inteiroOuNulo(searchParams.get("dia"));
 
+  /* Sem mês na URL: dia de hoje (comportamento padrão do painel) */
+  const periodo = useMemo(() => {
+    if (mesParam !== null && mesParam >= 1 && mesParam <= 12) {
+      const ano = anoParam ?? ANO_ATUAL;
+      const diasNoMes = new Date(ano, mesParam, 0).getDate();
+      const dia = diaParam !== null && diaParam >= 1 && diaParam <= diasNoMes ? diaParam : null;
+      return { ano, mes: mesParam, dia, personalizado: true };
+    }
+    return { ano: ANO_ATUAL, mes: MES_ATUAL_NUM, dia: DIA_ATUAL, personalizado: false };
+  }, [mesParam, anoParam, diaParam]);
+
+  const mesSelecionado = MESES[periodo.mes - 1];
+  const selecao = periodo.personalizado
+    ? { type: periodo.dia ? "day" : "month", y: periodo.ano, m: periodo.mes - 1, d: periodo.dia }
+    : null;
+
+  /* patch: chave -> valor; null/undefined/"" remove o param da URL */
+  function atualizarParams(patch) {
+    const proximos = new URLSearchParams(searchParams);
+    Object.entries(patch).forEach(([chave, valor]) => {
+      if (valor === null || valor === undefined || valor === "") proximos.delete(chave);
+      else proximos.set(chave, String(valor));
+    });
+    setSearchParams(proximos, { replace: true });
+  }
+
+  /* ── Autenticação / primeiro acesso ── */
   useEffect(() => {
     if (toastShown.current) return;
     if (!initialized) return;
@@ -257,157 +290,144 @@ export default function HomeVendedor() {
     }
   }
 
+  /* ── Busca do painel: recarrega sempre que a URL (filtros/página) muda ── */
   useEffect(() => {
     if (!initialized || !isAuthenticated || !hasRole("ROLE_VEND")) return;
 
     let ativo = true;
-    const mes = MESES.indexOf(mesSelecionado) + 1;
-    const filtroPeriodo = {
-      ano: anoSelecionado,
-      mes,
-      ...(tipoFiltroPeriodo === "day" ? { dia: diaSelecionado } : {}),
-    };
+    setCarregandoPainel(true);
 
-    async function carregarPainel() {
-      try {
-        const response = await buscarPainelVendedor(filtroPeriodo);
-        if (ativo) setPainelVendedor(normalizarPainelVendedor(response));
-      } catch (error) {
+    buscarPainelVendedor({
+      ano: periodo.ano,
+      mes: periodo.mes,
+      dia: periodo.dia,
+      status: STATUS_API[cardAtivo ?? "vendas"],
+      pagina: paginaAtual,
+      tamanho: TAMANHO_PAGINA,
+    })
+      .then((response) => {
+        if (!ativo) return;
+        const painel = normalizarPainelVendedor(response);
+
+        /* página da URL além do fim (URL editada, item removido...): volta para a última */
+        const ultimaPagina = Math.max(painel.totalPages, 1);
+        if (paginaAtual > ultimaPagina) {
+          atualizarParams({ pagina: ultimaPagina > 1 ? ultimaPagina : null });
+          return;
+        }
+
+        setPainelVendedor(painel);
+      })
+      .catch((error) => {
         if (!ativo) return;
         setPainelVendedor(normalizarPainelVendedor(null));
         toast.error(error.message || "Não foi possível carregar o painel do vendedor.");
-      }
-    }
-
-    carregarPainel();
+      })
+      .finally(() => {
+        if (ativo) setCarregandoPainel(false);
+      });
 
     return () => {
       ativo = false;
     };
-  }, [initialized, isAuthenticated, hasRole, diaSelecionado, mesSelecionado, anoSelecionado, tipoFiltroPeriodo, atualizacaoPainel]);
+    // atualizarParams muda a cada render; só as chaves da URL disparam a busca
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialized, isAuthenticated, hasRole, periodo.ano, periodo.mes, periodo.dia, cardAtivo, paginaAtual, atualizacaoPainel]);
 
-  const dados = painelVendedor || {
-    totalVendas: 0,
-    comissoesLiberadas: 0,
-    pagamentosPendentes: 0,
-    projecao: formatarMoedaBR(0),
-    parcelas: 0,
-    tendencia: "0%",
-    vendas: [],
-    detalhesVenda: {},
-  };
-
-  const vendasFiltradas = dados.vendas.filter((v) => {
-    if (cardAtivo === "liberadas") return v.tipo === "liberada" || v.tipo === "paga";
-    if (cardAtivo === "pendentes") return v.tipo === "pendente";
-    return true;
-  });
+  const dados = painelVendedor || normalizarPainelVendedor(null);
 
   const tituloTabela =
     cardAtivo === "liberadas" ? "Comissões Liberadas"
       : cardAtivo === "pendentes" ? "Pagamentos Pendentes"
         : "Todas as Vendas";
 
-  const vendasExibidas = vendasFiltradas;
-
-  const todasParcelas = dados.vendas
-    .filter((v) => v.tipo === "liberada" || v.tipo === "paga")
-    .flatMap((v) => v.parcelas);
-
   const tendenciaPositiva = dados.tendencia.startsWith("+");
-  const periodoSelecionado = tipoFiltroPeriodo === "day" && diaSelecionado
-    ? `${diaSelecionado} de ${mesSelecionado} de ${anoSelecionado}`
-    : `${mesSelecionado} de ${anoSelecionado}`;
+  const periodoSelecionado = periodo.dia
+    ? `${periodo.dia} de ${mesSelecionado} de ${periodo.ano}`
+    : `${mesSelecionado} de ${periodo.ano}`;
   const periodoArquivo = periodoSelecionado
     .toLowerCase()
     .replace(/\s+de\s+/g, "-")
     .replace(/\s+/g, "-");
 
-  async function gerarPDF() {
-    const pdfHtml = `
-      <html>
-        <head>
-          <title>Relatório de Comissões – ${periodoSelecionado}</title>
-          <style>
-            * { box-sizing: border-box; }
-            body { margin: 0; background: #ffffff; font-family: Arial, sans-serif; color: #1e293b; }
-            .pdf-document { width: 794px; padding: 32px; background: #ffffff; }
-            h1 { font-size: 22px; color: #1a3a7a; margin-bottom: 4px; }
-            p.sub { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 24px; }
-            .resumo { display: flex; gap: 16px; margin-bottom: 32px; }
-            .caixa { border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px 20px; flex: 1; }
-            .caixa .rotulo { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; }
-            .caixa .valor { font-size: 26px; font-weight: 900; color: #1e293b; margin-top: 4px; }
-            table { width: 100%; border-collapse: collapse; }
-            th { text-align: left; font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; padding: 8px 12px; border-bottom: 2px solid #f1f5f9; }
-            td { padding: 10px 12px; font-size: 13px; border-bottom: 1px solid #f1f5f9; }
-            .badge { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
-            .paga { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
-            .liberada { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
-            .pendente { background: #fff7ed; color: #d97706; border: 1px solid #fed7aa; }
-            .resumo, .caixa, tr { break-inside: avoid; page-break-inside: avoid; }
-            footer { margin-top: 40px; font-size: 10px; color: #cbd5e1; text-align: center; }
-          </style>
-        </head>
-        <body>
-          <main class="pdf-document">
-          <p class="sub">Operações de Venda</p>
-          <h1>Painel do Consultor – ${periodoSelecionado}</h1>
-          <div class="resumo">
-            <div class="caixa"><div class="rotulo">Total de Vendas</div><div class="valor">${dados.totalVendas}</div></div>
-            <div class="caixa"><div class="rotulo">Comissões Liberadas</div><div class="valor">${dados.comissoesLiberadas}</div></div>
-            <div class="caixa"><div class="rotulo">Pagamentos Pendentes</div><div class="valor">${dados.pagamentosPendentes}</div></div>
-            <div class="caixa"><div class="rotulo">Projeção Bruta</div><div class="valor">${dados.projecao}</div></div>
-          </div>
-          <table>
-            <thead>
-              <tr><th>ID</th><th>Venda</th><th>Cliente</th><th>Comissão</th><th>Status</th></tr>
-            </thead>
-            <tbody>
-              ${dados.vendas.map((v) => `
-                <tr>
-                  <td><strong>${v.id}</strong></td>
-                  <td>${v.nome}</td>
-                  <td>${v.cliente}</td>
-                  <td>${v.comissao}</td>
-                  <td><span class="badge ${v.tipo}">${v.status}</span></td>
-                </tr>
-              `).join("")}
-            </tbody>
-          </table>
-          <footer>Gerado em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR")} • TND Brasil</footer>
-          </main>
-        </body>
-      </html>
-    `;
-
-    const { default: html2pdf } = await import("html2pdf.js");
-    const iframe = document.createElement("iframe");
-    iframe.style.position = "fixed";
-    iframe.style.left = "-10000px";
-    iframe.style.top = "0";
-    iframe.style.width = "794px";
-    iframe.style.height = "1123px";
-    iframe.style.border = "0";
-    document.body.appendChild(iframe);
-    const iframeDocument = iframe.contentDocument || iframe.contentWindow.document;
-    iframeDocument.open();
-    iframeDocument.write(pdfHtml);
-    iframeDocument.close();
-    iframeDocument.body.style.width = "794px";
-    const pdfElement = iframeDocument.querySelector(".pdf-document") || iframeDocument.body;
-    const opt = {
-      margin: 10,
-      filename: `relatorio-comissoes-${periodoArquivo}.pdf`,
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
-      pagebreak: { mode: ["css", "legacy"] },
-      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-    };
-    html2pdf().set(opt).from(pdfElement).save().then(() => { iframe.remove(); }, () => { iframe.remove(); });
+  /* ── Ações que mexem na URL ── */
+  function alternarCard(chave) {
+    atualizarParams({ status: cardAtivo === chave ? null : chave, pagina: null });
   }
 
-  async function gerarPDFRelatorio() {
+  function mudarPagina(pagina) {
+    atualizarParams({ pagina: pagina > 1 ? pagina : null });
+  }
+
+  function selecionarPeriodo(s) {
+    if (!s) {
+      atualizarParams({ ano: ANO_ATUAL, mes: MES_ATUAL_NUM, dia: null, status: null, pagina: null });
+      return;
+    }
+    atualizarParams({
+      ano: s.y,
+      mes: s.m + 1,
+      dia: s.type === "day" ? s.d : null,
+      status: null,
+      pagina: null,
+    });
+  }
+
+  /* ── Detalhe da venda: buscado só ao abrir o modal ── */
+  async function abrirVenda(venda) {
+    if (abrindoVendaId) return;
+    setAbrindoVendaId(venda.id);
+    try {
+      const detalhes = await buscarDetalheVenda(venda.idPedido);
+      setVendaNoModal({
+        venda: { ...venda, parcelas: venda.parcelasDaVenda || venda.parcelas },
+        detalhes: { ...detalhes, produto: normalizarProduto(detalhes?.produto) },
+      });
+    } catch (error) {
+      toast.error(error.message || "Não foi possível carregar os detalhes da venda.");
+    } finally {
+      setAbrindoVendaId(null);
+    }
+  }
+
+  /* ── PDF: precisa de TODAS as vendas do período, não só da página atual ── */
+  async function buscarTodasVendasDoPeriodo() {
+    const vendas = [];
+    let pagina = 1;
+    let totalPages = 1;
+
+    do {
+      const response = await buscarPainelVendedor({
+        ano: periodo.ano,
+        mes: periodo.mes,
+        dia: periodo.dia,
+        status: STATUS_API.vendas,
+        pagina,
+        tamanho: TAMANHO_PAGINA_PDF,
+      });
+      const painel = normalizarPainelVendedor(response);
+      vendas.push(...painel.vendas);
+      totalPages = painel.totalPages;
+      pagina += 1;
+    } while (pagina <= totalPages);
+
+    return vendas;
+  }
+
+  async function emitirPDF() {
+    if (gerandoPdf) return;
+    setGerandoPdf(true);
+    try {
+      const vendasPdf = await buscarTodasVendasDoPeriodo();
+      await gerarPDFRelatorio(vendasPdf);
+    } catch (error) {
+      toast.error(error.message || "Não foi possível gerar o PDF.");
+    } finally {
+      setGerandoPdf(false);
+    }
+  }
+
+  async function gerarPDFRelatorio(vendasPdf) {
     const { jsPDF } = await import("jspdf");
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -467,7 +487,7 @@ export default function HomeVendedor() {
         { label: "Status", width: 36, value: (v) => v.status },
       ];
       tableHeader(columns);
-      dados.vendas.forEach((venda) => {
+      vendasPdf.forEach((venda) => {
         const cells = columns.map((col) => ({ ...col, lines: doc.splitTextToSize(safeText(col.value(venda)), col.width - 3) }));
         const rowHeight = Math.max(12, ...cells.map((c) => 5 + c.lines.length * 4));
         if (y + rowHeight > pageHeight - 18) { doc.addPage(); y = 16; tableHeader(columns); }
@@ -524,16 +544,6 @@ export default function HomeVendedor() {
     doc.save(`relatorio-comissoes-${periodoArquivo}.pdf`);
   }
 
-  function alternarCard(chave) {
-    setCardAtivo((anterior) => (anterior === chave ? null : chave));
-  }
-
-  function selecionarMes(mes) {
-    setMesSelecionado(mes);
-    setMostrarMeses(false);
-    setCardAtivo(null);
-  }
-
   /* classes de tema */
   const bg = modoEscuro ? "bg-gray-900" : "bg-gray-100";
   const cardBg = modoEscuro ? "bg-gray-800" : "bg-white";
@@ -543,6 +553,8 @@ export default function HomeVendedor() {
   const textoM = modoEscuro ? "text-gray-300" : "text-gray-800";
   const hover = modoEscuro ? "hover:bg-gray-700" : "hover:bg-gray-50";
 
+  const scrollFino = { scrollbarWidth: "thin", scrollbarColor: "rgba(156,163,175,0.35) transparent" };
+
   return (
     <div className={`h-screen flex flex-col ${bg} transition-colors duration-300`}>
       <Navbar />
@@ -550,9 +562,9 @@ export default function HomeVendedor() {
       {/* ── Modal de detalhe da venda ── */}
       {vendaNoModal && (
         <ModalDetalheVenda
-          venda={vendaNoModal}
-          mes={mesSelecionado}
-          detalhesVenda={dados.detalhesVenda}
+          key={vendaNoModal.venda.id}
+          venda={vendaNoModal.venda}
+          detalhes={vendaNoModal.detalhes}
           aoFechar={() => setVendaNoModal(null)}
           aoAtualizar={() => setAtualizacaoPainel((valor) => valor + 1)}
           escuro={modoEscuro}
@@ -582,22 +594,7 @@ export default function HomeVendedor() {
             <div className="flex items-center gap-3 w-full sm:w-auto">
               <DatePickerCalendar
                 selecao={selecao}
-                aoSelecionar={(s) => {
-                  setSelecao(s);
-                  if (!s) {
-                    setTipoFiltroPeriodo("month");
-                    setDiaSelecionado(null);
-                    setAnoSelecionado(ANO_ATUAL);
-                    selecionarMes(MES_ATUAL);
-                    return;
-                  }
-
-                  const nomeMes = MESES[s.m];
-                  setTipoFiltroPeriodo(s.type);
-                  setDiaSelecionado(s.type === "day" ? s.d : null);
-                  setAnoSelecionado(s.y);
-                  selecionarMes(nomeMes);
-                }}
+                aoSelecionar={selecionarPeriodo}
                 dark={modoEscuro}
               />
             </div>
@@ -647,7 +644,7 @@ export default function HomeVendedor() {
                   <h2 className={`text-base font-bold ${textoM}`}>{tituloTabela}</h2>
                   {cardAtivo && (
                     <button
-                      onClick={() => setCardAtivo(null)}
+                      onClick={() => atualizarParams({ status: null, pagina: null })}
                       className={`ml-auto text-xs font-semibold tracking-wider uppercase transition-colors ${textoS} hover:text-blue-500`}
                     >
                       Limpar filtro ×
@@ -668,16 +665,23 @@ export default function HomeVendedor() {
                   <span />
                 </div>
 
-                {/* Linhas */}
-                <div className="flex flex-col gap-0.5 lg:flex-1 overflow-y-auto max-h-72 lg:max-h-none pr-2 lg:min-h-0" style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(156,163,175,0.35) transparent" }}>                {vendasExibidas.length === 0 && (
-                  <p className={`text-sm text-center py-6 ${textoS}`}>Nenhuma venda encontrada para este filtro.</p>
-                )}
+                {/* Linhas (a página já vem filtrada e limitada pelo back) */}
+                <div
+                  className={`flex flex-col gap-0.5 lg:flex-1 overflow-y-auto max-h-72 lg:max-h-none pr-2 lg:min-h-0 transition-opacity ${carregandoPainel ? "opacity-60" : "opacity-100"}`}
+                  style={scrollFino}
+                >
+                  {dados.vendas.length === 0 && (
+                    <p className={`text-sm text-center py-6 ${textoS}`}>
+                      {carregandoPainel ? "Carregando..." : "Nenhuma venda encontrada para este filtro."}
+                    </p>
+                  )}
 
-                  {vendasExibidas.map((v) => (
+                  {dados.vendas.map((v) => (
                     <button
                       key={v.id}
-                      onClick={() => setVendaNoModal({ ...v, parcelas: v.parcelasDaVenda || v.parcelas })}
-                      className={`w-full grid grid-cols-[auto_1fr] sm:grid-cols-[2fr_2fr_2fr_auto] gap-2 sm:gap-4 items-center px-2 py-3 rounded-xl transition-colors text-left group ${hover}`}
+                      onClick={() => abrirVenda(v)}
+                      disabled={abrindoVendaId === v.id}
+                      className={`w-full grid grid-cols-[auto_1fr] sm:grid-cols-[2fr_2fr_2fr_auto] gap-2 sm:gap-4 items-center px-2 py-3 rounded-xl transition-colors text-left group disabled:opacity-60 disabled:cursor-wait ${hover}`}
                     >
                       {/* Identificação + info mobile */}
                       <div className="flex items-center gap-2.5 min-w-0">
@@ -729,6 +733,13 @@ export default function HomeVendedor() {
                     </button>
                   ))}
                 </div>
+
+                {/* Paginação (mesmo componente do CatalogPage) */}
+                <Pagination
+                  currentPage={paginaAtual}
+                  totalPages={dados.totalPages}
+                  onPageChange={mudarPagina}
+                />
               </div>
             </div>
 
@@ -783,13 +794,17 @@ export default function HomeVendedor() {
                   />
                 </div>
 
-                {/* Lista de parcelas com scroll interno e Pedido ID por item */}
-                <div className="flex flex-col gap-1.5 overflow-y-auto max-h-48 lg:max-h-none lg:flex-1 lg:min-h-0 pr-1" style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(156,163,175,0.35) transparent" }}>                {todasParcelas.length === 0 && (
-                  <p className={`text-xs text-center py-2 ${textoS}`}>Sem parcelas liberadas.</p>
-                )}
-                  {todasParcelas.map((p, i) => (
+                {/* Parcelas liberadas do período (vêm do back, independem da página) */}
+                <div
+                  className="flex flex-col gap-1.5 overflow-y-auto max-h-48 lg:max-h-none lg:flex-1 lg:min-h-0 pr-1"
+                  style={scrollFino}
+                >
+                  {dados.parcelasLiberadas.length === 0 && (
+                    <p className={`text-xs text-center py-2 ${textoS}`}>Sem parcelas liberadas.</p>
+                  )}
+                  {dados.parcelasLiberadas.map((p, i) => (
                     <div
-                      key={i}
+                      key={p.idParcela ?? i}
                       className={`flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg
                       ${modoEscuro ? "bg-gray-700/50" : "bg-gray-50"}`}
                     >
@@ -836,11 +851,12 @@ export default function HomeVendedor() {
 
               {/* Emitir PDF */}
               <button
-                onClick={gerarPDFRelatorio}
-                className="w-full py-2.5 rounded-xl text-sm font-bold text-white tracking-wide transition-all duration-200 hover:opacity-90 active:scale-[0.98] shadow-md"
+                onClick={emitirPDF}
+                disabled={gerandoPdf}
+                className="w-full py-2.5 rounded-xl text-sm font-bold text-white tracking-wide transition-all duration-200 hover:opacity-90 active:scale-[0.98] shadow-md disabled:opacity-60 disabled:cursor-wait"
                 style={{ background: "linear-gradient(135deg, #1a3a7a 0%, #2d5fa6 100%)" }}
               >
-                Emitir PDF
+                {gerandoPdf ? "Gerando PDF..." : "Emitir PDF"}
               </button>
             </div>
 

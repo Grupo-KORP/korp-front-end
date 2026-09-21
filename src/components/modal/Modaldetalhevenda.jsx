@@ -135,10 +135,9 @@ function CabecalhoSecao({ titulo, cor, escuro }) {
 /* ══════════════════════════════════════════
    MODAL PRINCIPAL
 ══════════════════════════════════════════ */
-export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar, aoAtualizar, escuro }) {
+export default function ModalDetalheVenda({ venda, detalhes, aoFechar, aoAtualizar, escuro }) {
     // Cria uma chave juntando o mes e o id da venda.
-    const chave = `${mes}-${venda.id}`;
-    const detalhes = detalhesVenda?.[chave];
+    const chave = venda.id;
 
     // Quantidade
     const [quantidade, setQuantidade] = useState(detalhes?.produto?.quantidade ?? 0);

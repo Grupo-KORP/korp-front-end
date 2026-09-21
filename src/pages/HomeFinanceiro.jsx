@@ -184,21 +184,21 @@ export default function HomeFinanceiro() {
 
   useEffect(() => {
     if (toastShown.current) return;
-    if (!verificarToken()) {
-      toastShown.current = true;
-      toast.error("Sessão expirada. Faça login novamente.");
-      navigate("/login");
-      return;
-    }
-    if (!verificarSeFinanceiroEAdmin()) {
-      toastShown.current = true;
-      toast.error("Acesso negado. Você não tem permissão para acessar esta página.");
-      navigate("/vendedores/home");
-    }
+    // if (!verificarToken()) {
+    //   toastShown.current = true;
+    //   toast.error("Sessão expirada. Faça login novamente.");
+    //   navigate("/login");
+    //   return;
+    // }
+    // if (!verificarSeFinanceiroEAdmin()) {
+    //   toastShown.current = true;
+    //   toast.error("Acesso negado. Você não tem permissão para acessar esta página.");
+    //   navigate("/vendedores/home");
+    // }
   }, [navigate]);
 
   useEffect(() => {
-    if (!verificarToken() || !verificarSeFinanceiroEAdmin()) return;
+    // if (!verificarToken() || !verificarSeFinanceiroEAdmin()) return;
 
     let ativo = true;
     buscarPainelFinanceiro({ ano: anoSelecionado, mes: MESES.indexOf(mesSelecionado) + 1 })
