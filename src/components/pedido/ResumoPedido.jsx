@@ -424,7 +424,7 @@ const gerarPDFBase64 = async () => {
   setError(null);
 
   try {
-    const pedidoRequest = mapperFormDataToPedidoRequest(formData);
+    const pedidoRequest = mapperFormDataToPedidoRequest({ ...formData, formaPagamento });
 
     if (enviarPdf && distribuidorEmail) {
       const pdfBase64 = await gerarPDFBase64();

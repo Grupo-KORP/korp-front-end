@@ -135,6 +135,10 @@ function CabecalhoSecao({ titulo, cor, escuro }) {
 /* ══════════════════════════════════════════
    MODAL PRINCIPAL
 ══════════════════════════════════════════ */
+function carregarDatasPagamento(pedido) {
+    return Array.isArray(pedido?.datasPagamento) && pedido.datasPagamento.length > 0 ? pedido.datasPagamento.map(String) : [""];
+}
+
 export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar, aoAtualizar, escuro }) {
     // Cria uma chave juntando o mes e o id da venda.
     const chave = `${mes}-${venda.id}`;
@@ -152,8 +156,10 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
     const [nomeFantasiaDistribuidor, setNomeFantasiaDistribuidor] = useState(detalhes?.distribuidor?.nomeFantasia ?? "");
     const [numeroNotaDistribuidor, setNumeroNotaDistribuidor] = useState(detalhes?.pedido?.numeroNotaDistribuidor ?? "");
     const [observacoes, setObservacoes] = useState(detalhes?.pedido?.observacoes ?? "");
-    const [metodoPagamento, setMetodoPagamento] = useState(detalhes?.pedido?.metodoPagamento ?? "CARTAO_CREDITO");
-    const [quantidadeParcelas, setQuantidadeParcelas] = useState(detalhes?.pedido?.quantidadeParcelas ?? 1);
+    const metodoPagamento = detalhes?.pedido?.metodoPagamento ?? detalhes?.pedido?.formaPagamento ?? "";
+    const boleto = metodoPagamento === "BOLETO";
+    const [datasPagamento, setDatasPagamento] = useState(() => carregarDatasPagamento(detalhes?.pedido));
+    const datasPagamentoValidas = datasPagamento.length >= 1 && datasPagamento.length <= 7 && datasPagamento.every(data => /^\d{1,3}$/.test(data));
     const [salvando, setSalvando] = useState(false);
     // Guarda se cliente e distribuidor estao em modo de edicao.
     // Guarda os valores antigos para cancelar alteracoes.
@@ -163,8 +169,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
     const [nomeFantasiaDistribuidorAntes, setNomeFantasiaDistribuidorAntes] = useState(nomeFantasiaDistribuidor);
     const [numeroNotaDistribuidorAntes, setNumeroNotaDistribuidorAntes] = useState(numeroNotaDistribuidor);
     const [observacoesAntes, setObservacoesAntes] = useState(observacoes);
-    const [metodoPagamentoAntes, setMetodoPagamentoAntes] = useState(metodoPagamento);
-    const [quantidadeParcelasAntes, setQuantidadeParcelasAntes] = useState(quantidadeParcelas);
+    const [datasPagamentoAntes, setDatasPagamentoAntes] = useState(datasPagamento);
     const pedidoEmAndamento = (detalhes?.pedido?.statusPedido ?? "").toUpperCase() === "EM_ANDAMENTO";
 
     // Entrega
@@ -195,20 +200,17 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
         const distribuidorFantasia = detalhes?.distribuidor?.nomeFantasia ?? "";
         const nota = detalhes?.pedido?.numeroNotaDistribuidor ?? "";
         const obs = detalhes?.pedido?.observacoes ?? "";
-        const metodo = detalhes?.pedido?.metodoPagamento ?? "CARTAO_CREDITO";
-        const parcelas = detalhes?.pedido?.quantidadeParcelas ?? 1;
+        const datas = carregarDatasPagamento(detalhes?.pedido);
         setNomeFantasiaCliente(clienteFantasia);
         setNomeFantasiaDistribuidor(distribuidorFantasia);
         setNomeFantasiaClienteAntes(clienteFantasia);
         setNomeFantasiaDistribuidorAntes(distribuidorFantasia);
         setNumeroNotaDistribuidor(nota);
         setObservacoes(obs);
-        setMetodoPagamento(metodo);
-        setQuantidadeParcelas(parcelas);
+        setDatasPagamento(datas);
         setNumeroNotaDistribuidorAntes(nota);
         setObservacoesAntes(obs);
-        setMetodoPagamentoAntes(metodo);
-        setQuantidadeParcelasAntes(parcelas);
+        setDatasPagamentoAntes(datas);
 
         const entregaVal = detalhes?.produto?.entrega ?? "";
         setEntrega(entregaVal);
@@ -216,14 +218,14 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
 
         // Sai do modo de edicao.
         setModoEdicao(false);
-    }, [chave]);
+    }, [chave, detalhes]);
 
     // Atalho Escape para fechar.
     useEffect(() => {
         function aoApertarTecla(e) { if (e.key === "Escape") tentarFechar(); }
         document.addEventListener("keydown", aoApertarTecla);
         return () => document.removeEventListener("keydown", aoApertarTecla);
-    }, [modoEdicao, quantidadeAntes, nomeFantasiaClienteAntes, nomeFantasiaDistribuidorAntes, numeroNotaDistribuidorAntes, observacoesAntes, metodoPagamentoAntes, quantidadeParcelasAntes, entregaAntes]);
+    }, [modoEdicao, quantidadeAntes, nomeFantasiaClienteAntes, nomeFantasiaDistribuidorAntes, numeroNotaDistribuidorAntes, observacoesAntes, datasPagamentoAntes, entregaAntes]);
 
     function iniciarEdicao() {
         if (!pedidoEmAndamento) return;
@@ -232,8 +234,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
         setNomeFantasiaDistribuidorAntes(nomeFantasiaDistribuidor);
         setNumeroNotaDistribuidorAntes(numeroNotaDistribuidor);
         setObservacoesAntes(observacoes);
-        setMetodoPagamentoAntes(metodoPagamento);
-        setQuantidadeParcelasAntes(quantidadeParcelas);
+        setDatasPagamentoAntes([...datasPagamento]);
         setEntregaAntes(entrega);
         setModoEdicao(true);
     }
@@ -243,6 +244,11 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
 
         if (finalizarPedido && (!numeroNotaDistribuidor.trim() || !observacoes.trim())) {
             toast.error("Informe nota e observações para finalizar o pedido.");
+            return;
+        }
+
+        if (finalizarPedido && boleto && !datasPagamentoValidas) {
+            toast.error("Preencha todas as datas de pagamento com até 3 dígitos.");
             return;
         }
 
@@ -267,8 +273,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
         setNomeFantasiaDistribuidor(nomeFantasiaDistribuidorAntes);
         setNumeroNotaDistribuidor(numeroNotaDistribuidorAntes);
         setObservacoes(observacoesAntes);
-        setMetodoPagamento(metodoPagamentoAntes);
-        setQuantidadeParcelas(quantidadeParcelasAntes);
+        setDatasPagamento([...datasPagamentoAntes]);
         setEntrega(entregaAntes);
         setModoEdicao(false);
     }
@@ -284,8 +289,9 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
             numeroNotaDistribuidor,
             observacoes,
             metodoPagamento,
-            parcelado: Number(quantidadeParcelas) > 1,
-            quantidadeParcelas: Number(quantidadeParcelas),
+            datasPagamento: boleto ? datasPagamento.filter(data => data !== "").map(Number) : [],
+            parcelado: boleto && datasPagamento.filter(data => data !== "").length > 1,
+            quantidadeParcelas: boleto ? Math.max(1, datasPagamento.filter(data => data !== "").length) : 1,
             entrega,
             finalizarPedido,
         };
@@ -446,36 +452,38 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
                                     />
                                     <CampoLeitura rotulo="Status" valor={detalhes.pedido?.statusPedido} escuro={escuro} />
 
-                                    <div>
-                                        <label className={`block text-[9px] font-bold tracking-widest uppercase mb-1 ${escuro ? "text-gray-500" : "text-gray-400"}`}>
-                                            Método de Pagamento
-                                        </label>
-                                        <select
-                                            value={metodoPagamento}
-                                            disabled={!modoEdicao}
-                                            onChange={(e) => setMetodoPagamento(e.target.value)}
-                                            className={`w-full px-3 py-1.5 rounded-lg border text-xs font-semibold focus:outline-none transition-all duration-200
-                                                ${modoEdicao
-                                                    ? escuro ? "bg-blue-950/60 border-blue-500 text-white ring-1 ring-blue-500/40" : "bg-blue-50 border-blue-400 text-blue-900 ring-1 ring-blue-300/50"
-                                                    : escuro ? "bg-gray-800/80 border-gray-700 text-gray-200 cursor-default" : "bg-white border-gray-200 text-gray-700 cursor-default"
-                                                }`}
-                                        >
-                                            <option value="PIX">PIX</option>
-                                            <option value="BOLETO">Boleto</option>
-                                            <option value="CARTAO_CREDITO">Cartão de crédito</option>
-                                            <option value="CARTAO_DEBITO">Cartão de débito</option>
-                                            <option value="TRANSFERENCIA">Transferência</option>
-                                            <option value="DINHEIRO">Dinheiro</option>
-                                        </select>
-                                    </div>
-
-                                    <CampoQuantidade
-                                        valor={quantidadeParcelas}
-                                        modoEdicao={modoEdicao}
-                                        aoAlterar={setQuantidadeParcelas}
-                                        escuro={escuro}
-                                        rotulo="Parcelas"
-                                    />
+                                    <CampoLeitura rotulo="Forma de pagamento" valor={metodoPagamento === "AVISTA" ? "À vista" : boleto ? "Boleto" : metodoPagamento} escuro={escuro} />
+                                    {boleto && (
+                                        <div className="col-span-3">
+                                            <span className="block text-[9px] font-bold uppercase mb-1 text-gray-400">Datas de pagamento *</span>
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                {datasPagamento.map((data, indice) => (
+                                                    <div key={indice} className="flex items-center gap-1">
+                                                        <input type="text" inputMode="numeric" pattern="[0-9]{1,3}" maxLength={3} required
+                                                            aria-label={`Data de pagamento ${indice + 1}`}
+                                                            value={data} readOnly={!modoEdicao || salvando}
+                                                            onChange={(event) => {
+                                                                const valor = event.target.value.replace(/\D/g, "").slice(0, 3);
+                                                                setDatasPagamento(datas => datas.map((atual, i) => i === indice ? valor : atual));
+                                                            }}
+                                                            className={`w-12 h-12 text-center rounded-lg border text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 ${escuro ? "bg-gray-800 border-gray-700 text-gray-200" : "bg-white border-gray-200 text-gray-700"}`}
+                                                        />
+                                                        {modoEdicao && datasPagamento.length > 1 && (
+                                                            <button type="button" disabled={salvando} aria-label={`Remover data de pagamento ${indice + 1}`}
+                                                                onClick={() => setDatasPagamento(datas => datas.filter((_, i) => i !== indice))}
+                                                                className="text-gray-400 hover:text-red-500">×</button>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                                {modoEdicao && (
+                                                    <button type="button" aria-label="Adicionar data de pagamento" disabled={salvando || datasPagamento.length >= 7}
+                                                        onClick={() => setDatasPagamento(datas => datas.length < 7 ? [...datas, ""] : datas)}
+                                                        className="w-12 h-12 rounded-lg border border-blue-400 text-blue-500 text-xl disabled:opacity-40 disabled:cursor-not-allowed">+</button>
+                                                )}
+                                            </div>
+                                            {modoEdicao && <p className="mt-1 text-xs text-gray-400">Preencha todos os campos para finalizar. Máximo de 7 datas, com até 3 dígitos cada.</p>}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -583,7 +591,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
                         <>
                             <button
                                 onClick={() => confirmarEdicao(true)}
-                                disabled={salvando || !numeroNotaDistribuidor.trim() || !observacoes.trim()}
+                                disabled={salvando || !numeroNotaDistribuidor.trim() || !observacoes.trim() || (boleto && !datasPagamentoValidas)}
                                 className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all
               bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
