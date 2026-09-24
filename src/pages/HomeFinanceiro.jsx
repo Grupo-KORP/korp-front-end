@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import NavbarFinanceiro from "../layout/NavbarFinanceiro.jsx";
 import { useDarkMode } from "../hooks/useDarkMode.jsx";
@@ -269,6 +270,10 @@ export default function HomeFinanceiro() {
             <div className="flex items-center gap-3 w-full sm:w-auto">
               <div className="relative" ref={refDropdown}>
                 <button
+                  type="button"
+                  aria-label="Selecionar mês e ano"
+                  aria-expanded={mostrarMeses}
+                  aria-controls="filtro-periodo-financeiro"
                   onClick={() => setMostrarMeses((v) => !v)}
                   className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border text-sm font-semibold transition
                     ${cardBg} ${borda} ${textoM} ${hover}`}
@@ -278,10 +283,35 @@ export default function HomeFinanceiro() {
                 </button>
 
                 {mostrarMeses && (
-                  <div className={`absolute right-0 mt-2 z-20 w-40 max-h-64 overflow-y-auto rounded-xl shadow-lg border p-1.5
+                  <div id="filtro-periodo-financeiro" className={`absolute right-0 mt-2 z-20 w-40 rounded-xl shadow-lg border p-1.5
                     ${cardBg} ${borda}`}>
+                    <div className={`flex items-center justify-between border-b pb-1.5 mb-1.5 ${borda}`}>
+                      <button
+                        type="button"
+                        aria-label="Ano anterior"
+                        onClick={() => setAnoSelecionado((ano) => ano - 1)}
+                        className={`p-1.5 rounded-lg transition ${textoM} ${hover}`}
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 18l-6-6 6-6" />
+                        </svg>
+                      </button>
+                      <span className={`text-sm font-bold ${textoM}`} aria-live="polite">{anoSelecionado}</span>
+                      <button
+                        type="button"
+                        aria-label="Próximo ano"
+                        onClick={() => setAnoSelecionado((ano) => ano + 1)}
+                        className={`p-1.5 rounded-lg transition ${textoM} ${hover}`}
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 6l6 6-6 6" />
+                        </svg>
+                      </button>
+                    </div>
+                    <div className="max-h-64 overflow-y-auto">
                     {MESES.map((mes) => (
                       <button
+                        type="button"
                         key={mes}
                         onClick={() => selecionarMes(mes)}
                         className={`w-full text-left px-3 py-1.5 rounded-lg text-sm transition
@@ -290,6 +320,7 @@ export default function HomeFinanceiro() {
                         {mes}
                       </button>
                     ))}
+                    </div>
                   </div>
                 )}
               </div>

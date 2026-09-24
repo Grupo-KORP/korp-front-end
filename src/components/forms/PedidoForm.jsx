@@ -1439,7 +1439,9 @@ function ProdutoSection({ onChange, initialData, onRemove }) {
   const produtosEncontrados =
     searched && !searchError
       ? produtos.filter((produto) =>
-          (produto.nome || "").toLowerCase().includes(search.trim().toLowerCase())
+          [produto.nome, produto.pn].some((valor) =>
+            (valor || "").toLowerCase().includes(search.trim().toLowerCase())
+          )
         )
       : [];
 
@@ -1483,7 +1485,7 @@ function ProdutoSection({ onChange, initialData, onRemove }) {
 
   const handleSearch = () => {
     if (!search.trim()) {
-      setSearchError("Informe o nome do produto para pesquisar.");
+      setSearchError("Informe o nome ou P/N do produto para pesquisar.");
       setSearched(false);
       return;
     }
@@ -1499,7 +1501,7 @@ function ProdutoSection({ onChange, initialData, onRemove }) {
   };
 
   const startNewProduto = () => {
-    const updated = { ...data, descricao: search.trim() };
+    const updated = { ...data, descricao: search.trim(), pn: "", fkProduto: "" };
     setData(updated);
     onChange?.(updated);
     setOpen(true);
@@ -1517,12 +1519,14 @@ function ProdutoSection({ onChange, initialData, onRemove }) {
 
     try {
       const novoProduto = await cadastrarProduto({
-        nome: descricaoTrim
+        nome: descricaoTrim,
+        pn: (data.pn || "").trim(),
       });
 
       const updated = {
         ...data,
         fkProduto: novoProduto.idProduto,
+        pn: novoProduto.pn ?? (data.pn || "").trim(),
       };
       setData(updated);
       onChange?.(updated);
@@ -1693,13 +1697,13 @@ function ProdutoSection({ onChange, initialData, onRemove }) {
           <div className="modal">
             <h3>Buscar Produto</h3>
             <p className="modal-hint">
-              A pesquisa deve ser feita pelo nome do produto.
+              Pesquise pelo nome ou P/N do produto.
             </p>
 
             <div className="modal-search-row">
               <input
                 type="text"
-                placeholder="Digite o nome do produto"
+                placeholder="Digite o nome ou P/N do produto"
                 value={search}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 onKeyDown={(event) => {
@@ -1732,7 +1736,7 @@ function ProdutoSection({ onChange, initialData, onRemove }) {
                     const updated = {
                       ...data,
                       descricao: produto.nome,
-                      pn: produto.codigoProduto,
+                      pn: produto.pn || "",
                       fkProduto: produto.idProduto,
                     };
                     setData(updated);
@@ -1742,14 +1746,14 @@ function ProdutoSection({ onChange, initialData, onRemove }) {
                   }}
                 >
                   <strong>{produto.nome}</strong>
-                  <span>{produto.codigoProduto}</span>
+                  <span>P/N: {produto.pn || "—"}</span>
                 </div>
               ))}
 
               {searched && !searchError && produtosEncontrados.length === 0 && (
                 <div className="modal-empty">
                   <p>
-                    Nenhum produto com esse nome esta cadastrado no sistema.
+                    Nenhum produto encontrado para essa pesquisa.
                   </p>
                   <button
                     type="button"
