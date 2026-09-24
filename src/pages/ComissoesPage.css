@@ -651,13 +651,21 @@
 
 .comissoes-home-parcela {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) 150px minmax(150px, 0.8fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(80px, .8fr) auto;
   align-items: end;
   gap: 12px;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
   background: #ffffff;
   padding: 12px;
+}
+
+.comissoes-home-parcela-info { grid-column: 1 / -1; }
+.comissoes-home-parcela > .comissoes-status { grid-column: 3; justify-self: end; align-self: end; margin-bottom: 6px; }
+.comissoes-home-parcela > label { min-width: 0; }
+
+@media (max-width: 820px) {
+  .comissoes-home-parcelas { grid-template-columns: minmax(0, 1fr); }
 }
 
 .comissoes-page-dark .comissoes-home-parcela {
@@ -1096,6 +1104,13 @@
 }
 .comissoes-print-brand {
   display: none;
+}
+
+@media (max-width: 820px) {
+  .comissoes-home-parcela {
+    grid-template-columns: minmax(0, 1fr) minmax(70px, .8fr) auto;
+    align-items: stretch;
+  }
 }
 
 @media print {

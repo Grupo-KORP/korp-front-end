@@ -1,5 +1,6 @@
 // Importa os hooks do React usados para guardar estado e executar efeitos.
 import { useState, useEffect } from "react";
+import "./ModalDetalheVenda.css";
 import { toast } from "sonner";
 import { atualizarPedido } from "../../services/api";
 
@@ -135,7 +136,7 @@ function CabecalhoSecao({ titulo, cor, escuro }) {
 /* ══════════════════════════════════════════
    MODAL PRINCIPAL
 ══════════════════════════════════════════ */
-export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar, aoAtualizar, escuro }) {
+export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar, aoAtualizar, escuro, somenteLeitura = false, parcelasConteudo }) {
     // Cria uma chave juntando o mes e o id da venda.
     const chave = `${mes}-${venda.id}`;
     const detalhes = detalhesVenda?.[chave];
@@ -226,6 +227,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
     }, [modoEdicao, quantidadeAntes, nomeFantasiaClienteAntes, nomeFantasiaDistribuidorAntes, numeroNotaDistribuidorAntes, observacoesAntes, metodoPagamentoAntes, quantidadeParcelasAntes, entregaAntes]);
 
     function iniciarEdicao() {
+        if (somenteLeitura) return;
         if (!pedidoEmAndamento) return;
         setQuantidadeAntes(quantidade);
         setNomeFantasiaClienteAntes(nomeFantasiaCliente);
@@ -446,7 +448,9 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
                                     />
                                     <CampoLeitura rotulo="Status" valor={detalhes.pedido?.statusPedido} escuro={escuro} />
 
-                                    <div>
+                                    {somenteLeitura ? (
+                                        <CampoLeitura rotulo="Método de Pagamento" valor={metodoPagamento === "BOLETO" ? "Boleto" : "À vista"} escuro={escuro} />
+                                    ) : <div>
                                         <label className={`block text-[9px] font-bold tracking-widest uppercase mb-1 ${escuro ? "text-gray-500" : "text-gray-400"}`}>
                                             Método de Pagamento
                                         </label>
@@ -467,15 +471,17 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
                                             <option value="TRANSFERENCIA">Transferência</option>
                                             <option value="DINHEIRO">Dinheiro</option>
                                         </select>
-                                    </div>
+                                    </div>}
 
-                                    <CampoQuantidade
+                                    {somenteLeitura && metodoPagamento !== "BOLETO" ? (
+                                        <CampoLeitura rotulo="Condição de pagamento" valor="À vista, sem parcelas" escuro={escuro} />
+                                    ) : <CampoQuantidade
                                         valor={quantidadeParcelas}
                                         modoEdicao={modoEdicao}
                                         aoAlterar={setQuantidadeParcelas}
                                         escuro={escuro}
                                         rotulo="Parcelas"
-                                    />
+                                    />}
                                 </div>
                             </div>
 
@@ -483,7 +489,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
                             <div className={`rounded-xl border p-5 ${classeSecao}`}>
                                 <CabecalhoSecao titulo="Dados do Produto" cor="bg-cyan-500" escuro={escuro} />
 
-                                <div className="flex flex-col gap-4">
+                                <div className="detalhe-produto-campos">
                                     <CampoLeitura
                                         rotulo="Descrição do Produto"
                                         valor={detalhes.produto.descricao}
@@ -491,9 +497,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
                                         colSpan={4}
                                     />
 
-                                    <div className={`w-full h-px ${classeSeparador}`} />
-
-                                    <div className="grid grid-cols-4 gap-x-5 gap-y-3">
+                                    <div className="detalhe-produto-grade">
                                         <CampoLeitura rotulo="P/N" valor={detalhes.produto.pn} escuro={escuro} />
                                         <CampoTextoEditavel
                                             rotulo="Entrega"
@@ -512,8 +516,6 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
                                         <CampoLeitura rotulo="Valor Unitário" valor={detalhes.produto.valorUnitario} escuro={escuro} />
                                         <CampoLeitura rotulo="Valor Total" valor={detalhes.produto.valorTotal} escuro={escuro} />
                                     </div>
-
-                                    <div className={`w-full h-px ${classeSeparador}`} />
 
                                     <div
                                         className="rounded-xl p-4 grid grid-cols-4 gap-x-5 gap-y-3 items-end"
@@ -543,7 +545,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
                             </div>
 
                             {/* ── Parcelas */}
-                            {venda.parcelas?.length > 0 && (
+                            {parcelasConteudo ?? (venda.parcelas?.length > 0 && (
                                 <div className={`rounded-xl border p-5 ${classeSecao}`}>
                                     <CabecalhoSecao titulo="Parcelas desta Venda" cor="bg-emerald-500" escuro={escuro} />
                                     <div className="grid grid-cols-3 gap-3">
@@ -561,7 +563,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
                                         ))}
                                     </div>
                                 </div>
-                            )}
+                            ))}
                         </>
                     ) : (
                         <div className={`rounded-xl border p-8 text-center ${classeSecao}`}>
@@ -600,7 +602,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
                                 Salvar
                             </button>
                         </>
-                    ) : (
+                    ) : !somenteLeitura && (
                         <button
                             onClick={iniciarEdicao}
                             disabled={!pedidoEmAndamento}
