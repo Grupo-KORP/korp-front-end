@@ -46,7 +46,7 @@ function LoginForm() {
       if (isVendedor) {
         navegar('/vendedores/home')
       } else {
-        navegar('/financeiro/vendedores')
+        navegar('/financeiro/home')
       }
     } catch {
       // Erro já capturado pelo hook useAuth e exibido via `error`

@@ -364,7 +364,11 @@
 }
 
 .comissoes-liberacao-item time {
-  grid-column: 1 / -1;
+  grid-column: 2;
+  grid-row: 2;
+  align-self: center;
+  justify-self: end;
+  white-space: nowrap;
   font-weight: 700;
 }
 
@@ -1088,5 +1092,37 @@
   .comissoes-modal-parcelas {
     padding-left: 16px;
     padding-right: 16px;
+  }
+}
+.comissoes-print-brand {
+  display: none;
+}
+
+@media print {
+  .comissoes-page > .navbar,
+  .comissoes-page .comissoes-actions {
+    display: none;
+  }
+
+  .comissoes-page,
+  .comissoes-page .comissoes-content {
+    height: auto;
+    overflow: visible;
+  }
+
+  .comissoes-print-brand {
+    display: block;
+    width: 32mm;
+    padding: 2mm;
+    margin-bottom: 5mm;
+    background: #1e4080;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .comissoes-print-brand img {
+    display: block;
+    width: 100%;
+    height: auto;
   }
 }

@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import NavbarFinanceiro from "../layout/NavbarFinanceiro.jsx";
+import logoTnd from "../assets/logo-tnd.webp";
 import DatePickerCalendar from "../components/ui/DatePickerCalendar.jsx";
 import { useDarkMode } from "../hooks/useDarkMode.jsx";
 import "./ComissoesPage.css";
@@ -782,11 +783,17 @@ export default function ComissoesPage() {
     }, {});
   }, [vendas]);
 
-  const vendasFiltradas = useMemo(() => {
+  const vendasBuscadas = useMemo(() => {
     const termo = normalizar(busca.trim());
+    return vendas.filter((venda) => !termo || [
+      venda.vendedor,
+      venda.detalhesPedido?.numeroPedido,
+      venda.id,
+    ].some((valor) => normalizar(String(valor ?? "")).includes(termo)));
+  }, [busca, vendas]);
 
-    return vendas.filter((venda) => {
-      const vendedorCombina = termo ? normalizar(venda.vendedor).includes(termo) : true;
+  const vendasFiltradas = useMemo(() => {
+    return vendasBuscadas.filter((venda) => {
       const statusCombina = filtroAtivo
         ? venda.parcelas.some((parcela) => parcela.status === filtroAtivo)
         : true;
@@ -796,21 +803,21 @@ export default function ComissoesPage() {
           ? venda.dataVenda === `${selecao.y}-${String(selecao.m + 1).padStart(2, "0")}-${String(selecao.d).padStart(2, "0")}`
           : venda.dataVenda.startsWith(`${selecao.y}-${String(selecao.m + 1).padStart(2, "0")}`);
 
-      return vendedorCombina && statusCombina && dataCombina;
+      return statusCombina && dataCombina;
     });
-  }, [busca, filtroAtivo, selecao, vendas]);
+  }, [vendasBuscadas, filtroAtivo, selecao]);
 
   const proximasLiberacoes = useMemo(() => {
     const datasPermitidas = new Set([toISODate(hoje), toISODate(amanha)]);
 
-    return vendas
+    return vendasBuscadas
       .flatMap((venda) =>
         venda.parcelas
           .filter((parcela) => datasPermitidas.has(parcela.previsao))
           .map((parcela) => ({ ...parcela, venda }))
       )
       .sort((a, b) => a.previsao.localeCompare(b.previsao));
-  }, [vendas]);
+  }, [vendasBuscadas]);
 
   const vendaSelecionada = vendas.find((venda) => venda.id === vendaSelecionadaId);
   const tituloTabela = filtrosKpi.find((filtro) => filtro.chave === filtroAtivo)?.rotulo || "Todas as Vendas";
@@ -856,6 +863,9 @@ export default function ComissoesPage() {
       <NavbarFinanceiro />
 
       <main className="comissoes-content">
+        <div className="comissoes-print-brand">
+          <img src={logoTnd} alt="TND Brasil" />
+        </div>
         <header className="comissoes-header">
           <div>
             <p>Operações Financeiras</p>
@@ -869,7 +879,8 @@ export default function ComissoesPage() {
                 type="text"
                 value={busca}
                 onChange={(event) => setBusca(event.target.value)}
-                placeholder="PESQUISAR VENDEDOR"
+                placeholder="VENDEDOR OU CÓDIGO DO PEDIDO"
+                aria-label="Pesquisar vendedor ou código do pedido"
               />
             </label>
             <DatePickerCalendar selecao={selecao} aoSelecionar={setSelecao} dark={modoEscuro} />
@@ -950,12 +961,19 @@ export default function ComissoesPage() {
                       <span>{parcela.venda.cliente}</span>
                     </div>
                     <div>
+                      <span>Pedido</span>
+                      <strong>{parcela.venda.detalhesPedido?.numeroPedido || parcela.venda.id}</strong>
+                    </div>
+                    <div>
                       <span>Parcela {parcela.numero}</span>
                       <strong>{formatarMoeda(parcela.valor)}</strong>
                     </div>
-                    <time>{formatarData(parcela.previsao)}</time>
+                    <time dateTime={parcela.previsao}>{formatarData(parcela.previsao)}</time>
                   </article>
                 ))}
+                {proximasLiberacoes.length === 0 && (
+                  <p className="comissoes-empty">Nenhuma próxima liberação encontrada.</p>
+                )}
               </div>
             </section>
 

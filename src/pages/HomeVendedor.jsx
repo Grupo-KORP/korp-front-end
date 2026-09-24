@@ -2,6 +2,7 @@
 import "../styles/base-reset.css";
 import "./HomeVendedor.css";
 import Navbar from "../layout/NavbarVendedor";
+import { carregarLogoPdf, adicionarLogoPdf } from "../services/pdfBranding.js";
 import { useDarkMode } from "../hooks/useDarkMode";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -239,7 +240,7 @@ export default function HomeVendedor() {
     if (!hasRole("ROLE_VEND")) {
       toastShown.current = true;
       toast.error("Acesso negado. Você não tem permissão para acessar esta página.");
-      navigate("/financeiro/vendedores");
+      navigate("/financeiro/home");
     }
 
     verificarPrimeiroAcesso(usuario)
@@ -324,6 +325,7 @@ export default function HomeVendedor() {
     .replace(/\s+/g, "-");
 
   async function gerarPDF() {
+    const logo = await carregarLogoPdf();
     const pdfHtml = `
       <html>
         <head>
@@ -375,7 +377,7 @@ export default function HomeVendedor() {
               `).join("")}
             </tbody>
           </table>
-          <footer>Gerado em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR")} • TND Brasil</footer>
+          <footer>Gerado em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR")}<img src="${logo.data}" alt="TND Brasil" style="display:block;width:90px;height:auto;margin:8px auto 0" /></footer>
           </main>
         </body>
       </html>
@@ -396,6 +398,7 @@ export default function HomeVendedor() {
     iframeDocument.close();
     iframeDocument.body.style.width = "794px";
     const pdfElement = iframeDocument.querySelector(".pdf-document") || iframeDocument.body;
+    await Promise.all(Array.from(pdfElement.querySelectorAll("img"), (imagem) => imagem.decode()));
     const opt = {
       margin: 10,
       filename: `relatorio-comissoes-${periodoArquivo}.pdf`,
@@ -408,6 +411,7 @@ export default function HomeVendedor() {
   }
 
   async function gerarPDFRelatorio() {
+    const logo = await carregarLogoPdf();
     const { jsPDF } = await import("jspdf");
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -517,7 +521,8 @@ export default function HomeVendedor() {
       doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.3);
       doc.line(margin, pageHeight - 12, pageWidth - margin, pageHeight - 12);
       doc.setFont("helvetica", "normal"); doc.setFontSize(7); doc.setTextColor(148, 163, 184);
-      doc.text(`Gerado em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR")} • TND Brasil`, margin, pageHeight - 7);
+      doc.text(`Gerado em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR")}`, margin, pageHeight - 7);
+      adicionarLogoPdf(doc, logo, pageWidth / 2 - 9, pageHeight - 11, 18);
       doc.text(`Página ${i} de ${totalPages}`, pageWidth - margin, pageHeight - 7, { align: "right" });
     }
 
