@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import NavbarFinanceiro from "../layout/NavbarFinanceiro.jsx";
 import { useDarkMode } from "../hooks/useDarkMode.jsx";
