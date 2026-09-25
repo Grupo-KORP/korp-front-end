@@ -139,10 +139,9 @@ function carregarDatasPagamento(pedido) {
     return Array.isArray(pedido?.datasPagamento) && pedido.datasPagamento.length > 0 ? pedido.datasPagamento.map(String) : [""];
 }
 
-export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar, aoAtualizar, escuro }) {
+export default function ModalDetalheVenda({ venda, mes, aoFechar, aoAtualizar, escuro }) {
     // Cria uma chave juntando o mes e o id da venda.
-    const chave = `${mes}-${venda.id}`;
-    const detalhes = detalhesVenda?.[chave];
+    const chave = venda.id;
 
     // Quantidade
     const [quantidade, setQuantidade] = useState(detalhes?.produto?.quantidade ?? 0);
