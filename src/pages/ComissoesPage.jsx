@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import ModalDetalheVenda from "../components/modal/Modaldetalhevenda.jsx";
 import NavbarFinanceiro from "../layout/NavbarFinanceiro.jsx";
 import logoTnd from "../assets/logo-tnd.webp";
@@ -471,6 +472,8 @@ export default function ComissoesPage() {
   const [busca, setBusca] = useState("");
   const [selecao, setSelecao] = useState(() => ({ type: "month", y: hoje.getFullYear(), m: hoje.getMonth() }));
   const [vendaSelecionadaId, setVendaSelecionadaId] = useState(null);
+  const [emitindoRelatorio, setEmitindoRelatorio] = useState(false);
+  const relatorioEmAndamento = useRef(false);
 
   const vendasBuscadas = useMemo(() => {
     const termo = normalizar(busca.trim());
@@ -497,7 +500,7 @@ export default function ComissoesPage() {
   }, [parcelasFiltradas]);
 
   const vendaSelecionada = vendas.find((venda) => venda.id === vendaSelecionadaId);
-  const tituloTabela = filtrosKpi.find((filtro) => filtro.chave === filtroAtivo)?.rotulo || "Parcelas do período";
+  const tituloTabela = filtrosKpi.find((filtro) => filtro.chave === filtroAtivo)?.rotulo || "Pagamentos do período";
 
   function alterarStatus(vendaId, parcelaId, status) {
     setVendas((atuais) =>
@@ -531,8 +534,25 @@ export default function ComissoesPage() {
     );
   }
 
-  function emitirRelatorio() {
-    window.print();
+  async function emitirRelatorio() {
+    if (relatorioEmAndamento.current) return;
+    relatorioEmAndamento.current = true;
+    setEmitindoRelatorio(true);
+    try {
+      const filtro = selecao || { type: "month", y: hoje.getFullYear(), m: hoje.getMonth() };
+      const data = new Date(filtro.y, filtro.m, filtro.type === "day" ? filtro.d : 1);
+      const periodo = data.toLocaleDateString("pt-BR", { ...(filtro.type === "day" ? { day: "2-digit" } : {}), month: "long", year: "numeric" });
+      const { criarRelatorioComissoes } = await import("../services/relatorioComissoes.js");
+      const doc = await criarRelatorioComissoes({ parcelas: parcelasFiltradas, periodo, status: filtroAtivo, busca });
+      const sufixo = `${filtro.y}-${String(filtro.m + 1).padStart(2, "0")}${filtro.type === "day" ? `-${String(filtro.d).padStart(2, "0")}` : ""}`;
+      await doc.save(`relatorio-comissoes-${sufixo}.pdf`, { returnPromise: true });
+      toast.success("Relatório PDF gerado com sucesso!");
+    } catch {
+      toast.error("Não foi possível gerar o relatório. Tente novamente.");
+    } finally {
+      relatorioEmAndamento.current = false;
+      setEmitindoRelatorio(false);
+    }
   }
 
   return (
@@ -556,7 +576,7 @@ export default function ComissoesPage() {
                 type="text"
                 value={busca}
                 onChange={(event) => setBusca(event.target.value)}
-                placeholder="VENDEDOR OU CÓDIGO DO PEDIDO"
+                placeholder="Vendedor ou código do pedido"
                 aria-label="Pesquisar vendedor ou código do pedido"
               />
             </label>
@@ -608,7 +628,12 @@ export default function ComissoesPage() {
                         <td>{venda.cliente}</td>
                         <td>{venda.vendedor}</td>
                         <td>{formatarMoeda(parcela.valor)}</td>
-                        <td><strong>{parcela.numero}</strong><span>{formatarData(parcela.previsao)}</span></td>
+                        <td>
+                          <div className="comissoes-parcela-vencimento">
+                            <strong>{parcela.numero}</strong>
+                            <span>{formatarData(parcela.previsao)}</span>
+                          </div>
+                        </td>
                         <td>
                           <StatusBadge status={parcela.status} />
                         </td>
@@ -654,8 +679,8 @@ export default function ComissoesPage() {
               </div>
             </section>
 
-            <button className="comissoes-report-button" type="button" onClick={emitirRelatorio}>
-              Emitir relatório
+            <button className="comissoes-report-button" type="button" onClick={emitirRelatorio} disabled={emitindoRelatorio} aria-busy={emitindoRelatorio}>
+              {emitindoRelatorio ? "Gerando PDF..." : "Emitir relatório"}
             </button>
           </aside>
         </div>

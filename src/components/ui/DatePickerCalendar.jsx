@@ -32,17 +32,17 @@ export default function DatePickerCalendar({ selecao, aoSelecionar, dark }) {
     if (view === "day") {
       const nova = new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1);
       if (nova >= new Date(ANO_MIN, 0, 1)) setCursor(nova);
-    } else if (view === "month" || mode === "month") {
+    } else if (view === "month") {
       if (cursor.getFullYear() > ANO_MIN) setCursor(new Date(cursor.getFullYear() - 1, 0, 1));
     } else {
-      const base = Math.floor(cursor.getFullYear() / 12) * 12;
+      const base = ANO_MIN + Math.floor((cursor.getFullYear() - ANO_MIN) / 12) * 12;
       if (base > ANO_MIN) setCursor(new Date(cursor.getFullYear() - 12, 0, 1));
     }
   }
 
   function navNext() {
     if (view === "day") setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1));
-    else if (view === "month" || mode === "month") setCursor(new Date(cursor.getFullYear() + 1, 0, 1));
+    else if (view === "month") setCursor(new Date(cursor.getFullYear() + 1, 0, 1));
     else setCursor(new Date(cursor.getFullYear() + 12, 0, 1));
   }
 
@@ -54,7 +54,7 @@ export default function DatePickerCalendar({ selecao, aoSelecionar, dark }) {
   function selYear(y) {
     if (y < ANO_MIN) return;
     setCursor(new Date(y, cursor.getMonth(), 1));
-    setView("day");
+    setView(mode === "month" ? "month" : "day");
   }
 
   function confirmar() {
@@ -74,13 +74,12 @@ export default function DatePickerCalendar({ selecao, aoSelecionar, dark }) {
   const today = new Date();
   const firstDay = new Date(cursor.getFullYear(), cursor.getMonth(), 1).getDay();
   const daysInMonth = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0).getDate();
-  const base = Math.floor(cursor.getFullYear() / 12) * 12;
+  const base = ANO_MIN + Math.floor((cursor.getFullYear() - ANO_MIN) / 12) * 12;
 
   // Desabilita seta esquerda quando já estamos no limite
   const prevDesabilitado =
     (view === "day" && cursor.getFullYear() === ANO_MIN && cursor.getMonth() === 0) ||
     (view === "month" && cursor.getFullYear() <= ANO_MIN) ||
-    (mode === "month" && cursor.getFullYear() <= ANO_MIN) ||
     (view === "year" && base <= ANO_MIN);
 
   const titleMap = {
@@ -131,9 +130,9 @@ export default function DatePickerCalendar({ selecao, aoSelecionar, dark }) {
                   : dark ? "text-gray-400 hover:bg-gray-700" : "text-gray-400 hover:bg-gray-100"}`}>
               ‹
             </button>
-            <button onClick={() => mode !== "month" && setView(v => v === "day" ? "year" : "day")}
+            <button onClick={() => setView(v => v === "year" ? mode : "year")}
               className={`text-sm font-semibold px-3 py-1 rounded-lg ${dark ? "text-white hover:bg-gray-700" : "text-gray-800 hover:bg-gray-100"}`}>
-              {titleMap[mode === "month" ? "month" : view]}
+              {titleMap[view]}
             </button>
             <button onClick={navNext}
               className={`p-1.5 rounded-lg text-xl leading-none ${dark ? "text-gray-400 hover:bg-gray-700" : "text-gray-400 hover:bg-gray-100"}`}>
@@ -165,8 +164,8 @@ export default function DatePickerCalendar({ selecao, aoSelecionar, dark }) {
             </div>
           )}
 
-          {/* Anos (modo dia) */}
-          {mode === "day" && view === "year" && (
+          {/* Anos */}
+          {view === "year" && (
             <div className="grid grid-cols-3 gap-1.5">
               {Array.from({ length: 12 }).map((_, i) => {
                 const y = base + i;
@@ -186,7 +185,7 @@ export default function DatePickerCalendar({ selecao, aoSelecionar, dark }) {
           )}
 
           {/* Meses */}
-          {mode === "month" && (
+          {view === "month" && (
             <div className="grid grid-cols-3 gap-1.5">
               {MESES_PT.map((mn, i) => {
                 const isSel = temp?.type === "month" && temp.m === i && temp.y === cursor.getFullYear();

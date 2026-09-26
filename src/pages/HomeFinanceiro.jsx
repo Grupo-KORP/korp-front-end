@@ -22,6 +22,7 @@ const MESES = [
 ];
 
 const HOJE = new Date();
+const ANO_MIN = 2026;
 
 const formatarMoedaBR = (valor) =>
   Number(valor || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -172,6 +173,8 @@ export default function HomeFinanceiro() {
   const [mostrarMeses, setMostrarMeses] = useState(false);
   const [mesRascunho, setMesRascunho] = useState(MESES[HOJE.getMonth()]);
   const [anoRascunho, setAnoRascunho] = useState(HOJE.getFullYear());
+  const [mostrarAnos, setMostrarAnos] = useState(false);
+  const inicioAnos = ANO_MIN + Math.floor((anoRascunho - ANO_MIN) / 12) * 12;
   const [painel, setPainel] = useState(null);
   const [emitindoRelatorio, setEmitindoRelatorio] = useState(false);
   const relatorioEmAndamento = useRef(false);
@@ -307,6 +310,7 @@ export default function HomeFinanceiro() {
                     if (!mostrarMeses) {
                       setMesRascunho(mesSelecionado);
                       setAnoRascunho(anoSelecionado);
+                      setMostrarAnos(false);
                     }
                     setMostrarMeses((v) => !v);
                   }}
@@ -327,19 +331,22 @@ export default function HomeFinanceiro() {
                     <div className="flex items-center justify-between mb-3">
                       <button
                         type="button"
-                        aria-label="Ano anterior"
-                        onClick={() => setAnoRascunho((ano) => ano - 1)}
-                        className={`p-1.5 rounded-lg transition ${textoM} ${hover}`}
+                        aria-label={mostrarAnos ? "Anos anteriores" : "Ano anterior"}
+                        disabled={mostrarAnos ? inicioAnos <= ANO_MIN : anoRascunho <= ANO_MIN}
+                        onClick={() => setAnoRascunho((ano) => Math.max(ANO_MIN, ano - (mostrarAnos ? 12 : 1)))}
+                        className={`p-1.5 rounded-lg transition disabled:opacity-25 disabled:cursor-not-allowed ${textoM} ${hover}`}
                       >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 18l-6-6 6-6" />
                         </svg>
                       </button>
-                      <span className={`text-sm font-bold ${textoM}`} aria-live="polite">{anoRascunho}</span>
+                      <button type="button" onClick={() => setMostrarAnos((valor) => !valor)} className={`text-sm font-bold px-3 py-1 rounded-lg ${textoM} ${hover}`} aria-live="polite">
+                        {mostrarAnos ? `${inicioAnos} – ${inicioAnos + 11}` : anoRascunho}
+                      </button>
                       <button
                         type="button"
-                        aria-label="Próximo ano"
-                        onClick={() => setAnoRascunho((ano) => ano + 1)}
+                        aria-label={mostrarAnos ? "Próximos anos" : "Próximo ano"}
+                        onClick={() => setAnoRascunho((ano) => ano + (mostrarAnos ? 12 : 1))}
                         className={`p-1.5 rounded-lg transition ${textoM} ${hover}`}
                       >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -348,7 +355,18 @@ export default function HomeFinanceiro() {
                       </button>
                     </div>
                     <div className="grid grid-cols-3 gap-x-2 gap-y-1 mb-4">
-                    {MESES.map((mes) => (
+                    {mostrarAnos ? Array.from({ length: 12 }, (_, i) => inicioAnos + i).map((ano) => (
+                      <button
+                        type="button"
+                        key={ano}
+                        onClick={() => { setAnoRascunho(ano); setMostrarAnos(false); }}
+                        aria-pressed={ano === anoRascunho}
+                        className={`w-full px-3 py-3 rounded-lg text-sm transition
+                          ${ano === anoRascunho ? "font-bold bg-blue-600 text-white" : `${modoEscuro ? "text-blue-300" : "text-blue-900"} ${hover}`}`}
+                      >
+                        {ano}
+                      </button>
+                    )) : MESES.map((mes) => (
                       <button
                         type="button"
                         key={mes}
