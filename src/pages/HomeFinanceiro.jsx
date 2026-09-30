@@ -1,3 +1,4 @@
+import { calendarStyles } from "../components/ui/calendarStyles.js";
 import { formatarStatusPagamento } from "../services/statusPagamento.js";
 import React, { useEffect, useRef, useState } from "react";
 import NavbarFinanceiro from "../layout/NavbarFinanceiro.jsx";
@@ -268,6 +269,7 @@ export default function HomeFinanceiro() {
   const hover = modoEscuro ? "hover:bg-gray-700" : "hover:bg-gray-50";
 
   const gridStroke = modoEscuro ? "#374151" : "#e5e7eb";
+  const coresCalendario = calendarStyles(modoEscuro);
   const axisStroke = modoEscuro ? "#6b7280" : "#9ca3af";
   const tooltipStyle = {
     background: modoEscuro ? "#1f2937" : "#ffffff",
@@ -315,55 +317,55 @@ export default function HomeFinanceiro() {
                     }
                     setMostrarMeses((v) => !v);
                   }}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-full border text-sm font-semibold transition
-                    ${cardBg} ${borda} ${textoM} ${hover}`}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium transition-colors shadow-sm
+                    ${coresCalendario.trigger} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2`}
                 >
                   <IconCalendario />
                   {periodoSelecionado}
                   <svg className={`w-4 h-4 transition-transform ${mostrarMeses ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="m6 9 6 6 6-6" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="m6 9 6 6 6-6" />
                   </svg>
                 </button>
 
                 {mostrarMeses && (
-                  <div id="filtro-periodo-financeiro" role="group" aria-label="Selecionar mês e ano" className={`absolute left-0 sm:left-auto sm:right-0 mt-2 z-20 w-80 max-w-[calc(100vw-2rem)] rounded-2xl shadow-xl border p-4
+                  <div id="filtro-periodo-financeiro" role="group" aria-label="Selecionar mês e ano" className={`absolute left-0 sm:left-auto sm:right-0 mt-2 z-20 w-80 max-w-[calc(100vw-2rem)] rounded-2xl shadow-lg border p-4
                     ${cardBg} ${borda}`}>
-                    <div className={`rounded-lg py-2 mb-3 text-center text-sm font-semibold ${modoEscuro ? "bg-gray-700 text-white" : "bg-gray-100 text-gray-900"}`}>Por mês</div>
+                    <div className={`rounded-lg py-1.5 mb-3 text-center text-xs font-medium ${coresCalendario.selected}`}>Por mês</div>
                     <div className="flex items-center justify-between mb-3">
                       <button
                         type="button"
                         aria-label={mostrarAnos ? "Anos anteriores" : "Ano anterior"}
                         disabled={mostrarAnos ? inicioAnos <= ANO_MIN : anoRascunho <= ANO_MIN}
                         onClick={() => setAnoRascunho((ano) => Math.max(ANO_MIN, ano - (mostrarAnos ? 12 : 1)))}
-                        className={`p-1.5 rounded-lg transition disabled:opacity-25 disabled:cursor-not-allowed ${textoM} ${hover}`}
+                        className={`p-1.5 rounded-lg transition disabled:opacity-25 disabled:cursor-not-allowed ${coresCalendario.text} ${coresCalendario.hover}`}
                       >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 18l-6-6 6-6" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 18l-6-6 6-6" />
                         </svg>
                       </button>
-                      <button type="button" onClick={() => setMostrarAnos((valor) => !valor)} className={`text-sm font-bold px-3 py-1 rounded-lg ${textoM} ${hover}`} aria-live="polite">
+                      <button type="button" onClick={() => setMostrarAnos((valor) => !valor)} className={`text-sm font-medium px-3 py-1 rounded-lg ${coresCalendario.text} ${coresCalendario.hover}`} aria-live="polite">
                         {mostrarAnos ? `${inicioAnos} – ${inicioAnos + 11}` : anoRascunho}
                       </button>
                       <button
                         type="button"
                         aria-label={mostrarAnos ? "Próximos anos" : "Próximo ano"}
                         onClick={() => setAnoRascunho((ano) => ano + (mostrarAnos ? 12 : 1))}
-                        className={`p-1.5 rounded-lg transition ${textoM} ${hover}`}
+                        className={`p-1.5 rounded-lg transition ${coresCalendario.text} ${coresCalendario.hover}`}
                       >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 6l6 6-6 6" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 6l6 6-6 6" />
                         </svg>
                       </button>
                     </div>
-                    <div className="grid grid-cols-3 gap-x-2 gap-y-1 mb-4">
+                    <div className="grid grid-cols-3 gap-1.5 mb-3">
                     {mostrarAnos ? Array.from({ length: 12 }, (_, i) => inicioAnos + i).map((ano) => (
                       <button
                         type="button"
                         key={ano}
                         onClick={() => { setAnoRascunho(ano); setMostrarAnos(false); }}
                         aria-pressed={ano === anoRascunho}
-                        className={`w-full px-3 py-3 rounded-lg text-sm transition
-                          ${ano === anoRascunho ? "font-bold bg-blue-600 text-white" : `${modoEscuro ? "text-blue-300" : "text-blue-900"} ${hover}`}`}
+                        className={`w-full py-2 rounded-lg text-xs transition-colors
+                          ${ano === anoRascunho ? coresCalendario.selected : `${coresCalendario.text} ${coresCalendario.hover}`}`}
                       >
                         {ano}
                       </button>
@@ -374,16 +376,16 @@ export default function HomeFinanceiro() {
                         onClick={() => setMesRascunho(mes)}
                         aria-label={`${mes} de ${anoRascunho}`}
                         aria-pressed={mes === mesRascunho}
-                        className={`w-full px-3 py-3 rounded-lg text-sm transition
-                          ${mes === mesRascunho ? "font-bold bg-blue-600 text-white" : `${modoEscuro ? "text-blue-300" : "text-blue-900"} ${hover}`}`}
+                        className={`w-full py-2 rounded-lg text-xs transition-colors
+                          ${mes === mesRascunho ? coresCalendario.selected : `${coresCalendario.text} ${coresCalendario.hover}`}`}
                       >
                         {mes.slice(0, 3)}
                       </button>
                     ))}
                     </div>
                     <div className={`flex items-center justify-between border-t pt-3 ${borda}`}>
-                      <button type="button" onClick={() => setMesRascunho(null)} className={`text-sm px-1 py-2 ${textoS} ${hover}`}>Limpar</button>
-                      <button type="button" disabled={!mesRascunho} onClick={confirmarPeriodo} className="rounded-xl bg-blue-700 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed">Confirmar</button>
+                      <button type="button" onClick={() => setMesRascunho(null)} className={`text-xs ${coresCalendario.text} ${coresCalendario.hover}`}>Limpar</button>
+                      <button type="button" disabled={!mesRascunho} onClick={confirmarPeriodo} className={`rounded-lg px-4 py-1.5 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed ${coresCalendario.confirm}`}>Confirmar</button>
                     </div>
                   </div>
                 )}

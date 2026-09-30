@@ -590,7 +590,7 @@ export default function ComissoesPage() {
       const data = new Date(filtro.y, filtro.m, filtro.type === "day" ? filtro.d : 1);
       const periodo = data.toLocaleDateString("pt-BR", { ...(filtro.type === "day" ? { day: "2-digit" } : {}), month: "long", year: "numeric" });
       const { criarRelatorioComissoes } = await import("../services/relatorioComissoes.js");
-      const doc = await criarRelatorioComissoes({ parcelas: parcelasFiltradas, periodo, status: filtroAtivo, busca });
+      const doc = await criarRelatorioComissoes({ parcelas: parcelasFiltradas, proximasLiberacoes, periodo, status: filtroAtivo, busca });
       const sufixo = `${filtro.y}-${String(filtro.m + 1).padStart(2, "0")}${filtro.type === "day" ? `-${String(filtro.d).padStart(2, "0")}` : ""}`;
       await doc.save(`relatorio-comissoes-${sufixo}.pdf`, { returnPromise: true });
       toast.success("Relatório PDF gerado com sucesso!");
