@@ -13,7 +13,7 @@ export function carregarLogoPdf() {
           canvas.width = imagem.naturalWidth;
           canvas.height = imagem.naturalHeight;
           const contexto = canvas.getContext("2d");
-          contexto.fillStyle = "#1e4080";
+          contexto.fillStyle = "#0f2557";
           contexto.fillRect(0, 0, canvas.width, canvas.height);
           contexto.drawImage(imagem, 0, 0);
           resolve({ data: canvas.toDataURL("image/png"), proporcao: canvas.width / canvas.height });

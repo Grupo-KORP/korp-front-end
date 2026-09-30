@@ -41,6 +41,7 @@ export function mapperFormDataToPedidoRequest(formData) {
       email: distribuidor.email,
       contatos: distribuidor.contatos || [],
     },
+    metodoPagamento: formData.formaPagamento,
     itens,
   };
 }
