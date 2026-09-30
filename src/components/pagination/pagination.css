@@ -1,0 +1,111 @@
+/* Tokens próprios: a paginação funciona mesmo sem o CatalogPage.css carregado */
+.app-pagination {
+  --pg-border: #e5e7eb;
+  --pg-bg: #ffffff;
+  --pg-text: #1f2937;
+  --pg-text-s: #64748b;
+  --pg-hover-bg: #eff6ff;
+  --pg-hover-text: #1e4d9b;
+  --pg-hover-border: #bfdbfe;
+  --pg-gradient: linear-gradient(135deg, #0f2557 0%, #1a3a7a 60%, #1e4d9b 100%);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--pg-border);
+}
+
+body.dark .app-pagination {
+  --pg-border: #374151;
+  --pg-bg: #1f2937;
+  --pg-text: #d1d5db;
+  --pg-text-s: #9ca3af;
+  --pg-hover-bg: rgba(30, 58, 138, 0.5);
+  --pg-hover-text: #60a5fa;
+  --pg-hover-border: #1e3a8a;
+}
+
+.app-pagination-info {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--pg-text-s);
+}
+
+.app-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.app-pag-btn {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid var(--pg-border);
+  border-radius: 0.75rem;
+  background: var(--pg-bg);
+  color: var(--pg-text);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.app-pag-btn svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+}
+
+.app-pag-btn:hover:not(:disabled):not(.is-active) {
+  background: var(--pg-hover-bg);
+  color: var(--pg-hover-text);
+  border-color: var(--pg-hover-border);
+}
+
+.app-pag-btn:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.app-pag-btn.is-active {
+  background: var(--pg-gradient);
+  border-color: transparent;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(26, 58, 122, 0.3);
+  cursor: default;
+}
+
+.app-pag-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.app-pagination-ellipsis {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--pg-text-s);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .app-pagination {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

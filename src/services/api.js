@@ -152,23 +152,44 @@ export async function atualizarPedido(idPedido, pedidoEditRequest) {
 }
 
 // ─── Painel do vendedor ─────────────────────────────────────────────────────
+// Substitui a função buscarPainelVendedor atual em services/api.js e adiciona buscarDetalheVenda.
 
-export async function buscarPainelVendedor({ ano, mes, dia } = {}) {
-  const params = {};
+/**
+ * @param pagina  1-based (o Spring é 0-based, a conversão fica aqui)
+ * @param status  "TODAS" | "LIBERADAS" | "PENDENTES"
+ */
+export async function buscarPainelVendedor({ ano, mes, dia, status, pagina = 1, tamanho = 5 } = {}) {
+  const params = { page: Math.max(pagina, 1) - 1, size: tamanho };
   if (ano !== null && ano !== undefined) params.ano = ano;
   if (mes !== null && mes !== undefined) params.mes = mes;
   if (dia !== null && dia !== undefined) params.dia = dia;
+  if (status) params.status = status;
 
   try {
     const { data } = await api.get("/vendedor/home", { params });
     return data;
   } catch (err) {
-    const status = err?.status ?? err?.response?.status;
+    const httpStatus = err?.status ?? err?.response?.status;
 
-    if (status === 404) throw new Error("Painel do vendedor sem dados.");
-    if (status === 403) throw new Error("Sem permissão para acessar o painel.");
-    if (status === 401) throw new Error("Sessão expirada. Faça login novamente.");
+    if (httpStatus === 404) throw new Error("Painel do vendedor sem dados.");
+    if (httpStatus === 403) throw new Error("Sem permissão para acessar o painel.");
+    if (httpStatus === 401) throw new Error("Sessão expirada. Faça login novamente.");
 
     throw new Error("Erro ao carregar o painel. Tente novamente.");
+  }
+}
+
+export async function buscarDetalheVenda(idPedido) {
+  try {
+    const { data } = await api.get(`/vendedor/home/vendas/${idPedido}`);
+    return data;
+  } catch (err) {
+    const httpStatus = err?.status ?? err?.response?.status;
+
+    if (httpStatus === 404) throw new Error("Venda não encontrada.");
+    if (httpStatus === 403) throw new Error("Sem permissão para ver esta venda.");
+    if (httpStatus === 401) throw new Error("Sessão expirada. Faça login novamente.");
+
+    throw new Error("Erro ao carregar os detalhes da venda. Tente novamente.");
   }
 }
