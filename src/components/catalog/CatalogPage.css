@@ -7,7 +7,7 @@
 
 /* ─── Tokens (light) ─────────────────────────────────────────────────────────── */
 :root {
-  --cat-bg: #f3f4f6;
+  --cat-bg: var(--app-page-bg-light);
 
   --cat-card-bg: #ffffff;
 
@@ -47,7 +47,7 @@
 
 /* ─── Tokens (dark) ──────────────────────────────────────────────────────────── */
 body.dark {
-  --cat-bg: #111827;
+  --cat-bg: var(--app-page-bg-dark);
   --cat-card-bg: #1f2937;
   --cat-card-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
   --cat-border: #374151;

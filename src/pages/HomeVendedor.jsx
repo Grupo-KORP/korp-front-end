@@ -254,11 +254,11 @@ function CardMetrica({ icone, rotulo, valor, badge, sub, ativo, aoClicar, dark }
   return (
     <button
       onClick={aoClicar}
-      className={`rounded-xl px-4 py-3 flex flex-col gap-1.5 shadow-sm text-left transition-all duration-200 cursor-pointer focus:outline-none
+      className={`rounded-xl px-4 py-3 flex flex-col gap-1.5 ${dark ? "shadow-none border-0" : "shadow-sm"} text-left transition-all duration-200 cursor-pointer focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400
         ${ativo
-          ? "text-white ring-2 ring-blue-400 scale-[1.02]"
+          ? `text-white scale-[1.02] ${dark ? "" : "ring-2 ring-blue-400"}`
           : dark
-            ? "bg-gray-800 border border-gray-700 hover:border-blue-500 hover:shadow-md"
+            ? "bg-gray-800"
             : "bg-white border border-gray-100 hover:border-blue-200 hover:shadow-md"
         }`}
       style={ativo ? estiloAtivo : {}}
@@ -648,7 +648,7 @@ const periodo = useMemo(() => {
   }
  
   /* classes de tema */
-  const bg = modoEscuro ? "bg-gray-900" : "bg-gray-100";
+  const bg = modoEscuro ? "bg-[var(--app-page-bg-dark)]" : "bg-[var(--app-page-bg-light)]";
   const cardBg = modoEscuro ? "bg-gray-800" : "bg-white";
   const borda = modoEscuro ? "border-gray-700" : "border-gray-100";
   const textoP = modoEscuro ? "text-white" : "text-gray-900";

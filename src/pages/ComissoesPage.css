@@ -2,14 +2,14 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #f3f4f6;
+  background: var(--app-page-bg-light);
   color: #111827;
   overflow: hidden;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .comissoes-page-dark {
-  background: #111827;
+  background: var(--app-page-bg-dark);
   color: #f9fafb;
 }
 
@@ -174,6 +174,13 @@
   background: linear-gradient(135deg, #0f2557 0%, #1a3a7a 60%, #1e4d9b 100%);
   box-shadow: 0 12px 28px rgba(30, 64, 175, 0.24);
   transform: scale(1.015);
+}
+
+.comissoes-page-dark .comissoes-kpi,
+.comissoes-page-dark .comissoes-kpi:hover,
+.comissoes-page-dark .comissoes-kpi.is-active {
+  border: 0;
+  box-shadow: none;
 }
 
 .comissoes-kpi-top {

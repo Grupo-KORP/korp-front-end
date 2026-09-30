@@ -1,5 +1,5 @@
 .pedido-page {
-  --pedido-bg: #f3f4f6;
+  --pedido-bg: var(--app-page-bg-light);
 
   --pedido-card-bg: #ffffff;
   --pedido-card-soft-bg: #f8fafc;
@@ -39,7 +39,7 @@
 }
 
 .pedido-page-dark {
-  --pedido-bg: #111827;
+  --pedido-bg: var(--app-page-bg-dark);
 
   --pedido-card-bg: #1f2937;
   --pedido-card-soft-bg: #111827;
