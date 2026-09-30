@@ -1,4 +1,4 @@
-import { formatarStatusPagamento } from "../services/statusPagamento.js";
+﻿import { formatarStatusPagamento } from "../services/statusPagamento.js";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import "../styles/base-reset.css";
 import "./HomeVendedor.css";
@@ -538,6 +538,7 @@ const periodo = useMemo(() => {
  
   async function gerarPDFRelatorio(vendasPdf) {
     const { jsPDF } = await import("jspdf");
+    const logo = await carregarLogoPdf(); 
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
@@ -580,8 +581,10 @@ const periodo = useMemo(() => {
  
     const tableHeader = (columns) => {
       ensureSpace(10);
-      doc.setFillColor(241, 245, 249); doc.rect(margin, y, usableWidth, 9, "F");
-      doc.setFont("helvetica", "bold"); doc.setFontSize(7); doc.setTextColor(100, 116, 139);
+      doc.setFillColor(15, 37, 87); doc.rect(0, 0, pageWidth, 22, "F");
+      doc.setTextColor(255, 255, 255); 
+      adicionarLogoPdf(doc, logo, margin, 5, 22);
+      doc.text(`Painel do Consultor – ${periodoSelecionado}`, margin + 28, 13);
       let x = margin;
       columns.forEach((col) => { doc.text(col.label, x + 1.5, y + 5.8, { maxWidth: col.width - 3 }); x += col.width; });
       y += 9;
