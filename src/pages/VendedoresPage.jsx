@@ -8,6 +8,7 @@ import NavbarVendedor from "../layout/NavbarFinanceiro.jsx";
 import { useDarkMode } from "../hooks/useDarkMode.jsx";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
+import ModalVendasVendedor from "../components/modal/ModalVendasVendedor.jsx";
 
 const PAGE_SIZE = 5;
 
@@ -137,6 +138,8 @@ export default function VendedoresPage() {
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
   const [editingId, setEditingId] = useState(null);
+  const [vendedorSelecionado, setVendedorSelecionado] = useState(null);
+  const [statusOriginal, setStatusOriginal] = useState("Ativo");
   const [success, setSuccess] = useState(null);
   const [search, setSearch] = useState(searchParams.get("busca") || "");
 
@@ -268,6 +271,16 @@ export default function VendedoresPage() {
           percentualComissao: parseFloat(form.comissao)
         };
         await api.put(`/usuario/${editingId}`, payload);
+        if (statusOriginal === "Ativo" && form.status === "Inativo") {
+          try {
+            // Este endpoint faz a inativação lógica e preserva o cadastro.
+            await api.delete(`/usuario/${editingId}`);
+          } catch {
+            await fetchVendedores(currentPage, search);
+            toast.error("Os dados foram salvos, mas não foi possível inativar o vendedor. Tente salvar novamente.");
+            return;
+          }
+        }
         toast.success("Vendedor atualizado com sucesso!", { duration: 5000 });
         setEditingId(null);
       } else {
@@ -314,13 +327,15 @@ export default function VendedoresPage() {
   }
 
   function handleEdit(v) {
+    const status = v.status === true || v.status === "true" ? "Ativo" : "Inativo";
     setEditingId(v.idVendedor);
+    setStatusOriginal(status);
     setForm({
       nome: v.nome,
       email: v.email,
       fone: v.telefone ?? "",
       comissao: v.percentualComissao != null ? `${v.percentualComissao}%` : "30%",
-      status: v.status === true ? "Ativo" : "Inativo",
+      status,
     });
     setErrors({});
   }
@@ -359,6 +374,7 @@ export default function VendedoresPage() {
       style={!modoEscuro ? { background: "linear-gradient(120deg, #e0e7ff, #f8fafc)" } : undefined}
     >
       <NavbarVendedor />
+      {vendedorSelecionado && <ModalVendasVendedor vendedor={vendedorSelecionado} dark={modoEscuro} onClose={() => setVendedorSelecionado(null)} />}
 
       <div className="flex-1 overflow-y-auto lg:overflow-hidden w-full px-5 py-4 sm:py-5">
         <div className="flex h-full w-full flex-col">
@@ -423,7 +439,8 @@ export default function VendedoresPage() {
                     <p className={`text-sm text-center py-8 ${textoS}`}>Nenhum vendedor encontrado.</p>
                   ) : (displayed.map((v) => (
                     <div key={v.email}
-                      className={`grid grid-cols-4 gap-4 items-center px-2 py-3.5 rounded-xl ${hover} transition-colors group`}
+                      onClick={() => setVendedorSelecionado(v)}
+                      className={`grid grid-cols-4 gap-4 items-center px-2 py-3.5 rounded-xl cursor-pointer ${hover} transition-colors group`}
                     >
                       {/* Identificação */}
                       <div className="flex items-center gap-3">
@@ -433,7 +450,7 @@ export default function VendedoresPage() {
                           </span>
                         </div>
                         <div>
-                          <p className={`text-sm font-bold ${textoM}`}>{v.nome}</p>
+                          <button type="button" onClick={(event) => { event.stopPropagation(); setVendedorSelecionado(v); }} aria-label={`Ver vendas de ${v.nome}`} className={`text-sm font-bold text-left hover:underline ${textoM}`}>{v.nome}</button>
                           <p className={`text-xs ${textoS}`}>{v.email}</p>
                         </div>
                       </div>
@@ -450,7 +467,7 @@ export default function VendedoresPage() {
                       </span>
 
                       {/* Ferramentas */}
-                      <div className="flex items-center justify-center gap-2">
+                      <div className="flex items-center justify-center gap-2" onClick={(event) => event.stopPropagation()}>
                         <button onClick={() => handleEdit(v)}
                           className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${textoS} hover:text-blue-500 ${modoEscuro ? "hover:bg-blue-900/40" : "hover:bg-blue-50"}`}
                           aria-label="Editar">
@@ -545,15 +562,30 @@ export default function VendedoresPage() {
 
                 {/* Status do Colaborador */}
                 <div>
-                  <label className={`text-[10px] font-bold tracking-widest uppercase block mb-1 ${textoS}`}>
+                  <label htmlFor="status-colaborador" className={`text-[10px] font-bold tracking-widest uppercase block mb-1 ${textoS}`}>
                     Status do Colaborador
                   </label>
+                  {editingId ? (
+                    <select
+                      id="status-colaborador"
+                      name="status"
+                      value={form.status}
+                      onChange={handleFormChange}
+                      disabled={loading}
+                      className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition ${inputBg}`}
+                    >
+                      <option value="Ativo" disabled={statusOriginal === "Inativo"}>Ativo</option>
+                      <option value="Inativo">Inativo</option>
+                    </select>
+                  ) : (
                   <input
+                    id="status-colaborador"
                     type="text"
                     value="Ativo"
                     readOnly
                     className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none cursor-not-allowed ${inputBg}`}
                   />
+                  )}
                 </div>
 
                 <div className="flex gap-2 mt-1">

@@ -1,8 +1,13 @@
-import React, { useMemo, useState } from "react";
+import { formatarStatusPagamento } from "../services/statusPagamento.js";
+import React, { useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import ModalDetalheVenda from "../components/modal/Modaldetalhevenda.jsx";
 import NavbarFinanceiro from "../layout/NavbarFinanceiro.jsx";
+import logoTnd from "../assets/logo-tnd.webp";
 import DatePickerCalendar from "../components/ui/DatePickerCalendar.jsx";
 import { useDarkMode } from "../hooks/useDarkMode.jsx";
 import "./ComissoesPage.css";
+import { parcelasDoPeriodo, filtrarStatusParcelas } from "../services/filtrosComissoes.js";
 
 const STATUS = {
   pendente: "Pendente",
@@ -363,375 +368,122 @@ function ComissaoKpi({ filtro, valor, ativo, onClick }) {
 }
 
 function StatusBadge({ status, children }) {
-  return <span className={`comissoes-status status-${normalizar(status)}`}>{children || status}</span>;
+  return <span className={`comissoes-status status-${normalizar(status)}`}>{children || formatarStatusPagamento(status)}</span>;
 }
 
-function extrairResumoCodigo(vendaId) {
-  const codigo = String(vendaId || "").split("-").pop() || "";
-  return codigo.slice(0, 2);
-}
-
-function parcelaAtualPorStatus(venda, status) {
-  return venda.parcelas.find((parcela) => parcela.status === status) || null;
-}
-
-function VendaModal({ venda, onClose, onStatusChange, onNotaChange }) {
+function VendaModal({ venda, onClose, onStatusChange, onNotaChange, escuro }) {
+  const [rascunho, setRascunho] = useState(null);
+  const editando = rascunho !== null;
   if (!venda) return null;
-
+  const pedido = venda.detalhesPedido || {};
+  const pagamentoAVista = normalizar(pedido.metodoPagamento || "") !== "boleto";
+  const pagamentos = pagamentoAVista && venda.parcelas.length > 0
+    ? [{
+      ...venda.parcelas[0],
+      valor: totalComissao(venda),
+      status: statusVenda(venda),
+      notaFiscal: [...new Set(venda.parcelas.map((parcela) => parcela.notaFiscal).filter(Boolean))].join(", "),
+    }]
+    : venda.parcelas;
+  const atualizarPagamento = (callback, pagamentoId, valor) => {
+    const registros = pagamentoAVista ? venda.parcelas : venda.parcelas.filter((parcela) => parcela.id === pagamentoId);
+    registros.forEach((parcela) => callback(venda.id, parcela.id, valor));
+  };
+  const editarPagamento = (id, campo, valor) => {
+    setRascunho((atuais) => atuais.map((pagamento) => pagamento.id !== id
+      ? pagamento
+      : {
+        ...pagamento,
+        [campo]: valor,
+        ...(campo === "status" && valor !== STATUS.paga ? { notaFiscal: "" } : {}),
+      }));
+  };
+  const salvarPagamentos = () => {
+    rascunho.forEach((pagamento) => {
+      const original = pagamentos.find((item) => item.id === pagamento.id);
+      if (pagamento.status !== original.status) {
+        atualizarPagamento(onStatusChange, pagamento.id, pagamento.status);
+      }
+      if (pagamento.notaFiscal !== original.notaFiscal) {
+        atualizarPagamento(onNotaChange, pagamento.id, pagamento.notaFiscal);
+      }
+    });
+    setRascunho(null);
+    toast.success("Pagamentos atualizados com sucesso!");
+  };
+  const produto = pedido.produto || {};
   const status = statusVenda(venda);
-  const detalhesPedido = venda.detalhesPedido || {};
-  const cliente = detalhesPedido.cliente || {};
-  const distribuidor = detalhesPedido.distribuidor || {};
-  const produto = detalhesPedido.produto || {};
-  const resumoFinanceiro = detalhesPedido.resumoFinanceiro || {};
-  const codigoResumo = extrairResumoCodigo(venda.id);
-  const parcelaAtual = parcelaAtualPorStatus(venda, status);
-
+  const metodos = { "cartao de credito": "CARTAO_CREDITO", "cartao de debito": "CARTAO_DEBITO", boleto: "BOLETO", pix: "PIX", transferencia: "TRANSFERENCIA", dinheiro: "DINHEIRO" };
+  const pessoa = (dados = {}) => ({ ...dados, telefone: dados.telefone ?? dados.fone });
+  const detalhes = {
+    cliente: pessoa(pedido.cliente),
+    distribuidor: pessoa(pedido.distribuidor),
+    pedido: {
+      ...pedido,
+      numeroNotaDistribuidor: pedido.numeroNotaDistribuidor ?? pedido.notaFiscal,
+      metodoPagamento: metodos[normalizar(pedido.metodoPagamento || "")] || pedido.metodoPagamento || "",
+      quantidadeParcelas: pagamentoAVista ? 0 : venda.parcelas.length,
+    },
+    produto: {
+      ...produto,
+      descricao: produto.descricao || venda.venda,
+      valorUnitario: formatarMoeda(produto.valorUnitario),
+      valorTotal: formatarMoeda(produto.valorTotal),
+      valorUnitarioFaturado: formatarMoeda(produto.valorUnitarioFaturado),
+      totalFaturado: formatarMoeda(produto.totalFaturado ?? venda.valorVenda),
+    },
+  };
   return (
-    <div className="comissoes-home-modal-overlay" role="presentation" onMouseDown={onClose}>
-      <div
-        className="comissoes-home-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="modal-venda-titulo"
-        onMouseDown={(event) => event.stopPropagation()}
-      >
-        <header className="comissoes-home-modal-header">
-          <div className="comissoes-home-modal-id">
-            <span>{codigoResumo}</span>
-          </div>
-          <div className="comissoes-home-modal-title">
-            <p>Detalhes da Venda</p>
-            <h2 id="modal-venda-titulo">{venda.venda} - {venda.cliente}</h2>
-          </div>
-          <StatusBadge status={status}>
-            {parcelaAtual ? `Parcela ${parcelaAtual.numero}` : status}
-          </StatusBadge>
-        </header>
-
-        <div className="comissoes-home-modal-body modal-detalhe-scroll">
+    <ModalDetalheVenda
+      key={venda.id}
+      venda={{ ...venda, nome: venda.venda, status, tipo: normalizar(status), comissao: formatarMoeda(totalComissao(venda)) }}
+      mes="financeiro"
+      detalhesVenda={{ [`financeiro-${venda.id}`]: detalhes }}
+      aoFechar={onClose}
+      escuro={escuro}
+      somenteLeitura
+      parcelasConteudo={(
           <section className="comissoes-home-modal-section">
-            <div className="comissoes-home-section-title">
-              <span />
-              <h3>Dados da Venda</h3>
-            </div>
-
-            <div className="comissoes-home-fields">
-              <div className="comissoes-home-field-card">
-                <label>
-                  Pedido
-                  <input type="text" readOnly value={detalhesPedido.numeroPedido || venda.id} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  Vendedor
-                  <input type="text" readOnly value={detalhesPedido.vendedor || venda.vendedor} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  Método de Pagamento
-                  <input type="text" readOnly value={detalhesPedido.metodoPagamento || "—"} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  Nota Fiscal
-                  <input type="text" readOnly value={detalhesPedido.notaFiscal || "—"} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card comissoes-home-field-card-wide">
-                <label>
-                  Observações
-                  <input type="text" readOnly value={detalhesPedido.observacoes || "—"} />
-                </label>
-              </div>
-            </div>
-          </section>
-
-          <section className="comissoes-home-modal-section">
-            <div className="comissoes-home-section-title">
-              <span />
-              <h3>Dados do Cliente</h3>
-            </div>
-
-            <div className="comissoes-home-fields">
-              <div className="comissoes-home-field-card">
-                <label>
-                  Nome Fantasia
-                  <input type="text" readOnly value={cliente.nomeFantasia || "—"} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  Razão Social
-                  <input type="text" readOnly value={cliente.razaoSocial || "—"} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  CNPJ
-                  <input type="text" readOnly value={cliente.cnpj || "—"} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  Insc. Est.
-                  <input type="text" readOnly value={cliente.inscricaoEstadual || "—"} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  Fone
-                  <input type="text" readOnly value={cliente.fone || "—"} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  CEP
-                  <input type="text" readOnly value={cliente.cep || "—"} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  Endereço
-                  <input type="text" readOnly value={cliente.endereco || "—"} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  Número
-                  <input type="text" readOnly value={cliente.numero || "—"} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  Complemento
-                  <input type="text" readOnly value={cliente.complemento || "—"} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  Cidade
-                  <input type="text" readOnly value={cliente.cidade || "—"} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  UF
-                  <input type="text" readOnly value={cliente.uf || "—"} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  Contato
-                  <input type="text" readOnly value={cliente.contato || "—"} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card comissoes-home-field-card-wide">
-                <label>
-                  E-mail
-                  <input type="text" readOnly value={cliente.email || "—"} />
-                </label>
-              </div>
-            </div>
-          </section>
-
-          <section className="comissoes-home-modal-section">
-            <div className="comissoes-home-section-title">
-              <span />
-              <h3>Dados do Distribuidor</h3>
-            </div>
-
-            <div className="comissoes-home-fields">
-              <div className="comissoes-home-field-card">
-                <label>
-                  Nome Fantasia
-                  <input type="text" readOnly value={distribuidor.nomeFantasia || "—"} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  Razão Social
-                  <input type="text" readOnly value={distribuidor.razaoSocial || "—"} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  CNPJ
-                  <input type="text" readOnly value={distribuidor.cnpj || "—"} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  Insc. Est.
-                  <input type="text" readOnly value={distribuidor.inscricaoEstadual || "—"} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  Fone
-                  <input type="text" readOnly value={distribuidor.fone || "—"} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  CEP
-                  <input type="text" readOnly value={distribuidor.cep || "—"} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  Endereço
-                  <input type="text" readOnly value={distribuidor.endereco || "—"} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  Número
-                  <input type="text" readOnly value={distribuidor.numero || "—"} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  Complemento
-                  <input type="text" readOnly value={distribuidor.complemento || "—"} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  Cidade
-                  <input type="text" readOnly value={distribuidor.cidade || "—"} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  UF
-                  <input type="text" readOnly value={distribuidor.uf || "—"} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  Contato
-                  <input type="text" readOnly value={distribuidor.contato || "—"} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card comissoes-home-field-card-wide">
-                <label>
-                  E-mail
-                  <input type="text" readOnly value={distribuidor.email || "—"} />
-                </label>
-              </div>
-            </div>
-          </section>
-
-          <section className="comissoes-home-modal-section">
+            <div className="comissoes-home-payment-header">
             <div className="comissoes-home-section-title comissoes-home-section-title-green">
               <span />
-              <h3>Dados do Produto</h3>
+              <h3>Pagamentos</h3>
             </div>
-
-            <div className="comissoes-home-fields">
-              <div className="comissoes-home-field-card">
-                <label>
-                  Descrição do Produto
-                  <input type="text" readOnly value={produto.descricao || venda.venda} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  P/N
-                  <input type="text" readOnly value={produto.pn || "—"} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  Entrega
-                  <input type="text" readOnly value={produto.entrega || "—"} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  Quantidade
-                  <input type="text" readOnly value={produto.quantidade ?? "—"} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  Valor Unitário
-                  <input type="text" readOnly value={formatarMoeda(produto.valorUnitario)} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  Valor Total
-                  <input type="text" readOnly value={formatarMoeda(produto.valorTotal)} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  Valor Unit. Faturado
-                  <input type="text" readOnly value={formatarMoeda(produto.valorUnitarioFaturado)} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  Total Faturado
-                  <input type="text" readOnly value={formatarMoeda(produto.totalFaturado)} />
-                </label>
-              </div>
+            <div className="flex flex-wrap gap-2">
+              {editando ? (
+                <>
+                  <button type="button" onClick={() => setRascunho(null)}
+                    className={`px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all border ${escuro ? "bg-gray-800 border-gray-600 text-gray-200 hover:bg-gray-700" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-100"}`}>
+                    Cancelar
+                  </button>
+                  <button type="button" onClick={salvarPagamentos}
+                    className="px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all bg-blue-600 text-white hover:bg-blue-700">
+                    Salvar
+                  </button>
+                </>
+              ) : (
+                <button type="button" onClick={() => setRascunho(pagamentos.map((pagamento) => ({ ...pagamento })))}
+                  className={`px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all border ${escuro ? "bg-blue-500/10 border-blue-400 text-blue-400 hover:bg-blue-500/20" : "bg-blue-50 border-blue-500 text-blue-600 hover:bg-blue-100"}`}>
+                  Editar
+                </button>
+              )}
             </div>
-          </section>
-
-          <section className="comissoes-home-modal-section">
-            <div className="comissoes-home-section-title">
-              <span />
-              <h3>Resumo Financeiro</h3>
-            </div>
-
-            <div className="comissoes-home-fields">
-              <div className="comissoes-home-field-card">
-                <label>
-                  Valor de Compra
-                  <input type="text" readOnly value={formatarMoeda(resumoFinanceiro.valorCompra ?? venda.valorVenda)} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  Valor de Faturamento
-                  <input type="text" readOnly value={formatarMoeda(resumoFinanceiro.valorFaturamento ?? venda.valorVenda)} />
-                </label>
-              </div>
-              <div className="comissoes-home-field-card">
-                <label>
-                  Total de Comissão Bruta
-                  <input type="text" readOnly value={formatarMoeda(resumoFinanceiro.totalComissaoBruta ?? totalComissao(venda))} />
-                </label>
-              </div>
-            </div>
-          </section>
-
-          <section className="comissoes-home-modal-section">
-            <div className="comissoes-home-section-title comissoes-home-section-title-green">
-              <span />
-              <h3>Parcelas da Compra</h3>
             </div>
 
             <div className="comissoes-home-parcelas">
-              {venda.parcelas.map((parcela) => (
+              {(rascunho || pagamentos).map((parcela) => (
                 <div className="comissoes-home-parcela" key={parcela.id}>
                   <div className="comissoes-home-parcela-info">
-                    <strong>Parcela {parcela.numero}</strong>
+                    <strong>{pagamentoAVista ? "Pagamento à vista" : `Pagamento ${parcela.numero}`}</strong>
                     <span>{formatarMoeda(parcela.valor)} - prevista para {formatarData(parcela.previsao)}</span>
                   </div>
 
                   <label>
                     Status
-                    <select value={parcela.status} onChange={(event) => onStatusChange(venda.id, parcela.id, event.target.value)}>
+                    <select disabled={!editando} value={parcela.status} onChange={(event) => editarPagamento(parcela.id, "status", event.target.value)}>
                       {STATUS_OPTIONS.map((option) => (
                         <option key={option} value={option}>
-                          {option}
+                          {formatarStatusPagamento(option)}
                         </option>
                       ))}
                     </select>
@@ -739,11 +491,12 @@ function VendaModal({ venda, onClose, onStatusChange, onNotaChange }) {
 
                   {parcela.status === STATUS.paga && (
                     <label>
-                      Nota Fiscal
+                      Nota Fiscal do Vendedor
                       <input
                         type="text"
+                        disabled={!editando}
                         value={parcela.notaFiscal}
-                        onChange={(event) => onNotaChange(venda.id, parcela.id, event.target.value)}
+                        onChange={(event) => editarPagamento(parcela.id, "notaFiscal", event.target.value)}
                         placeholder="Ex: NF-0000"
                       />
                     </label>
@@ -754,15 +507,8 @@ function VendaModal({ venda, onClose, onStatusChange, onNotaChange }) {
               ))}
             </div>
           </section>
-        </div>
-
-        <footer className="comissoes-home-modal-footer">
-          <button type="button" onClick={onClose}>
-            Fechar
-          </button>
-        </footer>
-      </div>
-    </div>
+      )}
+    />
   );
 }
 
@@ -771,49 +517,37 @@ export default function ComissoesPage() {
   const [vendas, setVendas] = useState(vendasMockadas);
   const [filtroAtivo, setFiltroAtivo] = useState(null);
   const [busca, setBusca] = useState("");
-  const [selecao, setSelecao] = useState(null);
+  const [selecao, setSelecao] = useState(() => ({ type: "month", y: hoje.getFullYear(), m: hoje.getMonth() }));
   const [vendaSelecionadaId, setVendaSelecionadaId] = useState(null);
+  const [emitindoRelatorio, setEmitindoRelatorio] = useState(false);
+  const relatorioEmAndamento = useRef(false);
 
-  const contadores = useMemo(() => {
-    const parcelas = vendas.flatMap((venda) => venda.parcelas);
-    return filtrosKpi.reduce((acc, filtro) => {
-      acc[filtro.chave] = parcelas.filter((parcela) => parcela.status === filtro.chave).length;
-      return acc;
-    }, {});
-  }, [vendas]);
-
-  const vendasFiltradas = useMemo(() => {
+  const vendasBuscadas = useMemo(() => {
     const termo = normalizar(busca.trim());
+    return vendas.filter((venda) => !termo || [
+      venda.vendedor,
+      venda.detalhesPedido?.numeroPedido,
+      venda.id,
+    ].some((valor) => normalizar(String(valor ?? "")).includes(termo)));
+  }, [busca, vendas]);
 
-    return vendas.filter((venda) => {
-      const vendedorCombina = termo ? normalizar(venda.vendedor).includes(termo) : true;
-      const statusCombina = filtroAtivo
-        ? venda.parcelas.some((parcela) => parcela.status === filtroAtivo)
-        : true;
-      const dataCombina = !selecao
-        ? true
-        : selecao.type === "day"
-          ? venda.dataVenda === `${selecao.y}-${String(selecao.m + 1).padStart(2, "0")}-${String(selecao.d).padStart(2, "0")}`
-          : venda.dataVenda.startsWith(`${selecao.y}-${String(selecao.m + 1).padStart(2, "0")}`);
-
-      return vendedorCombina && statusCombina && dataCombina;
-    });
-  }, [busca, filtroAtivo, selecao, vendas]);
+  const parcelasPeriodo = useMemo(() => parcelasDoPeriodo(vendasBuscadas, selecao), [vendasBuscadas, selecao]);
+  const contadores = useMemo(() => filtrosKpi.reduce((acc, filtro) => {
+    acc[filtro.chave] = filtrarStatusParcelas(parcelasPeriodo, filtro.chave).length;
+    return acc;
+  }, {}), [parcelasPeriodo]);
+  const parcelasFiltradas = useMemo(() => filtrarStatusParcelas(parcelasPeriodo, filtroAtivo), [parcelasPeriodo, filtroAtivo]);
 
   const proximasLiberacoes = useMemo(() => {
     const datasPermitidas = new Set([toISODate(hoje), toISODate(amanha)]);
 
-    return vendas
-      .flatMap((venda) =>
-        venda.parcelas
-          .filter((parcela) => datasPermitidas.has(parcela.previsao))
-          .map((parcela) => ({ ...parcela, venda }))
-      )
+    return parcelasFiltradas
+      .filter((parcela) => datasPermitidas.has(parcela.previsao))
       .sort((a, b) => a.previsao.localeCompare(b.previsao));
-  }, [vendas]);
+  }, [parcelasFiltradas]);
 
   const vendaSelecionada = vendas.find((venda) => venda.id === vendaSelecionadaId);
-  const tituloTabela = filtrosKpi.find((filtro) => filtro.chave === filtroAtivo)?.rotulo || "Todas as Vendas";
+  const tituloTabela = filtrosKpi.find((filtro) => filtro.chave === filtroAtivo)?.rotulo || "Pagamentos do período";
 
   function alterarStatus(vendaId, parcelaId, status) {
     setVendas((atuais) =>
@@ -847,8 +581,25 @@ export default function ComissoesPage() {
     );
   }
 
-  function emitirRelatorio() {
-    window.print();
+  async function emitirRelatorio() {
+    if (relatorioEmAndamento.current) return;
+    relatorioEmAndamento.current = true;
+    setEmitindoRelatorio(true);
+    try {
+      const filtro = selecao || { type: "month", y: hoje.getFullYear(), m: hoje.getMonth() };
+      const data = new Date(filtro.y, filtro.m, filtro.type === "day" ? filtro.d : 1);
+      const periodo = data.toLocaleDateString("pt-BR", { ...(filtro.type === "day" ? { day: "2-digit" } : {}), month: "long", year: "numeric" });
+      const { criarRelatorioComissoes } = await import("../services/relatorioComissoes.js");
+      const doc = await criarRelatorioComissoes({ parcelas: parcelasFiltradas, proximasLiberacoes, periodo, status: filtroAtivo, busca });
+      const sufixo = `${filtro.y}-${String(filtro.m + 1).padStart(2, "0")}${filtro.type === "day" ? `-${String(filtro.d).padStart(2, "0")}` : ""}`;
+      await doc.save(`relatorio-comissoes-${sufixo}.pdf`, { returnPromise: true });
+      toast.success("Relatório PDF gerado com sucesso!");
+    } catch {
+      toast.error("Não foi possível gerar o relatório. Tente novamente.");
+    } finally {
+      relatorioEmAndamento.current = false;
+      setEmitindoRelatorio(false);
+    }
   }
 
   return (
@@ -856,6 +607,9 @@ export default function ComissoesPage() {
       <NavbarFinanceiro />
 
       <main className="comissoes-content">
+        <div className="comissoes-print-brand">
+          <img src={logoTnd} alt="TND Brasil" />
+        </div>
         <header className="comissoes-header">
           <div>
             <p>Operações Financeiras</p>
@@ -869,7 +623,8 @@ export default function ComissoesPage() {
                 type="text"
                 value={busca}
                 onChange={(event) => setBusca(event.target.value)}
-                placeholder="PESQUISAR VENDEDOR"
+                placeholder="Vendedor ou código do pedido"
+                aria-label="Pesquisar vendedor ou código do pedido"
               />
             </label>
             <DatePickerCalendar selecao={selecao} aoSelecionar={setSelecao} dark={modoEscuro} />
@@ -906,31 +661,36 @@ export default function ComissoesPage() {
                       <th>Cliente</th>
                       <th>Vendedor</th>
                       <th>Comissão</th>
-                      <th>Parcelas</th>
+                      <th>Parcela / Vencimento</th>
                       <th>Status</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {vendasFiltradas.map((venda) => (
-                      <tr key={venda.id} onClick={() => setVendaSelecionadaId(venda.id)}>
+                    {parcelasFiltradas.map(({ venda, ...parcela }) => (
+                      <tr key={`${venda.id}-${parcela.id}`} onClick={() => setVendaSelecionadaId(venda.id)}>
                         <td>
                           <strong>{venda.id}</strong>
                           <span>{venda.venda}</span>
                         </td>
                         <td>{venda.cliente}</td>
                         <td>{venda.vendedor}</td>
-                        <td>{formatarMoeda(totalComissao(venda))}</td>
-                        <td>{venda.parcelas.length} parcelas</td>
+                        <td>{formatarMoeda(parcela.valor)}</td>
                         <td>
-                          <StatusBadge status={statusVenda(venda)} />
+                          <div className="comissoes-parcela-vencimento">
+                            <strong>{parcela.numero}</strong>
+                            <span>{formatarData(parcela.previsao)}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <StatusBadge status={parcela.status} />
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
 
-                {vendasFiltradas.length === 0 && (
-                  <p className="comissoes-empty">Nenhuma venda encontrada para os filtros selecionados.</p>
+                {parcelasFiltradas.length === 0 && (
+                  <p className="comissoes-empty">Nenhuma parcela encontrada para os filtros selecionados.</p>
                 )}
               </div>
             </section>
@@ -950,23 +710,32 @@ export default function ComissoesPage() {
                       <span>{parcela.venda.cliente}</span>
                     </div>
                     <div>
+                      <span>Pedido</span>
+                      <strong>{parcela.venda.detalhesPedido?.numeroPedido || parcela.venda.id}</strong>
+                    </div>
+                    <div>
                       <span>Parcela {parcela.numero}</span>
                       <strong>{formatarMoeda(parcela.valor)}</strong>
                     </div>
-                    <time>{formatarData(parcela.previsao)}</time>
+                    <time dateTime={parcela.previsao}>{formatarData(parcela.previsao)}</time>
                   </article>
                 ))}
+                {proximasLiberacoes.length === 0 && (
+                  <p className="comissoes-empty">Nenhuma próxima liberação encontrada.</p>
+                )}
               </div>
             </section>
 
-            <button className="comissoes-report-button" type="button" onClick={emitirRelatorio}>
-              Emitir relatório
+            <button className="comissoes-report-button" type="button" onClick={emitirRelatorio} disabled={emitindoRelatorio} aria-busy={emitindoRelatorio}>
+              {emitindoRelatorio ? "Gerando PDF..." : "Emitir relatório"}
             </button>
           </aside>
         </div>
       </main>
 
       <VendaModal
+        key={vendaSelecionadaId || "fechado"}
+        escuro={modoEscuro}
         venda={vendaSelecionada}
         onClose={() => setVendaSelecionadaId(null)}
         onStatusChange={alterarStatus}

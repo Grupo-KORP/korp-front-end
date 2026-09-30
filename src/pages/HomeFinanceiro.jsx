@@ -1,7 +1,9 @@
-
+import { calendarStyles } from "../components/ui/calendarStyles.js";
+import { formatarStatusPagamento } from "../services/statusPagamento.js";
 import React, { useEffect, useRef, useState } from "react";
 import NavbarFinanceiro from "../layout/NavbarFinanceiro.jsx";
 import { useDarkMode } from "../hooks/useDarkMode.jsx";
+import { useAuth } from "../hooks/useAuth";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import {
@@ -12,6 +14,7 @@ import {
   XAxis,
   YAxis,
   Tooltip,
+  Legend,
 } from "recharts";
 
 const MESES = [
@@ -21,6 +24,7 @@ const MESES = [
 ];
 
 const HOJE = new Date();
+const ANO_MIN = 2026;
 
 const formatarMoedaBR = (valor) =>
   Number(valor || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -42,19 +46,19 @@ const PAINEL_MOCK = {
   comissaoAPagar: 18450,
   qtdVendasComissaoAPagar: 26,
   evolucaoVendas: [
-    { mes: "Out/25", valor: 180000 },
-    { mes: "Nov/25", valor: 210000 },
-    { mes: "Dez/25", valor: 195000 },
-    { mes: "Jan/26", valor: 215000 },
-    { mes: "Fev/26", valor: 235000 },
-    { mes: "Mar/26", valor: 260000 },
+    { mes: "Out/25", valor: 180000, quantidadeVendas: 24 },
+    { mes: "Nov/25", valor: 210000, quantidadeVendas: 30 },
+    { mes: "Dez/25", valor: 195000, quantidadeVendas: 27 },
+    { mes: "Jan/26", valor: 215000, quantidadeVendas: 35 },
+    { mes: "Fev/26", valor: 235000, quantidadeVendas: 32 },
+    { mes: "Mar/26", valor: 260000, quantidadeVendas: 40 },
   ],
   rankingVendedores: [
-    { nome: "Maria Silva", valor: 4250 },
-    { nome: "João Oliveira", valor: 3890 },
-    { nome: "Ana Costa", valor: 2950 },
-    { nome: "Rafael Santos", valor: 2180 },
-    { nome: "Fernanda Lima", valor: 1680 },
+    { nome: "Maria Silva", valor: 4250, quantidadeVendas: 12 },
+    { nome: "João Oliveira", valor: 3890, quantidadeVendas: 10 },
+    { nome: "Ana Costa", valor: 2950, quantidadeVendas: 8 },
+    { nome: "Rafael Santos", valor: 2180, quantidadeVendas: 6 },
+    { nome: "Fernanda Lima", valor: 1680, quantidadeVendas: 4 },
   ],
   ultimosPedidos: [
     { codigo: "V1287", vendedor: "Maria Silva", cliente: "Tech Solutions Ltda", valorFaturado: 6500, comissao: 450, pagamento: "À vista", status: "Pago" },
@@ -165,10 +169,17 @@ function CardMetrica({ icone, tint, rotulo, valor, badge, sub, dark }) {
 export default function HomeFinanceiro() {
   const { darkMode: modoEscuro } = useDarkMode();
   const navigate = useNavigate();
+  const { initialized, isAuthenticated, hasRole } = useAuth();
   const [mesSelecionado, setMesSelecionado] = useState(MESES[HOJE.getMonth()]);
   const [anoSelecionado, setAnoSelecionado] = useState(HOJE.getFullYear());
   const [mostrarMeses, setMostrarMeses] = useState(false);
+  const [mesRascunho, setMesRascunho] = useState(MESES[HOJE.getMonth()]);
+  const [anoRascunho, setAnoRascunho] = useState(HOJE.getFullYear());
+  const [mostrarAnos, setMostrarAnos] = useState(false);
+  const inicioAnos = ANO_MIN + Math.floor((anoRascunho - ANO_MIN) / 12) * 12;
   const [painel, setPainel] = useState(null);
+  const [emitindoRelatorio, setEmitindoRelatorio] = useState(false);
+  const relatorioEmAndamento = useRef(false);
 
   const refDropdown = useRef(null);
   const toastShown = useRef(false);
@@ -185,21 +196,22 @@ export default function HomeFinanceiro() {
 
   useEffect(() => {
     if (toastShown.current) return;
-    // if (!verificarToken()) {
-    //   toastShown.current = true;
-    //   toast.error("Sessão expirada. Faça login novamente.");
-    //   navigate("/login");
-    //   return;
-    // }
-    // if (!verificarSeFinanceiroEAdmin()) {
-    //   toastShown.current = true;
-    //   toast.error("Acesso negado. Você não tem permissão para acessar esta página.");
-    //   navigate("/vendedores/home");
-    // }
-  }, [navigate]);
+    if (!initialized) return;
+    if (!isAuthenticated) {
+      toastShown.current = true;
+      toast.error("Sessão expirada. Faça login novamente.");
+      navigate("/login");
+      return;
+    }
+    if (!hasRole("ROLE_FINAN") && !hasRole("ROLE_ADMIN")) {
+      toastShown.current = true;
+      toast.error("Acesso negado. Você não tem permissão para acessar esta página.");
+      navigate("/vendedores/home");
+    }
+  }, [initialized, isAuthenticated, hasRole, navigate]);
 
   useEffect(() => {
-    // if (!verificarToken() || !verificarSeFinanceiroEAdmin()) return;
+    if (!initialized || !isAuthenticated || (!hasRole("ROLE_FINAN") && !hasRole("ROLE_ADMIN"))) return;
 
     let ativo = true;
     buscarPainelFinanceiro({ ano: anoSelecionado, mes: MESES.indexOf(mesSelecionado) + 1 })
@@ -210,7 +222,7 @@ export default function HomeFinanceiro() {
       });
 
     return () => { ativo = false; };
-  }, [mesSelecionado, anoSelecionado]);
+  }, [mesSelecionado, anoSelecionado, initialized, isAuthenticated, hasRole]);
 
   const dados = painel || PAINEL_MOCK;
   const periodoSelecionado = `${mesSelecionado} de ${anoSelecionado}`;
@@ -221,13 +233,30 @@ export default function HomeFinanceiro() {
     "Em Análise": "bg-blue-50 text-blue-600 border-blue-200",
   };
 
-  function selecionarMes(mes) {
-    setMesSelecionado(mes);
+  function confirmarPeriodo() {
+    setMesSelecionado(mesRascunho);
+    setAnoSelecionado(anoRascunho);
     setMostrarMeses(false);
+    refDropdown.current?.querySelector("button")?.focus();
   }
 
-  function emitirRelatorio() {
-    toast.info("Emissão de relatório em PDF ainda não implementada para o painel financeiro.");
+  async function emitirRelatorio() {
+    if (relatorioEmAndamento.current) return;
+    relatorioEmAndamento.current = true;
+    setEmitindoRelatorio(true);
+    try {
+      const { criarRelatorioFinanceiro } = await import("../services/relatorioFinanceiro.js");
+      const doc = await criarRelatorioFinanceiro({ dados, periodo: periodoSelecionado });
+      const mes = String(MESES.indexOf(mesSelecionado) + 1).padStart(2, "0");
+      await doc.save(`relatorio-financeiro-${anoSelecionado}-${mes}.pdf`, { returnPromise: true });
+      toast.success("Relatório PDF gerado com sucesso!");
+    } catch (error) {
+      console.error("Erro ao gerar relatório financeiro", error);
+      toast.error("Não foi possível gerar o relatório. Tente novamente.");
+    } finally {
+      relatorioEmAndamento.current = false;
+      setEmitindoRelatorio(false);
+    }
   }
 
   /* classes de tema */
@@ -240,6 +269,7 @@ export default function HomeFinanceiro() {
   const hover = modoEscuro ? "hover:bg-gray-700" : "hover:bg-gray-50";
 
   const gridStroke = modoEscuro ? "#374151" : "#e5e7eb";
+  const coresCalendario = calendarStyles(modoEscuro);
   const axisStroke = modoEscuro ? "#6b7280" : "#9ca3af";
   const tooltipStyle = {
     background: modoEscuro ? "#1f2937" : "#ffffff",
@@ -268,70 +298,109 @@ export default function HomeFinanceiro() {
             </div>
 
             <div className="flex items-center gap-3 w-full sm:w-auto">
-              <div className="relative" ref={refDropdown}>
+              <div className="relative" ref={refDropdown} onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  setMostrarMeses(false);
+                  refDropdown.current?.querySelector("button")?.focus();
+                }
+              }}>
                 <button
                   type="button"
                   aria-label="Selecionar mês e ano"
                   aria-expanded={mostrarMeses}
                   aria-controls="filtro-periodo-financeiro"
-                  onClick={() => setMostrarMeses((v) => !v)}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border text-sm font-semibold transition
-                    ${cardBg} ${borda} ${textoM} ${hover}`}
+                  onClick={() => {
+                    if (!mostrarMeses) {
+                      setMesRascunho(mesSelecionado);
+                      setAnoRascunho(anoSelecionado);
+                      setMostrarAnos(false);
+                    }
+                    setMostrarMeses((v) => !v);
+                  }}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium transition-colors shadow-sm
+                    ${coresCalendario.trigger} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2`}
                 >
                   <IconCalendario />
                   {periodoSelecionado}
+                  <svg className={`w-4 h-4 transition-transform ${mostrarMeses ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="m6 9 6 6 6-6" />
+                  </svg>
                 </button>
 
                 {mostrarMeses && (
-                  <div id="filtro-periodo-financeiro" className={`absolute right-0 mt-2 z-20 w-40 rounded-xl shadow-lg border p-1.5
+                  <div id="filtro-periodo-financeiro" role="group" aria-label="Selecionar mês e ano" className={`absolute left-0 sm:left-auto sm:right-0 mt-2 z-20 w-80 max-w-[calc(100vw-2rem)] rounded-2xl shadow-lg border p-4
                     ${cardBg} ${borda}`}>
-                    <div className={`flex items-center justify-between border-b pb-1.5 mb-1.5 ${borda}`}>
+                    <div className={`rounded-lg py-1.5 mb-3 text-center text-xs font-medium ${coresCalendario.selected}`}>Por mês</div>
+                    <div className="flex items-center justify-between mb-3">
                       <button
                         type="button"
-                        aria-label="Ano anterior"
-                        onClick={() => setAnoSelecionado((ano) => ano - 1)}
-                        className={`p-1.5 rounded-lg transition ${textoM} ${hover}`}
+                        aria-label={mostrarAnos ? "Anos anteriores" : "Ano anterior"}
+                        disabled={mostrarAnos ? inicioAnos <= ANO_MIN : anoRascunho <= ANO_MIN}
+                        onClick={() => setAnoRascunho((ano) => Math.max(ANO_MIN, ano - (mostrarAnos ? 12 : 1)))}
+                        className={`p-1.5 rounded-lg transition disabled:opacity-25 disabled:cursor-not-allowed ${coresCalendario.text} ${coresCalendario.hover}`}
                       >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 18l-6-6 6-6" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 18l-6-6 6-6" />
                         </svg>
                       </button>
-                      <span className={`text-sm font-bold ${textoM}`} aria-live="polite">{anoSelecionado}</span>
+                      <button type="button" onClick={() => setMostrarAnos((valor) => !valor)} className={`text-sm font-medium px-3 py-1 rounded-lg ${coresCalendario.text} ${coresCalendario.hover}`} aria-live="polite">
+                        {mostrarAnos ? `${inicioAnos} – ${inicioAnos + 11}` : anoRascunho}
+                      </button>
                       <button
                         type="button"
-                        aria-label="Próximo ano"
-                        onClick={() => setAnoSelecionado((ano) => ano + 1)}
-                        className={`p-1.5 rounded-lg transition ${textoM} ${hover}`}
+                        aria-label={mostrarAnos ? "Próximos anos" : "Próximo ano"}
+                        onClick={() => setAnoRascunho((ano) => ano + (mostrarAnos ? 12 : 1))}
+                        className={`p-1.5 rounded-lg transition ${coresCalendario.text} ${coresCalendario.hover}`}
                       >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 6l6 6-6 6" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 6l6 6-6 6" />
                         </svg>
                       </button>
                     </div>
-                    <div className="max-h-64 overflow-y-auto">
-                    {MESES.map((mes) => (
+                    <div className="grid grid-cols-3 gap-1.5 mb-3">
+                    {mostrarAnos ? Array.from({ length: 12 }, (_, i) => inicioAnos + i).map((ano) => (
+                      <button
+                        type="button"
+                        key={ano}
+                        onClick={() => { setAnoRascunho(ano); setMostrarAnos(false); }}
+                        aria-pressed={ano === anoRascunho}
+                        className={`w-full py-2 rounded-lg text-xs transition-colors
+                          ${ano === anoRascunho ? coresCalendario.selected : `${coresCalendario.text} ${coresCalendario.hover}`}`}
+                      >
+                        {ano}
+                      </button>
+                    )) : MESES.map((mes) => (
                       <button
                         type="button"
                         key={mes}
-                        onClick={() => selecionarMes(mes)}
-                        className={`w-full text-left px-3 py-1.5 rounded-lg text-sm transition
-                          ${mes === mesSelecionado ? "font-bold text-blue-600" : textoM} ${hover}`}
+                        onClick={() => setMesRascunho(mes)}
+                        aria-label={`${mes} de ${anoRascunho}`}
+                        aria-pressed={mes === mesRascunho}
+                        className={`w-full py-2 rounded-lg text-xs transition-colors
+                          ${mes === mesRascunho ? coresCalendario.selected : `${coresCalendario.text} ${coresCalendario.hover}`}`}
                       >
-                        {mes}
+                        {mes.slice(0, 3)}
                       </button>
                     ))}
+                    </div>
+                    <div className={`flex items-center justify-between border-t pt-3 ${borda}`}>
+                      <button type="button" onClick={() => setMesRascunho(null)} className={`text-xs ${coresCalendario.text} ${coresCalendario.hover}`}>Limpar</button>
+                      <button type="button" disabled={!mesRascunho} onClick={confirmarPeriodo} className={`rounded-lg px-4 py-1.5 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed ${coresCalendario.confirm}`}>Confirmar</button>
                     </div>
                   </div>
                 )}
               </div>
 
               <button
+                type="button"
+                disabled={emitindoRelatorio}
+                aria-busy={emitindoRelatorio}
                 onClick={emitirRelatorio}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white tracking-wide transition-all duration-200 hover:opacity-90 active:scale-[0.98] shadow-md whitespace-nowrap"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white tracking-wide transition-all duration-200 hover:opacity-90 active:scale-[0.98] shadow-md whitespace-nowrap disabled:opacity-60 disabled:cursor-not-allowed"
                 style={{ background: "linear-gradient(135deg, #1a3a7a 0%, #2d5fa6 100%)" }}
               >
                 <IconRelatorio />
-                Emitir relatório
+                {emitindoRelatorio ? "Gerando PDF..." : "Emitir relatório"}
               </button>
             </div>
           </div>
@@ -402,22 +471,52 @@ export default function HomeFinanceiro() {
                     <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} vertical={false} />
                     <XAxis dataKey="mes" tick={{ fontSize: 11, fill: axisStroke }} axisLine={{ stroke: gridStroke }} tickLine={false} />
                     <YAxis
+                      yAxisId="faturamento"
                       tick={{ fontSize: 11, fill: axisStroke }}
                       axisLine={false}
                       tickLine={false}
                       tickFormatter={(v) => `R$ ${(v / 1000).toFixed(0)}k`}
                       width={56}
                     />
+                    <YAxis
+                      yAxisId="quantidade"
+                      orientation="right"
+                      allowDecimals={false}
+                      domain={[0, "auto"]}
+                      tick={{ fontSize: 11, fill: axisStroke }}
+                      axisLine={false}
+                      tickLine={false}
+                      width={36}
+                    />
                     <Tooltip
                       contentStyle={tooltipStyle}
-                      formatter={(value) => [formatarMoedaBR(value), "Faturamento"]}
+                      formatter={(value, name, item) => [
+                        item.dataKey === "valor"
+                          ? formatarMoedaBR(value)
+                          : `${Number(value).toLocaleString("pt-BR")} ${Number(value) === 1 ? "venda" : "vendas"}`,
+                        name,
+                      ]}
                     />
+                    <Legend iconType="plainline" wrapperStyle={{ fontSize: 11, paddingTop: 12 }} />
                     <Line
                       type="monotone"
                       dataKey="valor"
+                      yAxisId="faturamento"
+                      name="Faturamento (R$)"
                       stroke="#2d5fa6"
                       strokeWidth={2.5}
                       dot={{ r: 3, fill: "#2d5fa6" }}
+                      activeDot={{ r: 5 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="quantidadeVendas"
+                      yAxisId="quantidade"
+                      name="Quantidade de vendas"
+                      stroke="#10b981"
+                      strokeDasharray="5 3"
+                      strokeWidth={2.5}
+                      dot={{ r: 3, fill: "#10b981" }}
                       activeDot={{ r: 5 }}
                     />
                   </LineChart>
@@ -454,9 +553,14 @@ export default function HomeFinanceiro() {
                         />
                       </div>
                     </div>
-                    <span className={`text-xs font-bold whitespace-nowrap flex-shrink-0 ${textoM}`}>
-                      {formatarMoedaBR(v.valor)}
-                    </span>
+                    <div className="text-right whitespace-nowrap flex-shrink-0">
+                      <p className={`text-xs leading-tight font-bold ${textoM}`}>{formatarMoedaBR(v.valor)}</p>
+                      <p className={`text-[10px] leading-tight ${modoEscuro ? "text-gray-400" : "text-gray-500"}`}>
+                        {v.quantidadeVendas == null
+                          ? "Quantidade indisponível"
+                          : `${Number(v.quantidadeVendas).toLocaleString("pt-BR")} ${Number(v.quantidadeVendas) === 1 ? "venda" : "vendas"}`}
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -501,7 +605,7 @@ export default function HomeFinanceiro() {
                       <td className={`px-3 py-3 text-xs ${textoS}`}>{p.pagamento}</td>
                       <td className="px-3 py-3">
                         <span className={`text-[9px] font-bold tracking-wider px-2.5 py-0.5 rounded-full uppercase border ${statusEstilo[p.status]}`}>
-                          {p.status}
+                          {formatarStatusPagamento(p.status)}
                         </span>
                       </td>
                     </tr>
