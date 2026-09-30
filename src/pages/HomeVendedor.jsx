@@ -1,3 +1,4 @@
+import { formatarStatusPagamento } from "../services/statusPagamento.js";
 ﻿import React, { useState, useRef, useEffect } from "react";
 import "../styles/base-reset.css";
 import "./HomeVendedor.css";
@@ -372,7 +373,7 @@ export default function HomeVendedor() {
                   <td>${v.nome}</td>
                   <td>${v.cliente}</td>
                   <td>${v.comissao}</td>
-                  <td><span class="badge ${v.tipo}">${v.status}</span></td>
+                  <td><span class="badge ${v.tipo}">${formatarStatusPagamento(v.status)}</span></td>
                 </tr>
               `).join("")}
             </tbody>
@@ -468,7 +469,7 @@ export default function HomeVendedor() {
         { label: "Venda", width: 34, value: (v) => v.nome },
         { label: "Cliente", width: 58, value: (v) => v.cliente },
         { label: "Comissao", width: 38, value: (v) => v.comissao },
-        { label: "Status", width: 36, value: (v) => v.status },
+        { label: "Status", width: 36, value: (v) => formatarStatusPagamento(v.status) },
       ];
       tableHeader(columns);
       dados.vendas.forEach((venda) => {
@@ -674,7 +675,7 @@ export default function HomeVendedor() {
                 </div>
 
                 {/* Linhas */}
-                <div className="flex flex-col gap-0.5 lg:flex-1 overflow-y-auto max-h-72 lg:max-h-none pr-2 lg:min-h-0" style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(156,163,175,0.35) transparent" }}>                {vendasExibidas.length === 0 && (
+                <div className="flex flex-col gap-0.5 lg:flex-1 overflow-y-auto max-h-72 lg:max-h-none pr-2 lg:min-h-0">                {vendasExibidas.length === 0 && (
                   <p className={`text-sm text-center py-6 ${textoS}`}>Nenhuma venda encontrada para este filtro.</p>
                 )}
 
@@ -703,7 +704,7 @@ export default function HomeVendedor() {
                                   ? "bg-blue-50 text-blue-600 border-blue-200"
                                   : "bg-orange-50 text-orange-500 border-orange-200"
                               }`}>
-                              {v.status}
+                              {formatarStatusPagamento(v.status)}
                             </span>
                           </div>
                         </div>
@@ -723,7 +724,7 @@ export default function HomeVendedor() {
                               ? "bg-blue-50 text-blue-600 border-blue-200"
                               : "bg-orange-50 text-orange-500 border-orange-200"
                           }`}>
-                          {v.status}
+                          {formatarStatusPagamento(v.status)}
                         </span>
                       </div>
 
@@ -789,7 +790,7 @@ export default function HomeVendedor() {
                 </div>
 
                 {/* Lista de parcelas com scroll interno e Pedido ID por item */}
-                <div className="flex flex-col gap-1.5 overflow-y-auto max-h-48 lg:max-h-none lg:flex-1 lg:min-h-0 pr-1" style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(156,163,175,0.35) transparent" }}>                {todasParcelas.length === 0 && (
+                <div className="flex flex-col gap-1.5 overflow-y-auto max-h-48 lg:max-h-none lg:flex-1 lg:min-h-0 pr-1">                {todasParcelas.length === 0 && (
                   <p className={`text-xs text-center py-2 ${textoS}`}>Sem parcelas liberadas.</p>
                 )}
                   {todasParcelas.map((p, i) => (

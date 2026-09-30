@@ -1,3 +1,4 @@
+import { formatarStatusPagamento } from "../../services/statusPagamento.js";
 // Importa os hooks do React usados para guardar estado e executar efeitos.
 import { useState, useEffect } from "react";
 import "./ModalDetalheVenda.css";
@@ -362,7 +363,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
                                 : venda.tipo === "liberada"
                                     ? "bg-blue-500/20 text-blue-300 border-blue-500/40"
                                     : "bg-orange-500/20 text-orange-300 border-orange-500/40"}`}>
-                            {venda.status}
+                            {formatarStatusPagamento(venda.status)}
                         </span>
                     </div>
                 </div>
@@ -629,63 +630,6 @@ export default function ModalDetalheVenda({ venda, mes, detalhesVenda, aoFechar,
           to   { opacity: 1; transform: translateY(0) scale(1); }
         }
 
-        .modal-detalhe-scroll {
-          scrollbar-width: thin;
-          scrollbar-color: ${escuro ? "#6b7280 #1f2937" : "#9ca3af #e5e7eb"};
-        }
-
-        .modal-detalhe-scroll::-webkit-scrollbar {
-          width: 10px;
-        }
-
-        .modal-detalhe-scroll::-webkit-scrollbar-button {
-          -webkit-appearance: none;
-          appearance: none;
-          display: none;
-          width: 0;
-          height: 0;
-          background: transparent;
-        }
-
-        .modal-detalhe-scroll::-webkit-scrollbar-button:single-button,
-        .modal-detalhe-scroll::-webkit-scrollbar-button:vertical:start:decrement,
-        .modal-detalhe-scroll::-webkit-scrollbar-button:vertical:start:increment,
-        .modal-detalhe-scroll::-webkit-scrollbar-button:vertical:end:decrement,
-        .modal-detalhe-scroll::-webkit-scrollbar-button:vertical:end:increment,
-        .modal-detalhe-scroll::-webkit-scrollbar-button:horizontal:start:decrement,
-        .modal-detalhe-scroll::-webkit-scrollbar-button:horizontal:start:increment,
-        .modal-detalhe-scroll::-webkit-scrollbar-button:horizontal:end:decrement,
-        .modal-detalhe-scroll::-webkit-scrollbar-button:horizontal:end:increment {
-          -webkit-appearance: none;
-          appearance: none;
-          display: none;
-          width: 0;
-          height: 0;
-          min-width: 0;
-          min-height: 0;
-          background: transparent;
-        }
-
-        .modal-detalhe-scroll::-webkit-scrollbar-track {
-          background: ${escuro ? "#1f2937" : "#e5e7eb"};
-          border-radius: 0 16px 16px 0;
-          margin: 14px 0;
-        }
-
-        .modal-detalhe-scroll::-webkit-scrollbar-thumb {
-          background: ${escuro
-                    ? "linear-gradient(180deg, #9ca3af 0%, #6b7280 100%)"
-                    : "linear-gradient(180deg, #d1d5db 0%, #9ca3af 100%)"};
-          border: 2px solid ${escuro ? "#1f2937" : "#e5e7eb"};
-          border-radius: 999px;
-          min-height: 42px;
-        }
-
-        .modal-detalhe-scroll::-webkit-scrollbar-thumb:hover {
-          background: ${escuro
-                    ? "linear-gradient(180deg, #d1d5db 0%, #9ca3af 100%)"
-                    : "linear-gradient(180deg, #9ca3af 0%, #6b7280 100%)"};
-        }
       `}</style>
         </div>
     );

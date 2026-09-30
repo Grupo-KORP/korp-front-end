@@ -1,3 +1,4 @@
+import { formatarStatusPagamento } from "../services/statusPagamento.js";
 import React, { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import ModalDetalheVenda from "../components/modal/Modaldetalhevenda.jsx";
@@ -367,10 +368,12 @@ function ComissaoKpi({ filtro, valor, ativo, onClick }) {
 }
 
 function StatusBadge({ status, children }) {
-  return <span className={`comissoes-status status-${normalizar(status)}`}>{children || status}</span>;
+  return <span className={`comissoes-status status-${normalizar(status)}`}>{children || formatarStatusPagamento(status)}</span>;
 }
 
 function VendaModal({ venda, onClose, onStatusChange, onNotaChange, escuro }) {
+  const [rascunho, setRascunho] = useState(null);
+  const editando = rascunho !== null;
   if (!venda) return null;
   const pedido = venda.detalhesPedido || {};
   const pagamentoAVista = normalizar(pedido.metodoPagamento || "") !== "boleto";
@@ -385,6 +388,28 @@ function VendaModal({ venda, onClose, onStatusChange, onNotaChange, escuro }) {
   const atualizarPagamento = (callback, pagamentoId, valor) => {
     const registros = pagamentoAVista ? venda.parcelas : venda.parcelas.filter((parcela) => parcela.id === pagamentoId);
     registros.forEach((parcela) => callback(venda.id, parcela.id, valor));
+  };
+  const editarPagamento = (id, campo, valor) => {
+    setRascunho((atuais) => atuais.map((pagamento) => pagamento.id !== id
+      ? pagamento
+      : {
+        ...pagamento,
+        [campo]: valor,
+        ...(campo === "status" && valor !== STATUS.paga ? { notaFiscal: "" } : {}),
+      }));
+  };
+  const salvarPagamentos = () => {
+    rascunho.forEach((pagamento) => {
+      const original = pagamentos.find((item) => item.id === pagamento.id);
+      if (pagamento.status !== original.status) {
+        atualizarPagamento(onStatusChange, pagamento.id, pagamento.status);
+      }
+      if (pagamento.notaFiscal !== original.notaFiscal) {
+        atualizarPagamento(onNotaChange, pagamento.id, pagamento.notaFiscal);
+      }
+    });
+    setRascunho(null);
+    toast.success("Pagamentos atualizados com sucesso!");
   };
   const produto = pedido.produto || {};
   const status = statusVenda(venda);
@@ -419,13 +444,34 @@ function VendaModal({ venda, onClose, onStatusChange, onNotaChange, escuro }) {
       somenteLeitura
       parcelasConteudo={(
           <section className="comissoes-home-modal-section">
+            <div className="comissoes-home-payment-header">
             <div className="comissoes-home-section-title comissoes-home-section-title-green">
               <span />
               <h3>Pagamentos</h3>
             </div>
+            <div className="flex flex-wrap gap-2">
+              {editando ? (
+                <>
+                  <button type="button" onClick={() => setRascunho(null)}
+                    className={`px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all border ${escuro ? "bg-gray-800 border-gray-600 text-gray-200 hover:bg-gray-700" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-100"}`}>
+                    Cancelar
+                  </button>
+                  <button type="button" onClick={salvarPagamentos}
+                    className="px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all bg-blue-600 text-white hover:bg-blue-700">
+                    Salvar
+                  </button>
+                </>
+              ) : (
+                <button type="button" onClick={() => setRascunho(pagamentos.map((pagamento) => ({ ...pagamento })))}
+                  className={`px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all border ${escuro ? "bg-blue-500/10 border-blue-400 text-blue-400 hover:bg-blue-500/20" : "bg-blue-50 border-blue-500 text-blue-600 hover:bg-blue-100"}`}>
+                  Editar
+                </button>
+              )}
+            </div>
+            </div>
 
             <div className="comissoes-home-parcelas">
-              {pagamentos.map((parcela) => (
+              {(rascunho || pagamentos).map((parcela) => (
                 <div className="comissoes-home-parcela" key={parcela.id}>
                   <div className="comissoes-home-parcela-info">
                     <strong>{pagamentoAVista ? "Pagamento à vista" : `Pagamento ${parcela.numero}`}</strong>
@@ -434,10 +480,10 @@ function VendaModal({ venda, onClose, onStatusChange, onNotaChange, escuro }) {
 
                   <label>
                     Status
-                    <select value={parcela.status} onChange={(event) => atualizarPagamento(onStatusChange, parcela.id, event.target.value)}>
+                    <select disabled={!editando} value={parcela.status} onChange={(event) => editarPagamento(parcela.id, "status", event.target.value)}>
                       {STATUS_OPTIONS.map((option) => (
                         <option key={option} value={option}>
-                          {option}
+                          {formatarStatusPagamento(option)}
                         </option>
                       ))}
                     </select>
@@ -448,8 +494,9 @@ function VendaModal({ venda, onClose, onStatusChange, onNotaChange, escuro }) {
                       Nota Fiscal do Vendedor
                       <input
                         type="text"
+                        disabled={!editando}
                         value={parcela.notaFiscal}
-                        onChange={(event) => atualizarPagamento(onNotaChange, parcela.id, event.target.value)}
+                        onChange={(event) => editarPagamento(parcela.id, "notaFiscal", event.target.value)}
                         placeholder="Ex: NF-0000"
                       />
                     </label>
@@ -687,6 +734,7 @@ export default function ComissoesPage() {
       </main>
 
       <VendaModal
+        key={vendaSelecionadaId || "fechado"}
         escuro={modoEscuro}
         venda={vendaSelecionada}
         onClose={() => setVendaSelecionadaId(null)}

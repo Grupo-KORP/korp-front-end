@@ -1,3 +1,4 @@
+import { formatarStatusPagamento } from "./statusPagamento.js";
 import { carregarLogoPdf, adicionarLogoPdf } from "./pdfBranding.js";
 
 export async function criarRelatorioComissoes({ parcelas, periodo, status, busca, geradoEm = new Date() }) {
@@ -30,7 +31,7 @@ export async function criarRelatorioComissoes({ parcelas, periodo, status, busca
     adicionarLogoPdf(doc, logo, largura - margem - 30, 5, 30);
     doc.setTextColor(100, 116, 139); doc.setFontSize(8);
     doc.text("Dados demonstrativos - painel ainda sem integração com o backend.", margem, 34);
-    const filtros = doc.splitTextToSize(`Status: ${status || "Todos"} | Busca: ${busca?.trim() || "Todos os vendedores e pedidos"}`, largura - margem * 2);
+    const filtros = doc.splitTextToSize(`Status: ${formatarStatusPagamento(status) || "Todos"} | Busca: ${busca?.trim() || "Todos os vendedores e pedidos"}`, largura - margem * 2);
     doc.text(filtros, margem, 40);
     y = 44 + filtros.length * 3.5;
   }
@@ -62,7 +63,7 @@ export async function criarRelatorioComissoes({ parcelas, periodo, status, busca
     const data = parcela.previsao?.split("-").reverse().join("/") || "-";
     const valores = [
       `${venda.id}\n${venda.detalhesPedido?.numeroPedido || venda.id}\n${venda.venda || ""}`,
-      venda.cliente, venda.vendedor, moeda(parcela.valor), parcela.numero, data, parcela.status, parcela.notaFiscal || "-",
+      venda.cliente, venda.vendedor, moeda(parcela.valor), parcela.numero, data, formatarStatusPagamento(parcela.status), parcela.notaFiscal || "-",
     ];
     doc.setFont("helvetica", "normal"); doc.setFontSize(8);
     const celulas = valores.map((valor, i) => doc.splitTextToSize(String(valor ?? "-"), colunas[i].largura - 4));

@@ -1,3 +1,4 @@
+import { formatarStatusPagamento } from "./statusPagamento.js";
 import { carregarLogoPdf, adicionarLogoPdf } from "./pdfBranding.js";
 
 const moeda = (valor) => Number(valor ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -123,7 +124,7 @@ export async function criarRelatorioFinanceiro({ dados, periodo, geradoEm = new 
     { titulo: "Pagamento", largura: 28 },
     { titulo: "Status", largura: 24 },
   ], dados.ultimosPedidos.map((item) => [
-    item.codigo, `${item.vendedor}\n${item.cliente}`, moeda(item.valorFaturado), moeda(item.comissao), item.pagamento, item.status,
+    item.codigo, `${item.vendedor}\n${item.cliente}`, moeda(item.valorFaturado), moeda(item.comissao), item.pagamento, formatarStatusPagamento(item.status),
   ]));
 
   const paginas = doc.internal.getNumberOfPages();

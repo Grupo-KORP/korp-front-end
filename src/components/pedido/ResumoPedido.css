@@ -331,15 +331,6 @@
   padding-right: 6px;
 }
 
-.resumo-scroll-content::-webkit-scrollbar {
-  width: 5px;
-}
-
-.resumo-scroll-content::-webkit-scrollbar-thumb {
-  background: var(--pedido-scrollbar, #cbd5e1);
-  border-radius: 10px;
-}
-
 .resumo-modal-overlay {
   position: fixed;
   inset: 0;

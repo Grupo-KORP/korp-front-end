@@ -1,3 +1,4 @@
+import { formatarStatusPagamento } from "../services/statusPagamento.js";
 import React, { useEffect, useRef, useState } from "react";
 import NavbarFinanceiro from "../layout/NavbarFinanceiro.jsx";
 import { useDarkMode } from "../hooks/useDarkMode.jsx";
@@ -602,7 +603,7 @@ export default function HomeFinanceiro() {
                       <td className={`px-3 py-3 text-xs ${textoS}`}>{p.pagamento}</td>
                       <td className="px-3 py-3">
                         <span className={`text-[9px] font-bold tracking-wider px-2.5 py-0.5 rounded-full uppercase border ${statusEstilo[p.status]}`}>
-                          {p.status}
+                          {formatarStatusPagamento(p.status)}
                         </span>
                       </td>
                     </tr>

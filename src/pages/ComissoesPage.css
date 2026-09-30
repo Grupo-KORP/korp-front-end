@@ -292,37 +292,6 @@
   flex: 1;
   min-height: 0;
   padding-right: 6px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
-}
-
-.comissoes-liberacoes-list::-webkit-scrollbar {
-  width: 6px;
-}
-
-.comissoes-liberacoes-list::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.comissoes-liberacoes-list::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.35);
-  border-radius: 999px;
-}
-
-.comissoes-liberacoes-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(96, 165, 250, 0.55);
-}
-
-.comissoes-page-dark .comissoes-liberacoes-list {
-  scrollbar-color: rgba(75, 85, 99, 0.8) transparent;
-}
-
-.comissoes-page-dark .comissoes-liberacoes-list::-webkit-scrollbar-thumb {
-  background: rgba(75, 85, 99, 0.8);
-}
-
-.comissoes-page-dark .comissoes-liberacoes-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(96, 165, 250, 0.65);
 }
 
 .comissoes-liberacao-item {
@@ -516,38 +485,6 @@
   flex-direction: column;
   gap: 16px;
   padding: 32px;
-  scrollbar-width: thin;
-  scrollbar-color: #9ca3af #e5e7eb;
-}
-
-.comissoes-page-dark .comissoes-home-modal-body {
-  scrollbar-color: #6b7280 #1f2937;
-}
-
-.comissoes-home-modal-body::-webkit-scrollbar {
-  width: 10px;
-}
-
-.comissoes-home-modal-body::-webkit-scrollbar-track {
-  background: #e5e7eb;
-  border-radius: 0 16px 16px 0;
-  margin: 14px 0;
-}
-
-.comissoes-page-dark .comissoes-home-modal-body::-webkit-scrollbar-track {
-  background: #1f2937;
-}
-
-.comissoes-home-modal-body::-webkit-scrollbar-thumb {
-  min-height: 42px;
-  border: 2px solid #e5e7eb;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #d1d5db 0%, #9ca3af 100%);
-}
-
-.comissoes-page-dark .comissoes-home-modal-body::-webkit-scrollbar-thumb {
-  border-color: #1f2937;
-  background: linear-gradient(180deg, #9ca3af 0%, #6b7280 100%);
 }
 
 .comissoes-home-modal-section {
@@ -650,6 +587,31 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+}
+
+.comissoes-home-payment-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.comissoes-home-payment-header .comissoes-home-section-title {
+  margin-bottom: 0;
+}
+
+.comissoes-home-parcela select:disabled,
+.comissoes-home-parcela input:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.comissoes-home-parcela select:focus-visible,
+.comissoes-home-parcela input:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
 }
 
 .comissoes-home-parcela {
