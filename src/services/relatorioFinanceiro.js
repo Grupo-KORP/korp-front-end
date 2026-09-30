@@ -25,10 +25,6 @@ export async function criarRelatorioFinanceiro({ dados, periodo, geradoEm = new 
     doc.text(periodo, margem, 20);
     doc.setFontSize(8);
     adicionarLogoPdf(doc, logo, largura - margem - 30, 5, 30);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(100, 116, 139);
-    doc.text("Dados demonstrativos - painel ainda sem integração com o backend.", margem, 34);
     y = 43;
   }
 
