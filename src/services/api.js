@@ -193,3 +193,46 @@ export async function buscarDetalheVenda(idPedido) {
     throw new Error("Erro ao carregar os detalhes da venda. Tente novamente.");
   }
 }
+
+// ─── Painel financeiro ──────────────────────────────────────────────────────
+// Um endpoint por bloco da tela; todos aceitam o mesmo filtro { ano, mes }.
+
+async function buscarBlocoFinanceiro(caminho, params) {
+  const filtrados = Object.fromEntries(
+    Object.entries(params).filter(([, valor]) => valor !== null && valor !== undefined),
+  );
+
+  try {
+    const { data } = await api.get(`/financeiro/home/${caminho}`, { params: filtrados });
+    return data;
+  } catch (err) {
+    const httpStatus = err?.status ?? err?.response?.status;
+
+    if (httpStatus === 403) throw new Error("Sem permissão para acessar o painel financeiro.");
+    if (httpStatus === 401) throw new Error("Sessão expirada. Faça login novamente.");
+
+    throw new Error("Erro ao carregar o painel financeiro. Tente novamente.");
+  }
+}
+
+export function buscarResumoFinanceiro({ ano, mes } = {}) {
+  return buscarBlocoFinanceiro("resumo", { ano, mes });
+}
+
+export function buscarEvolucaoVendasFinanceiro({ ano, mes } = {}) {
+  return buscarBlocoFinanceiro("evolucao-vendas", { ano, mes });
+}
+
+export function buscarRankingVendedoresFinanceiro({ ano, mes, limite } = {}) {
+  return buscarBlocoFinanceiro("ranking-vendedores", { ano, mes, limite });
+}
+
+/** @param pagina 1-based (o Spring é 0-based, a conversão fica aqui) */
+export function buscarPedidosFinanceiro({ ano, mes, pagina = 1, tamanho = 5 } = {}) {
+  return buscarBlocoFinanceiro("pedidos", {
+    ano,
+    mes,
+    page: Math.max(pagina, 1) - 1,
+    size: tamanho,
+  });
+}
