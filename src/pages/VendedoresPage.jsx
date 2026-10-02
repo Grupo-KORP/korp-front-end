@@ -218,7 +218,7 @@ export default function VendedoresPage() {
   const displayed = vendedores;
 
   /* classes de tema */
-  const bg = modoEscuro ? "bg-gray-900" : "";
+  const bg = modoEscuro ? "bg-[var(--app-page-bg-dark)]" : "bg-[var(--app-page-bg-light)]";
   const cardBg = modoEscuro ? "bg-gray-800" : "bg-white";
   const borda = modoEscuro ? "border-gray-700" : "border-gray-200";
   const textoP = modoEscuro ? "text-white" : "text-gray-900";
@@ -371,7 +371,6 @@ export default function VendedoresPage() {
   return (
     <div
       className={`h-screen overflow-hidden flex flex-col ${bg} transition-colors duration-300`}
-      style={!modoEscuro ? { background: "linear-gradient(120deg, #e0e7ff, #f8fafc)" } : undefined}
     >
       <NavbarVendedor />
       {vendedorSelecionado && <ModalVendasVendedor vendedor={vendedorSelecionado} dark={modoEscuro} onClose={() => setVendedorSelecionado(null)} />}

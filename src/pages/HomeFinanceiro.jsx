@@ -137,8 +137,8 @@ function CardMetrica({ icone, tint, rotulo, valor, badge, sub, dark }) {
 
   return (
     <div
-      className={`rounded-xl px-4 py-3.5 flex flex-col gap-1.5 shadow-sm transition-all duration-200
-        ${dark ? "bg-gray-800 border border-gray-700" : "bg-white border border-gray-100"}`}
+      className={`rounded-xl px-4 py-3.5 flex flex-col gap-1.5 transition-all duration-200
+        ${dark ? "bg-gray-800 border-0 shadow-none" : "bg-white border border-gray-100 shadow-sm"}`}
     >
       <div className="flex items-center justify-between">
         <span className={`text-[9px] font-bold tracking-widest uppercase ${dark ? "text-gray-400" : "text-gray-400"}`}>
@@ -260,7 +260,7 @@ export default function HomeFinanceiro() {
   }
 
   /* classes de tema */
-  const bg = modoEscuro ? "bg-gray-900" : "bg-gray-100";
+  const bg = modoEscuro ? "bg-[var(--app-page-bg-dark)]" : "bg-[var(--app-page-bg-light)]";
   const cardBg = modoEscuro ? "bg-gray-800" : "bg-white";
   const borda = modoEscuro ? "border-gray-700" : "border-gray-100";
   const textoP = modoEscuro ? "text-white" : "text-gray-900";
