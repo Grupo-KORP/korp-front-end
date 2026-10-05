@@ -15,6 +15,24 @@ export const api = axios.create({
   },
 });
 
+let csrfRequest = null;
+
+// O cookie pode desaparecer após logout ou expirar com a página ainda aberta.
+// Obtenha o token antes de enviar alterações, sem repetir operações de escrita.
+api.interceptors.request.use(async (config) => {
+  const method = (config.method || "get").toLowerCase();
+  const requiresCsrf = !["get", "head", "options"].includes(method);
+  const hasCsrfCookie = typeof document !== "undefined" && document.cookie
+    .split(";")
+    .some((cookie) => /^XSRF-TOKEN=.+/.test(cookie.trim()));
+
+  if (requiresCsrf && !hasCsrfCookie) {
+    await initializeCsrf();
+  }
+
+  return config;
+});
+
 // Interceptor: trata erros HTTP de forma centralizada
 api.interceptors.response.use(
   (response) => response,
@@ -40,7 +58,12 @@ export async function login({ email, senha }) {
 }
 
 export async function initializeCsrf() {
-  await api.get("/auth/csrf");
+  if (!csrfRequest) {
+    csrfRequest = api.get("/auth/csrf").finally(() => {
+      csrfRequest = null;
+    });
+  }
+  await csrfRequest;
 }
 
 export async function loadSession() {

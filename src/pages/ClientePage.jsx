@@ -274,6 +274,51 @@ export default function ClientePage() {
     setShowDetailsModal(true);
   }
 
+  async function handleSaveDetailsContact(contact) {
+    const payload = {
+      nome: contact.nome.trim(),
+      email: contact.email.trim(),
+      telefone: contact.telefone.replace(/\D/g, ""),
+      idCliente: selectedClient.idCliente ?? selectedClient.id,
+    };
+    const { data } = contact.idContato != null
+      ? await api.put(`/contatos/${contact.idContato}`, payload)
+      : await api.post("/contatos", payload);
+    setSelectedClient((previous) => ({
+      ...previous,
+      contatos: contact.idContato != null
+        ? previous.contatos.map((item) => item.idContato === contact.idContato ? data : item)
+        : [...(previous.contatos ?? []), data],
+    }));
+  }
+
+  async function handleDeleteDetailsContact(contact) {
+    await api.delete(`/contatos/${contact.idContato}`);
+    setSelectedClient((previous) => ({
+      ...previous,
+      contatos: previous.contatos.filter((item) => item.idContato !== contact.idContato),
+    }));
+    await fetchClientes(currentPage, search);
+  }
+
+  async function handleSaveDetailsCompany(company) {
+    const payload = {
+      razaoSocial: selectedClient.razaoSocial,
+      cnpj: String(selectedClient.cnpj ?? "").replace(/\D/g, ""),
+      inscricaoEstadual: selectedClient.inscricaoEstadual,
+      nomeFantasia: company.nomeFantasia.trim(),
+      telefone: company.telefone.replace(/\D/g, ""),
+      cep: company.cep.replace(/\D/g, ""),
+      endereco: company.logradouro,
+      numero: String(company.numero).trim(),
+      complemento: company.complemento,
+      cidade: company.cidade,
+      uf: company.uf,
+    };
+    await api.put(`/cliente/${selectedClient.idCliente ?? selectedClient.id}`, payload);
+    setSelectedClient((previous) => ({ ...previous, ...payload, logradouro: payload.endereco }));
+  }
+
   // ── Editar ──
   function handleEdit(c) {
     setEditingId(c.idCliente ?? c.id);
@@ -535,6 +580,11 @@ export default function ClientePage() {
         open={showDetailsModal}
         entity={selectedClient}
         onClose={() => setShowDetailsModal(false)}
+        onSaveContact={handleSaveDetailsContact}
+        onDeleteContact={handleDeleteDetailsContact}
+        onSaveCompany={handleSaveDetailsCompany}
+        onLookupCEP={fetchCEP}
+        onSaved={() => fetchClientes(currentPage, search)}
       />
 
       {contactToDelete && (
