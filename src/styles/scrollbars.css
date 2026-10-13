@@ -1,0 +1,40 @@
+/* Shared scrollbar style for pages, modals, lists, tables and text areas. */
+:root,
+.modal-frozen-light {
+  --app-scrollbar-thumb: rgba(148, 163, 184, 0.45);
+  --app-scrollbar-thumb-hover: rgba(100, 116, 139, 0.65);
+}
+
+:root:has(body.dark),
+body.dark,
+.modal-frozen-dark {
+  --app-scrollbar-thumb: rgba(75, 85, 99, 0.8);
+  --app-scrollbar-thumb-hover: rgba(107, 114, 128, 0.9);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--app-scrollbar-thumb) transparent;
+}
+
+/* Fallback for browsers without the standard scrollbar properties. */
+@supports not (scrollbar-width: thin) {
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  *::-webkit-scrollbar-track,
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: var(--app-scrollbar-thumb);
+    border-radius: 999px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--app-scrollbar-thumb-hover);
+  }
+}

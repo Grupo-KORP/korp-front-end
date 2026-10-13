@@ -20,6 +20,7 @@ function AppRoutes() {
       <Route path="*"           element={<Navigate to="/login" replace />} />
       <Route path="/login"      element={<LoginPage />} />
       <Route element={<ProtectedRoute />}>
+        <Route path="/financeiro/home" element={<HomeFinanceiro />} />
         <Route path="/financeiro/vendedores" element={<VendedoresPage />} />
         <Route path="/vendedores/cliente" element={<ClientePage />} />
         <Route path="/vendedores/distribuidor" element={<DistribuidorPage />} />
@@ -28,7 +29,6 @@ function AppRoutes() {
         <Route path="/vendedores/home" element={<HomeVendedor />} />
         <Route path="/comissoes" element={<ComissoesPage />} />
       </Route>
-      <Route path="/financeiro/home" element={<HomeFinanceiro />} />
       <Route path="/vendedores/recuperar-senha" element={<PaginaRecuperarSenha />} />
       <Route path="/vendedores/redefinir-senha" element={<PaginaRedefinirSenha />} />
     </Routes>

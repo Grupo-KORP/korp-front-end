@@ -608,21 +608,6 @@ body.dark .catalog-tools button:last-child:hover {
   min-height: 0;
   overflow-y: auto;
   padding-right: 6px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
-}
-
-.catalog-extra-form-content::-webkit-scrollbar {
-  width: 8px;
-}
-
-.catalog-extra-form-content::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.catalog-extra-form-content::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.45);
-  border-radius: 999px;
 }
 
 .produto-modal-backdrop {

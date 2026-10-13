@@ -1,7 +1,9 @@
-﻿import React, { useState, useEffect, useMemo, useRef } from "react";
+﻿import { formatarStatusPagamento } from "../services/statusPagamento.js";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import "../styles/base-reset.css";
 import "./HomeVendedor.css";
 import Navbar from "../layout/NavbarVendedor";
+import { carregarLogoPdf, adicionarLogoPdf } from "../services/pdfBranding.js";
 import { useDarkMode } from "../hooks/useDarkMode";
 import { toast } from "sonner";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -374,7 +376,7 @@ const periodo = useMemo(() => {
     if (!hasRole("ROLE_VEND")) {
       toastShown.current = true;
       toast.error("Acesso negado. Você não tem permissão para acessar esta página.");
-      navigate("/financeiro/vendedores");
+      navigate("/financeiro/home");
     }
  
     verificarPrimeiroAcesso(usuario)
@@ -455,7 +457,8 @@ const periodo = useMemo(() => {
     .toLowerCase()
     .replace(/\s+de\s+/g, "-")
     .replace(/\s+/g, "-");
- 
+
+
   /* ── Ações que mexem na URL ── */
   function alternarCard(chave) {
     atualizarParams({ status: cardAtivo === chave ? null : chave, pagina: null });
@@ -535,6 +538,7 @@ const periodo = useMemo(() => {
  
   async function gerarPDFRelatorio(vendasPdf) {
     const { jsPDF } = await import("jspdf");
+    const logo = await carregarLogoPdf(); 
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
@@ -577,8 +581,10 @@ const periodo = useMemo(() => {
  
     const tableHeader = (columns) => {
       ensureSpace(10);
-      doc.setFillColor(241, 245, 249); doc.rect(margin, y, usableWidth, 9, "F");
-      doc.setFont("helvetica", "bold"); doc.setFontSize(7); doc.setTextColor(100, 116, 139);
+      doc.setFillColor(15, 37, 87); doc.rect(0, 0, pageWidth, 22, "F");
+      doc.setTextColor(255, 255, 255); 
+      adicionarLogoPdf(doc, logo, margin, 5, 22);
+      doc.text(`Painel do Consultor – ${periodoSelecionado}`, margin + 28, 13);
       let x = margin;
       columns.forEach((col) => { doc.text(col.label, x + 1.5, y + 5.8, { maxWidth: col.width - 3 }); x += col.width; });
       y += 9;
@@ -590,7 +596,7 @@ const periodo = useMemo(() => {
         { label: "Venda", width: 34, value: (v) => v.nome },
         { label: "Cliente", width: 58, value: (v) => v.cliente },
         { label: "Comissao", width: 38, value: (v) => v.comissao },
-        { label: "Status", width: 36, value: (v) => v.status },
+        { label: "Status", width: 36, value: (v) => formatarStatusPagamento(v.status) },
       ];
       tableHeader(columns);
       vendasPdf.forEach((venda) => {
@@ -640,7 +646,8 @@ const periodo = useMemo(() => {
       doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.3);
       doc.line(margin, pageHeight - 12, pageWidth - margin, pageHeight - 12);
       doc.setFont("helvetica", "normal"); doc.setFontSize(7); doc.setTextColor(148, 163, 184);
-      doc.text(`Gerado em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR")} • TND Brasil`, margin, pageHeight - 7);
+      doc.text(`Gerado em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR")}`, margin, pageHeight - 7);
+      adicionarLogoPdf(doc, logo, pageWidth / 2 - 9, pageHeight - 11, 18);
       doc.text(`Página ${i} de ${totalPages}`, pageWidth - margin, pageHeight - 7, { align: "right" });
     }
  
@@ -768,7 +775,8 @@ const periodo = useMemo(() => {
                   <span className={`text-[9px] font-bold tracking-widest uppercase ${textoS}`}>Venda / Pagamento</span>
                   <span />
                 </div>
- 
+
+
                 {/* Linhas: cada venda aparece seguida das parcelas (pagamentos) dela no período/filtro atual */}
                 <div
                   className={`flex flex-col gap-0.5 lg:flex-1 overflow-y-auto max-h-72 lg:max-h-none pr-2 lg:min-h-0 transition-opacity ${carregandoPainel ? "opacity-60" : "opacity-100"}`}
@@ -786,7 +794,7 @@ const periodo = useMemo(() => {
                       ? `${linha.venda.nome} - ${linha.parcela.label}`
                       : `${linha.venda.nome} - ${linha.venda.cliente}`;
                     const valor = ehPagamento ? linha.parcela.valor : linha.venda.comissao;
-                    const statusTexto = ehPagamento ? textoStatusParcela(linha.parcela.status) : linha.venda.status;
+                    const statusTexto = ehPagamento ? textoStatusParcela(linha.parcela.status) : formatarStatusPagamento(linha.venda.status);
                     const statusCor = ehPagamento
                       ? corBadgeStatusParcela(linha.parcela.status)
                       : corBadgeStatusVenda(linha.venda.tipo);
@@ -912,7 +920,8 @@ const periodo = useMemo(() => {
                     style={{ width: `${Math.min((dados.comissoesLiberadas / (dados.totalVendas || 1)) * 100, 100)}%` }}
                   />
                 </div>
- 
+
+
                 {/* Parcelas liberadas do período (vêm do back, independem da página) */}
                 <div
                   className="flex flex-col gap-1.5 overflow-y-auto max-h-48 lg:max-h-none lg:flex-1 lg:min-h-0 pr-1"

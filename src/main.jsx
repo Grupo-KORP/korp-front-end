@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { DarkModeProvider } from './hooks/useDarkMode'
 import App from './App.jsx'
 import './index.css'
+import './styles/scrollbars.css'
 import { Toaster } from 'sonner'
 import { AuthProvider } from './context/AuthContext'
 

@@ -1,5 +1,7 @@
+import { formatarStatusPagamento } from "../../services/statusPagamento.js";
 // Importa os hooks do React usados para guardar estado e executar efeitos.
 import { useState, useEffect } from "react";
+import "./ModalDetalheVenda.css";
 import { toast } from "sonner";
 import { atualizarPedido } from "../../services/api";
 
@@ -139,9 +141,11 @@ function carregarDatasPagamento(pedido) {
     return Array.isArray(pedido?.datasPagamento) && pedido.datasPagamento.length > 0 ? pedido.datasPagamento.map(String) : [""];
 }
 
-export default function ModalDetalheVenda({ venda, detalhes, aoFechar, aoAtualizar, escuro }) {
-    // Cria uma chave juntando o mes e o id da venda.
-    const chave = venda.id;
+export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto, detalhesVenda, aoFechar, aoAtualizar, escuro, somenteLeitura = false, parcelasConteudo }) {
+    // Financeiro (ComissoesPage) informa mes/detalhesVenda; vendedor informa detalhes diretamente.
+    const modoFinanceiro = mes !== undefined;
+    const chave = modoFinanceiro ? `${mes}-${venda.id}` : venda.id;
+    const detalhes = detalhesDireto ?? detalhesVenda?.[chave];
 
     // Quantidade
     const [quantidade, setQuantidade] = useState(detalhes?.produto?.quantidade ?? 0);
@@ -227,6 +231,7 @@ export default function ModalDetalheVenda({ venda, detalhes, aoFechar, aoAtualiz
     }, [modoEdicao, quantidadeAntes, nomeFantasiaClienteAntes, nomeFantasiaDistribuidorAntes, numeroNotaDistribuidorAntes, observacoesAntes, datasPagamentoAntes, entregaAntes]);
 
     function iniciarEdicao() {
+        if (somenteLeitura) return;
         if (!pedidoEmAndamento) return;
         setQuantidadeAntes(quantidade);
         setNomeFantasiaClienteAntes(nomeFantasiaCliente);
@@ -365,7 +370,7 @@ export default function ModalDetalheVenda({ venda, detalhes, aoFechar, aoAtualiz
                                 : venda.tipo === "liberada"
                                     ? "bg-blue-500/20 text-blue-300 border-blue-500/40"
                                     : "bg-orange-500/20 text-orange-300 border-orange-500/40"}`}>
-                            {venda.status}
+                            {formatarStatusPagamento(venda.status)}
                         </span>
                     </div>
                 </div>
@@ -451,37 +456,50 @@ export default function ModalDetalheVenda({ venda, detalhes, aoFechar, aoAtualiz
                                     />
                                     <CampoLeitura rotulo="Status" valor={detalhes.pedido?.statusPedido} escuro={escuro} />
 
-                                    <CampoLeitura rotulo="Forma de pagamento" valor={metodoPagamento === "AVISTA" ? "À vista" : boleto ? "Boleto" : metodoPagamento} escuro={escuro} />
-                                    {boleto && (
-                                        <div className="col-span-3">
-                                            <span className="block text-[9px] font-bold uppercase mb-1 text-gray-400">Datas de pagamento *</span>
-                                            <div className="flex flex-wrap items-center gap-2">
-                                                {datasPagamento.map((data, indice) => (
-                                                    <div key={indice} className="flex items-center gap-1">
-                                                        <input type="text" inputMode="numeric" pattern="[0-9]{1,3}" maxLength={3} required
-                                                            aria-label={`Data de pagamento ${indice + 1}`}
-                                                            value={data} readOnly={!modoEdicao || salvando}
-                                                            onChange={(event) => {
-                                                                const valor = event.target.value.replace(/\D/g, "").slice(0, 3);
-                                                                setDatasPagamento(datas => datas.map((atual, i) => i === indice ? valor : atual));
-                                                            }}
-                                                            className={`w-12 h-12 text-center rounded-lg border text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 ${escuro ? "bg-gray-800 border-gray-700 text-gray-200" : "bg-white border-gray-200 text-gray-700"}`}
-                                                        />
-                                                        {modoEdicao && datasPagamento.length > 1 && (
-                                                            <button type="button" disabled={salvando} aria-label={`Remover data de pagamento ${indice + 1}`}
-                                                                onClick={() => setDatasPagamento(datas => datas.filter((_, i) => i !== indice))}
-                                                                className="text-gray-400 hover:text-red-500">×</button>
+                                    {modoFinanceiro ? (
+                                        <>
+                                            <CampoLeitura rotulo="Método de Pagamento" valor={boleto ? "Boleto" : "À vista"} escuro={escuro} />
+                                            <CampoLeitura
+                                                rotulo="Condição de pagamento"
+                                                valor={boleto ? `Parcelado (${Math.max(1, datasPagamento.filter((data) => data !== "").length)}x)` : "À vista, sem parcelas"}
+                                                escuro={escuro}
+                                            />
+                                        </>
+                                    ) : (
+                                        <>
+                                            <CampoLeitura rotulo="Forma de pagamento" valor={metodoPagamento === "AVISTA" ? "À vista" : boleto ? "Boleto" : metodoPagamento} escuro={escuro} />
+                                            {boleto && (
+                                                <div className="col-span-3">
+                                                    <span className="block text-[9px] font-bold uppercase mb-1 text-gray-400">Datas de pagamento *</span>
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        {datasPagamento.map((data, indice) => (
+                                                            <div key={indice} className="flex items-center gap-1">
+                                                                <input type="text" inputMode="numeric" pattern="[0-9]{1,3}" maxLength={3} required
+                                                                    aria-label={`Data de pagamento ${indice + 1}`}
+                                                                    value={data} readOnly={!modoEdicao || salvando}
+                                                                    onChange={(event) => {
+                                                                        const valor = event.target.value.replace(/\D/g, "").slice(0, 3);
+                                                                        setDatasPagamento(datas => datas.map((atual, i) => i === indice ? valor : atual));
+                                                                    }}
+                                                                    className={`w-12 h-12 text-center rounded-lg border text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 ${escuro ? "bg-gray-800 border-gray-700 text-gray-200" : "bg-white border-gray-200 text-gray-700"}`}
+                                                                />
+                                                                {modoEdicao && datasPagamento.length > 1 && (
+                                                                    <button type="button" disabled={salvando} aria-label={`Remover data de pagamento ${indice + 1}`}
+                                                                        onClick={() => setDatasPagamento(datas => datas.filter((_, i) => i !== indice))}
+                                                                        className="text-gray-400 hover:text-red-500">×</button>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                        {modoEdicao && (
+                                                            <button type="button" aria-label="Adicionar data de pagamento" disabled={salvando || datasPagamento.length >= 7}
+                                                                onClick={() => setDatasPagamento(datas => datas.length < 7 ? [...datas, ""] : datas)}
+                                                                className="w-12 h-12 rounded-lg border border-blue-400 text-blue-500 text-xl disabled:opacity-40 disabled:cursor-not-allowed">+</button>
                                                         )}
                                                     </div>
-                                                ))}
-                                                {modoEdicao && (
-                                                    <button type="button" aria-label="Adicionar data de pagamento" disabled={salvando || datasPagamento.length >= 7}
-                                                        onClick={() => setDatasPagamento(datas => datas.length < 7 ? [...datas, ""] : datas)}
-                                                        className="w-12 h-12 rounded-lg border border-blue-400 text-blue-500 text-xl disabled:opacity-40 disabled:cursor-not-allowed">+</button>
-                                                )}
-                                            </div>
-                                            {modoEdicao && <p className="mt-1 text-xs text-gray-400">Preencha todos os campos para finalizar. Máximo de 7 datas, com até 3 dígitos cada.</p>}
-                                        </div>
+                                                    {modoEdicao && <p className="mt-1 text-xs text-gray-400">Preencha todos os campos para finalizar. Máximo de 7 datas, com até 3 dígitos cada.</p>}
+                                                </div>
+                                            )}
+                                        </>
                                     )}
                                 </div>
                             </div>
@@ -490,7 +508,7 @@ export default function ModalDetalheVenda({ venda, detalhes, aoFechar, aoAtualiz
                             <div className={`rounded-xl border p-5 ${classeSecao}`}>
                                 <CabecalhoSecao titulo="Dados do Produto" cor="bg-cyan-500" escuro={escuro} />
 
-                                <div className="flex flex-col gap-4">
+                                <div className="detalhe-produto-campos">
                                     <CampoLeitura
                                         rotulo="Descrição do Produto"
                                         valor={detalhes.produto.descricao}
@@ -498,9 +516,7 @@ export default function ModalDetalheVenda({ venda, detalhes, aoFechar, aoAtualiz
                                         colSpan={4}
                                     />
 
-                                    <div className={`w-full h-px ${classeSeparador}`} />
-
-                                    <div className="grid grid-cols-4 gap-x-5 gap-y-3">
+                                    <div className="detalhe-produto-grade">
                                         <CampoLeitura rotulo="P/N" valor={detalhes.produto.pn} escuro={escuro} />
                                         <CampoTextoEditavel
                                             rotulo="Entrega"
@@ -519,8 +535,6 @@ export default function ModalDetalheVenda({ venda, detalhes, aoFechar, aoAtualiz
                                         <CampoLeitura rotulo="Valor Unitário" valor={detalhes.produto.valorUnitario} escuro={escuro} />
                                         <CampoLeitura rotulo="Valor Total" valor={detalhes.produto.valorTotal} escuro={escuro} />
                                     </div>
-
-                                    <div className={`w-full h-px ${classeSeparador}`} />
 
                                     <div
                                         className="rounded-xl p-4 grid grid-cols-4 gap-x-5 gap-y-3 items-end"
@@ -550,7 +564,7 @@ export default function ModalDetalheVenda({ venda, detalhes, aoFechar, aoAtualiz
                             </div>
 
                             {/* ── Parcelas */}
-                            {venda.parcelas?.length > 0 && (
+                            {parcelasConteudo ?? (venda.parcelas?.length > 0 && (
                                 <div className={`rounded-xl border p-5 ${classeSecao}`}>
                                     <CabecalhoSecao titulo="Parcelas desta Venda" cor="bg-emerald-500" escuro={escuro} />
                                     <div className="grid grid-cols-3 gap-3">
@@ -568,7 +582,7 @@ export default function ModalDetalheVenda({ venda, detalhes, aoFechar, aoAtualiz
                                         ))}
                                     </div>
                                 </div>
-                            )}
+                            ))}
                         </>
                     ) : (
                         <div className={`rounded-xl border p-8 text-center ${classeSecao}`}>
@@ -607,7 +621,7 @@ export default function ModalDetalheVenda({ venda, detalhes, aoFechar, aoAtualiz
                                 Salvar
                             </button>
                         </>
-                    ) : (
+                    ) : !somenteLeitura && (
                         <button
                             onClick={iniciarEdicao}
                             disabled={!pedidoEmAndamento}
@@ -634,63 +648,6 @@ export default function ModalDetalheVenda({ venda, detalhes, aoFechar, aoAtualiz
           to   { opacity: 1; transform: translateY(0) scale(1); }
         }
 
-        .modal-detalhe-scroll {
-          scrollbar-width: thin;
-          scrollbar-color: ${escuro ? "#6b7280 #1f2937" : "#9ca3af #e5e7eb"};
-        }
-
-        .modal-detalhe-scroll::-webkit-scrollbar {
-          width: 10px;
-        }
-
-        .modal-detalhe-scroll::-webkit-scrollbar-button {
-          -webkit-appearance: none;
-          appearance: none;
-          display: none;
-          width: 0;
-          height: 0;
-          background: transparent;
-        }
-
-        .modal-detalhe-scroll::-webkit-scrollbar-button:single-button,
-        .modal-detalhe-scroll::-webkit-scrollbar-button:vertical:start:decrement,
-        .modal-detalhe-scroll::-webkit-scrollbar-button:vertical:start:increment,
-        .modal-detalhe-scroll::-webkit-scrollbar-button:vertical:end:decrement,
-        .modal-detalhe-scroll::-webkit-scrollbar-button:vertical:end:increment,
-        .modal-detalhe-scroll::-webkit-scrollbar-button:horizontal:start:decrement,
-        .modal-detalhe-scroll::-webkit-scrollbar-button:horizontal:start:increment,
-        .modal-detalhe-scroll::-webkit-scrollbar-button:horizontal:end:decrement,
-        .modal-detalhe-scroll::-webkit-scrollbar-button:horizontal:end:increment {
-          -webkit-appearance: none;
-          appearance: none;
-          display: none;
-          width: 0;
-          height: 0;
-          min-width: 0;
-          min-height: 0;
-          background: transparent;
-        }
-
-        .modal-detalhe-scroll::-webkit-scrollbar-track {
-          background: ${escuro ? "#1f2937" : "#e5e7eb"};
-          border-radius: 0 16px 16px 0;
-          margin: 14px 0;
-        }
-
-        .modal-detalhe-scroll::-webkit-scrollbar-thumb {
-          background: ${escuro
-                    ? "linear-gradient(180deg, #9ca3af 0%, #6b7280 100%)"
-                    : "linear-gradient(180deg, #d1d5db 0%, #9ca3af 100%)"};
-          border: 2px solid ${escuro ? "#1f2937" : "#e5e7eb"};
-          border-radius: 999px;
-          min-height: 42px;
-        }
-
-        .modal-detalhe-scroll::-webkit-scrollbar-thumb:hover {
-          background: ${escuro
-                    ? "linear-gradient(180deg, #d1d5db 0%, #9ca3af 100%)"
-                    : "linear-gradient(180deg, #9ca3af 0%, #6b7280 100%)"};
-        }
       `}</style>
         </div>
     );

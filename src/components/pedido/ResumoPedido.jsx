@@ -6,6 +6,7 @@ import perfilDistribuidor from "../../assets/distribuidor.png";
 import { cadastrarPedido } from "../../services/api";
 import { mapperFormDataToPedidoRequest } from "../../services/pedidoRequestMapper";
 import { validarCamposPedido } from "../../services/pedidoValidation";
+import { carregarLogoPdf, adicionarLogoPdf } from "../../services/pdfBranding.js";
 
 export default function ResumoPedido({ formData, onSaveDraft, onPedidoSaved, onBusyChange }) {
   const cliente = formData?.cliente || {};
@@ -62,6 +63,7 @@ export default function ResumoPedido({ formData, onSaveDraft, onPedidoSaved, onB
   // ─── Função central: constrói e retorna o objeto jsPDF ───────────────────────
 const buildDoc = async () => {
   const { jsPDF } = await import("jspdf");
+  const logo = await carregarLogoPdf();
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -392,13 +394,14 @@ const buildDoc = async () => {
     doc.setFontSize(6);
     doc.setTextColor(148, 163, 184);
     doc.text(
-      `Gerado em ${new Date().toLocaleDateString("pt-BR")} as ${new Date().toLocaleTimeString("pt-BR")} - TND Brasil`,
+      `Gerado em ${new Date().toLocaleDateString("pt-BR")} as ${new Date().toLocaleTimeString("pt-BR")}`,
       margin,
       pageHeight - 3.5
     );
     doc.text(`Pagina ${page} de ${totalPages}`, pageWidth - margin, pageHeight - 3.5, {
       align: "right",
     });
+    adicionarLogoPdf(doc, logo, pageWidth / 2 - 9, pageHeight - 10, 18);
   }
 
   return doc;
