@@ -106,3 +106,59 @@
     border-radius: 20px;
     overflow: hidden;
 }
+.modal-contact-add {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    color: #2563eb;
+    background: rgba(37, 99, 235, 0.1);
+}
+
+.modal-contact-add:hover {
+    background: rgba(37, 99, 235, 0.2);
+}
+
+.modal-contact-input {
+    display: block;
+    width: 100%;
+    margin-top: 4px;
+    padding: 8px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+    font-size: 14px;
+}
+
+.modal-contact-name {
+    margin-top: 0;
+    font-weight: 600;
+}
+
+.modal-contact-input:focus-visible,
+.modal-contact-add:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+
+.modal-frozen-dark .modal-contact-input {
+    border-color: #475569;
+}
+
+.modal-frozen-dark .modal-contact-add {
+    color: #93c5fd;
+}
+
+.modal-contact-add:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.modal-contact-add.modal-contact-delete {
+    color: #dc2626;
+    background: rgba(220, 38, 38, 0.1);
+}
