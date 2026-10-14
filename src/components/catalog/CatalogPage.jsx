@@ -203,7 +203,7 @@ export default function CatalogPage({
                   {col.label}
                 </span>
               ))}
-              <span style={{ flex: "0 0 100px", textAlign: "center" }}>
+              <span style={{ flex: "0 0 130px", textAlign: "center" }}>
                 Ferramentas
               </span>
             </div>
@@ -238,6 +238,7 @@ export default function CatalogPage({
                     <span
                       key={idx}
                       className={cell.className || "catalog-centered"}
+                      data-label={tableColumns[idx + 1]?.label}
                       style={{ flex: tableColumns[idx + 1]?.flex || "1" }}
                     >
                       {cell.value}
