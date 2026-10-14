@@ -62,7 +62,7 @@ function Button({
   ].join(' ')
 
   return (
-    <button
+    <button data-ui-action
       type={type}
       onClick={onClick}
       disabled={isDisabled}

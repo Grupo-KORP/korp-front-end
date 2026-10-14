@@ -1,0 +1,59 @@
+:root {
+  --app-button-radius: 0.75rem;
+  --app-button-height: 2.25rem;
+  --app-button-padding-x: 1rem;
+}
+
+/* Curvatura comum, inclusive para navegação e células dos calendários. */
+#root button {
+  border-radius: var(--app-button-radius);
+}
+
+/* Medidas do botão Emitir relatório; largura acompanha o conteúdo ou o layout. */
+#root button[data-ui-action] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-sizing: border-box;
+  height: var(--app-button-height);
+  min-height: var(--app-button-height);
+  padding: 0 var(--app-button-padding-x);
+  font-size: 0.875rem;
+  line-height: 1rem;
+  white-space: nowrap;
+}
+
+/* Ícones e texto usam a mesma caixa de linha nos botões de ação. */
+#root button[data-ui-action] > svg {
+  display: block;
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 1rem;
+  align-self: center;
+}
+
+/* Compensação óptica da fonte; preserva a rotação da seta e do spinner. */
+#root button[data-ui-action]:not(.btn-pdf-icon):not(.btn-modal-search) > svg,
+#root button.cnpj-search-trigger > svg {
+  position: relative;
+  top: -1px;
+}
+
+#root button.cnpj-search-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+#root button.cnpj-search-trigger > svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+/* A ação de PDF usa somente ícone dentro do resumo do pedido. */
+#root button[data-ui-action].btn-pdf-icon {
+  width: var(--app-button-height);
+  flex-basis: var(--app-button-height);
+  padding: 0;
+}

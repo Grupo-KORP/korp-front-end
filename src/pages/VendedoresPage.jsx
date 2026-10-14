@@ -375,22 +375,22 @@ export default function VendedoresPage() {
       <NavbarVendedor />
       {vendedorSelecionado && <ModalVendasVendedor vendedor={vendedorSelecionado} dark={modoEscuro} onClose={() => setVendedorSelecionado(null)} />}
 
-      <div className="flex-1 overflow-y-auto lg:overflow-hidden w-full px-5 py-4 sm:py-5">
+      <div className="app-page-content flex-1 overflow-y-auto lg:overflow-hidden w-full">
         <div className="flex h-full w-full flex-col">
           <div className="flex min-h-0 flex-1 flex-col lg:flex-row gap-4 items-stretch">
 
             {/* ── Tabela de Vendedores ── */}
             <div className="min-w-0 flex-1 flex flex-col">
               {/* Header */}
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
-                <div className="pl-4 sm:pl-6">
-                  <h1 className={`text-xl font-extrabold leading-tight ${textoP}`}>Painel de vendedores</h1>
-                  <p className="text-[10px] font-semibold tracking-widest text-blue-500 uppercase leading-none mt-0.5">
+              <div className="app-page-header flex flex-col sm:flex-row sm:items-end sm:justify-between">
+                <div className="app-page-heading">
+                  <p data-page-eyebrow className="text-[10px] font-semibold tracking-widest text-blue-500 uppercase leading-none mt-0.5">
                     Colaboradores Cadastrados
                   </p>
+                  <h1 className={`text-xl font-extrabold leading-tight ${textoP}`}>Painel de vendedores</h1>
                 </div>
 
-                <div className="relative w-full sm:max-w-xs md:max-w-sm xl:max-w-md">
+                <div className="app-search relative w-full sm:max-w-xs md:max-w-sm xl:max-w-md">
                   <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -589,12 +589,12 @@ export default function VendedoresPage() {
 
                 <div className="flex gap-2 mt-1">
                   {editingId && (
-                    <button type="button" onClick={handleCancel}
+                    <button data-ui-action type="button" onClick={handleCancel}
                       className={`flex-1 py-3 rounded-xl border text-sm font-semibold transition-colors ${borda} ${textoS} ${hover}`}>
                       Cancelar
                     </button>
                   )}
-                  <button type="submit" disabled={loading}
+                  <button data-ui-action type="submit" disabled={loading}
                     className="flex-1 py-3 rounded-xl text-sm font-bold text-white tracking-wide transition-all duration-200 hover:opacity-90 active:scale-[0.98] shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
                     style={{ background: "linear-gradient(135deg, #1a3a7a 0%, #2d5fa6 100%)" }}>
                     {loading ? "Aguarde..." : editingId ? "Salvar" : "Cadastrar"}

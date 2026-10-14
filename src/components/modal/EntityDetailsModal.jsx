@@ -246,8 +246,8 @@ export default function EntityDetailsModal({ entity, onClose, title, open = true
           </div>
         </div>
         <div className="modal-frozen-footer flex justify-end gap-2 px-8 py-4 border-t flex-shrink-0">
-          {hasChanges && <button type="submit" disabled={busy || cepLoading || !!cepError} className={buttonClass}>{busy ? "Salvando..." : "Salvar"}</button>}
-          <button type="button" onClick={onClose} disabled={busy} className={buttonClass}>Fechar</button>
+          {hasChanges && <button data-ui-action type="submit" disabled={busy || cepLoading || !!cepError} className={buttonClass}>{busy ? "Salvando..." : "Salvar"}</button>}
+          <button data-ui-action type="button" onClick={onClose} disabled={busy} className={buttonClass}>Fechar</button>
         </div>
       </form>
 
@@ -275,8 +275,8 @@ export default function EntityDetailsModal({ entity, onClose, title, open = true
           </div>
           <p id="contact-delete-description" className="produto-confirm-text">Deseja realmente excluir o contato <strong>{contactToDelete.contact.nome || "sem nome"}</strong>?</p>
           <div className="produto-confirm-actions">
-            <button type="button" className="catalog-cancel" disabled={busy} onClick={() => setContactToDelete(null)}>Não</button>
-            <button type="button" className="catalog-submit catalog-submit--danger" disabled={busy} onClick={confirmDelete}>{busy ? "Excluindo..." : "Sim"}</button>
+            <button data-ui-action type="button" className="catalog-cancel" disabled={busy} onClick={() => setContactToDelete(null)}>Não</button>
+            <button data-ui-action type="button" className="catalog-submit catalog-submit--danger" disabled={busy} onClick={confirmDelete}>{busy ? "Excluindo..." : "Sim"}</button>
           </div>
         </div>
       </div>}

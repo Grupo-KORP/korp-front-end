@@ -538,7 +538,7 @@ export default function DistribuidorPage() {
           </div>
         ))}
       </div>
-      <button type="button" className="btn-add-produto" onClick={addContact}>
+      <button data-ui-action type="button" className="btn-add-produto" onClick={addContact}>
         + Adicionar Contato
       </button>
     </div>
@@ -624,7 +624,7 @@ export default function DistribuidorPage() {
       </p>
 
       <div className="produto-confirm-actions">
-        <button
+        <button data-ui-action
           type="button"
           className="catalog-cancel"
           onClick={() =>
@@ -634,7 +634,7 @@ export default function DistribuidorPage() {
           Cancelar
         </button>
 
-        <button
+        <button data-ui-action
           type="button"
           className="catalog-submit catalog-submit--danger"
           onClick={handleDeleteContact}

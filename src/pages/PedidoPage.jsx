@@ -130,11 +130,11 @@ export default function PedidoPage() {
                     <div className="form-area" id="area-pdf">
                         <div className="pedido-header">
                           <div>
-                            <p>Pedidos</p>
+                            <p data-page-eyebrow>Pedidos</p>
                             <h1>{activeDraft ? "Editar rascunho" : "Novo Pedido"}</h1>
                           </div>
                           <div className="pedido-header-actions">
-                            {drafts.length > 0 && <button ref={draftsButtonRef} type="button" className="btn-secondary" disabled={busy} aria-expanded={showDrafts} aria-controls="pedido-rascunhos" onClick={() => setShowDrafts(!showDrafts)}>
+                            {drafts.length > 0 && <button data-ui-action ref={draftsButtonRef} type="button" className="btn-secondary" disabled={busy} aria-expanded={showDrafts} aria-controls="pedido-rascunhos" onClick={() => setShowDrafts(!showDrafts)}>
                                 Rascunhos ({drafts.length})
                             </button>}
                           </div>
@@ -163,7 +163,7 @@ export default function PedidoPage() {
                                     <span>{draft.data.distribuidor.nomeFantasia || draft.data.distribuidor.razaoSocial || "Distribuidor não informado"}</span>
                                 </div>
                                 <div className="pedido-header-actions">
-                                    <button type="button" className="btn-secondary" disabled={busy} onClick={() => abrirPedido(draft)}>Continuar</button>
+                                    <button data-ui-action type="button" className="btn-secondary" disabled={busy} onClick={() => abrirPedido(draft)}>Continuar</button>
                                     <button type="button" className="draft-delete" disabled={busy} aria-label="Apagar rascunho" onClick={() => excluirRascunho(draft.id)}>
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                                             <path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6M14 10v6" />
@@ -202,12 +202,12 @@ export default function PedidoPage() {
                 <h2 id="pedido-discard-title">Descartar alterações?</h2>
                 <p id="pedido-discard-description">Há alterações não salvas neste pedido. Deseja descartá-las e abrir o rascunho selecionado?</p>
                 <div className="resumo-modal-actions">
-                    <button type="button" className="btn-primary" onClick={() => {
+                    <button data-ui-action type="button" className="btn-primary" onClick={() => {
                         const draft = pendingDraft;
                         setPendingDraft(null);
                         if (draft) carregarPedido(draft);
                     }}>Sim</button>
-                    <button ref={keepChangesButtonRef} type="button" className="btn-secondary" onClick={() => setPendingDraft(null)}>Não</button>
+                    <button data-ui-action ref={keepChangesButtonRef} type="button" className="btn-secondary" onClick={() => setPendingDraft(null)}>Não</button>
                 </div>
             </dialog>
         </div>

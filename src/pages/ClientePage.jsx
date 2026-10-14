@@ -536,7 +536,7 @@ export default function ClientePage() {
           </div>
         ))}
       </div>
-      <button type="button" className="btn-add-produto" onClick={addContact}>
+      <button data-ui-action type="button" className="btn-add-produto" onClick={addContact}>
         + Adicionar Contato
       </button>
     </div>
@@ -617,7 +617,7 @@ export default function ClientePage() {
             </p>
 
             <div className="produto-confirm-actions">
-              <button
+              <button data-ui-action
                 type="button"
                 className="catalog-cancel"
                 onClick={() => setContactToDelete(null)}
@@ -625,7 +625,7 @@ export default function ClientePage() {
                 Cancelar
               </button>
 
-              <button
+              <button data-ui-action
                 type="button"
                 className="catalog-submit catalog-submit--danger"
                 onClick={handleDeleteContact}

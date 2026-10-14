@@ -602,7 +602,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                     )}
                     {modoEdicao ? (
                         <>
-                            <button
+                            <button data-ui-action
                                 onClick={() => confirmarEdicao(true)}
                                 disabled={salvando || !numeroNotaDistribuidor.trim() || !observacoes.trim() || (boleto && !datasPagamentoValidas)}
                                 className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all
@@ -611,7 +611,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                                 <IconeCheck />
                                 Finalizar Pedido
                             </button>
-                            <button
+                            <button data-ui-action
                                 onClick={() => confirmarEdicao(false)}
                                 disabled={salvando}
                                 className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all
@@ -622,7 +622,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                             </button>
                         </>
                     ) : !somenteLeitura && (
-                        <button
+                        <button data-ui-action
                             onClick={iniciarEdicao}
                             disabled={!pedidoEmAndamento}
                             className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all border
@@ -632,7 +632,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                             Editar Informações
                         </button>
                     )}
-                    <button
+                    <button data-ui-action
                         onClick={tentarFechar}
                         className="px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all
               bg-blue-600 text-white hover:bg-blue-700"

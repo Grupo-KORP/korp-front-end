@@ -563,7 +563,7 @@ function ClienteSection({ onChange, initialData }) {
                   cadastro.
                 </p>
               )}
-              <button
+              <button data-ui-action
                 type="button"
                 className="btn-salvar-cadastro"
                 onClick={saveCliente}
@@ -612,7 +612,9 @@ function ClienteSection({ onChange, initialData }) {
                 </p>
 
                 <div className="modal-search-row">
-                  <input
+                  <div className="app-search-field">
+                    <svg aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z" /></svg>
+                    <input
                     type="text"
                     placeholder="Nome fantasia, CNPJ ou contato"
                     value={search}
@@ -625,7 +627,8 @@ function ClienteSection({ onChange, initialData }) {
                     }}
                     className="input-busca"
                   />
-                  <button
+                  </div>
+                  <button data-ui-action
                     type="button"
                     className="btn-modal-search"
                     onClick={handleSearch}
@@ -678,7 +681,7 @@ function ClienteSection({ onChange, initialData }) {
                             Este CNPJ já existe como cliente.
                           </p>
                         )}
-                        <button
+                        <button data-ui-action
                           type="button"
                           className="btn-cadastrar-novo"
                           onClick={startNewCliente}
@@ -702,7 +705,9 @@ function ClienteSection({ onChange, initialData }) {
                 </p>
 
                 <div className="modal-search-row single">
-                  <input
+                  <div className="app-search-field">
+                    <svg aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z" /></svg>
+                    <input
                     type="text"
                     placeholder="Buscar contato por nome ou e-mail"
                     value={contactSearch}
@@ -712,6 +717,7 @@ function ClienteSection({ onChange, initialData }) {
                     }}
                     className="input-busca"
                   />
+                  </div>
                 </div>
 
                 <div className="lista-clientes">
@@ -757,7 +763,7 @@ function ClienteSection({ onChange, initialData }) {
                         }
                         className="input-cnpj-cadastro"
                       />
-                      <button
+                      <button data-ui-action
                         type="button"
                         className="btn-cadastrar-novo"
                         onClick={registerClienteContact}
@@ -769,7 +775,7 @@ function ClienteSection({ onChange, initialData }) {
                   )}
                 </div>
 
-                <button
+                <button data-ui-action
                   type="button"
                   className="btn-modal-back"
                   onClick={() => setModalStep(1)}
@@ -779,7 +785,7 @@ function ClienteSection({ onChange, initialData }) {
               </>
             )}
 
-            <button
+            <button data-ui-action
               type="button"
               className="btn-modal-close"
               onClick={closeModal}
@@ -1161,7 +1167,7 @@ function DistribuidorSection({ onChange, initialData }) {
                   cadastro.
                 </p>
               )}
-              <button
+              <button data-ui-action
                 type="button"
                 className="btn-salvar-cadastro"
                 onClick={saveDistribuidor}
@@ -1210,7 +1216,9 @@ function DistribuidorSection({ onChange, initialData }) {
                 </p>
 
                 <div className="modal-search-row">
-                  <input
+                  <div className="app-search-field">
+                    <svg aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z" /></svg>
+                    <input
                     type="text"
                     placeholder="Nome fantasia, CNPJ ou contato"
                     value={search}
@@ -1223,7 +1231,8 @@ function DistribuidorSection({ onChange, initialData }) {
                     }}
                     className="input-busca"
                   />
-                  <button
+                  </div>
+                  <button data-ui-action
                     type="button"
                     className="btn-modal-search"
                     onClick={handleSearch}
@@ -1277,7 +1286,7 @@ function DistribuidorSection({ onChange, initialData }) {
                             Este CNPJ já existe como distribuidor.
                           </p>
                         )}
-                        <button
+                        <button data-ui-action
                           type="button"
                           className="btn-cadastrar-novo"
                           onClick={startNewDistribuidor}
@@ -1301,7 +1310,9 @@ function DistribuidorSection({ onChange, initialData }) {
                 </p>
 
                 <div className="modal-search-row single">
-                  <input
+                  <div className="app-search-field">
+                    <svg aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z" /></svg>
+                    <input
                     type="text"
                     placeholder="Buscar contato por nome ou e-mail"
                     value={contactSearch}
@@ -1311,6 +1322,7 @@ function DistribuidorSection({ onChange, initialData }) {
                     }}
                     className="input-busca"
                   />
+                  </div>
                 </div>
 
                 <div className="lista-clientes">
@@ -1358,7 +1370,7 @@ function DistribuidorSection({ onChange, initialData }) {
                         }
                         className="input-cnpj-cadastro"
                       />
-                      <button
+                      <button data-ui-action
                         type="button"
                         className="btn-cadastrar-novo"
                         onClick={registerDistribuidorContact}
@@ -1370,7 +1382,7 @@ function DistribuidorSection({ onChange, initialData }) {
                   )}
                 </div>
 
-                <button
+                <button data-ui-action
                   type="button"
                   className="btn-modal-back"
                   onClick={() => setModalStep(1)}
@@ -1380,7 +1392,7 @@ function DistribuidorSection({ onChange, initialData }) {
               </>
             )}
 
-            <button
+            <button data-ui-action
               type="button"
               className="btn-modal-close"
               onClick={closeModal}
@@ -1680,7 +1692,7 @@ function ProdutoSection({ onChange, initialData, onRemove }) {
           </div>
 
           {showSaveButton && (
-            <button
+            <button data-ui-action
               type="button"
               className="btn-salvar-cadastro"
               onClick={saveProduto}
@@ -1701,7 +1713,9 @@ function ProdutoSection({ onChange, initialData, onRemove }) {
             </p>
 
             <div className="modal-search-row">
-              <input
+              <div className="app-search-field">
+                    <svg aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z" /></svg>
+                    <input
                 type="text"
                 placeholder="Digite o nome ou P/N do produto"
                 value={search}
@@ -1714,7 +1728,8 @@ function ProdutoSection({ onChange, initialData, onRemove }) {
                 }}
                 className="input-busca"
               />
-              <button
+                  </div>
+              <button data-ui-action
                 type="button"
                 className="btn-modal-search"
                 onClick={handleSearch}
@@ -1755,7 +1770,7 @@ function ProdutoSection({ onChange, initialData, onRemove }) {
                   <p>
                     Nenhum produto encontrado para essa pesquisa.
                   </p>
-                  <button
+                  <button data-ui-action
                     type="button"
                     className="btn-cadastrar-novo"
                     onClick={startNewProduto}
@@ -1766,7 +1781,7 @@ function ProdutoSection({ onChange, initialData, onRemove }) {
               )}
             </div>
 
-            <button
+            <button data-ui-action
               type="button"
               className="btn-modal-close"
               onClick={closeModal}
@@ -1850,7 +1865,7 @@ export default function PedidoForm({ onFormChange, initialData }) {
         </div>
       ))}
 
-      <button type="button" className="btn-add-produto" onClick={addProduto}>
+      <button data-ui-action type="button" className="btn-add-produto" onClick={addProduto}>
         + Adicionar produto
       </button>
     </div>

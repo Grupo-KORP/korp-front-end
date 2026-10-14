@@ -590,13 +590,13 @@ const gerarPDFBase64 = async () => {
         </div>
 
         <div className="botoes-resumo">
-          <button className="btn-primary" onClick={adicionarPedido} disabled={loading}>
+          <button data-ui-action className="btn-primary" onClick={adicionarPedido} disabled={loading}>
             {loading ? "Salvando..." : "Adicionar Pedido"}
           </button>
-          <button type="button" className="btn-secondary" onClick={() => onSaveDraft?.({ formaPagamento })} disabled={loading}>
+          <button data-ui-action type="button" className="btn-secondary" onClick={() => onSaveDraft?.({ formaPagamento })} disabled={loading}>
             Salvar rascunho
           </button>
-          <button type="button" className="btn-secondary btn-pdf-icon" onClick={gerarPDF}
+          <button data-ui-action type="button" className="btn-secondary btn-pdf-icon" onClick={gerarPDF}
             disabled={loading} aria-label="Pré visualizar PDF">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
@@ -614,7 +614,7 @@ const gerarPDFBase64 = async () => {
             <h3>Erro ao salvar pedido</h3>
             <p>{error}</p>
             <div className="resumo-modal-actions">
-              <button
+              <button data-ui-action
                 type="button"
                 className="btn-primary"
                 onClick={() => {
@@ -624,7 +624,7 @@ const gerarPDFBase64 = async () => {
               >
                 Tentar novamente
               </button>
-              <button
+              <button data-ui-action
                 type="button"
                 className="btn-secondary"
                 onClick={() => setError(null)}
@@ -648,7 +648,7 @@ const gerarPDFBase64 = async () => {
             </p>
 
             <div className="resumo-modal-actions">
-              <button
+              <button data-ui-action
                 type="button"
                 className="btn-primary"
                 onClick={() => finalizarPedido(true)}
@@ -656,7 +656,7 @@ const gerarPDFBase64 = async () => {
               >
                 Sim
               </button>
-              <button
+              <button data-ui-action
                 type="button"
                 className="btn-secondary"
                 onClick={() => finalizarPedido(false)}

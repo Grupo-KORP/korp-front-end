@@ -1,0 +1,136 @@
+:root {
+  --app-search-bg: #fff;
+  --app-search-text: #9ca3af;
+  --app-search-focus: #2d5fa6;
+}
+
+body.dark {
+  --app-search-bg: #1f2937;
+  --app-search-text: #d1d5db;
+  --app-search-focus: #93c5fd;
+}
+
+/* Pesquisas acompanham as medidas compartilhadas dos botões. */
+#root :is(.catalog-search, .comissoes-search, .app-search, .app-search-field) {
+  background: var(--app-search-bg);
+  color: var(--app-search-text);
+  border: 0;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+  width: 24rem;
+  max-width: 100%;
+  flex: 0 1 24rem;
+  height: var(--app-button-height);
+  min-height: var(--app-button-height);
+  min-width: 0;
+  border-radius: var(--app-button-radius);
+}
+
+#root .catalog-search {
+  padding: 0 var(--app-button-padding-x);
+  gap: 0.5rem;
+}
+
+#root :is(.catalog-search, .comissoes-search, .app-search, .app-search-field) input,
+#root .input-busca {
+  background: transparent;
+  color: var(--app-search-text);
+  border: 0;
+  outline: none;
+  box-shadow: none;
+  box-sizing: border-box;
+  min-width: 0;
+  height: var(--app-button-height);
+  min-height: var(--app-button-height);
+  border-radius: var(--app-button-radius);
+  padding: 0 var(--app-button-padding-x);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+/* O fundo fica no contêiner para manter lupa e campo na mesma superfície. */
+#root .catalog-search input {
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  border-radius: 0;
+}
+
+#root :is(.comissoes-search, .app-search, .app-search-field) input {
+  padding-left: 2.5rem;
+}
+
+#root :is(.catalog-search, .comissoes-search, .app-search, .app-search-field) svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  pointer-events: none;
+  color: var(--app-search-text);
+}
+
+#root .catalog-search svg:not([fill="none"]) {
+  fill: currentColor;
+}
+
+#root :is(.comissoes-search, .app-search, .app-search-field) > svg {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+#root :is(.catalog-search, .comissoes-search, .app-search, .app-search-field) input::placeholder,
+#root .input-busca::placeholder {
+  color: var(--app-search-text);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  opacity: 1;
+}
+
+#root .modal-search-row {
+  grid-template-columns: minmax(0, 1fr) var(--app-button-height);
+}
+
+#root .modal-search-row.single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+#root button[data-ui-action].btn-modal-search {
+  width: var(--app-button-height);
+  padding: 0;
+}
+
+#root .app-search-field {
+  position: relative;
+  width: 100%;
+}
+
+#root :is(.catalog-search, .comissoes-search, .app-search, .app-search-field):focus-within {
+  outline: 2px solid var(--app-search-focus);
+  outline-offset: 2px;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+}
+
+#root :is(.catalog-search, .comissoes-search, .app-search, .app-search-field) input:focus {
+  border: 0;
+  outline: none;
+  box-shadow: none;
+}
+
+@media (max-width: 640px) {
+  #root :is(.catalog-search, .comissoes-search, .app-search) {
+    width: 100%;
+    flex-basis: auto;
+  }
+}
+
+@media (max-width: 400px) {
+  #root :is(.catalog-search, .comissoes-search, .app-search, .app-search-field) input::placeholder {
+    font-size: 0.625rem;
+    letter-spacing: normal;
+  }
+}

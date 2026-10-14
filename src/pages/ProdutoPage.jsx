@@ -247,7 +247,7 @@ export default function ProdutoPage() {
           {/* ── Topbar ── */}
           <div className="catalog-topbar produto-topbar-with-action">
             <div className="catalog-title-block">
-              <p>Produtos Cadastrados</p>
+              <p data-page-eyebrow>Produtos Cadastrados</p>
               <h1>Painel de Produtos</h1>
             </div>
 
@@ -263,7 +263,7 @@ export default function ProdutoPage() {
                   onChange={handleSearchChange}
                 />
               </label>
-              <button className="produto-new-btn" type="button" onClick={openCreateModal}>
+              <button data-ui-action className="produto-new-btn" type="button" onClick={openCreateModal}>
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M6 3h9.2L20 7.8V21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm8 1.9V9h4.1L14 4.9ZM6 5v14h12v-8h-6V5H6Zm2 8h8v1.7H8V13Zm0 3h6v1.7H8V16Z" />
                 </svg>
@@ -359,10 +359,10 @@ export default function ProdutoPage() {
               </div>
 
               <div className="catalog-form-actions" style={{ marginTop: "8px" }}>
-                <button type="button" className="catalog-cancel" onClick={closeModal}>
+                <button data-ui-action type="button" className="catalog-cancel" onClick={closeModal}>
                   Cancelar
                 </button>
-                <button type="submit" className="catalog-submit" disabled={loading || !dirty || !form.nome.trim()}>
+                <button data-ui-action type="submit" className="catalog-submit" disabled={loading || !dirty || !form.nome.trim()}>
                   {loading ? "Aguarde..." : modalMode === "edit" ? "Salvar" : "Cadastrar"}
                 </button>
               </div>
@@ -394,10 +394,10 @@ export default function ProdutoPage() {
             </p>
 
             <div className="produto-confirm-actions">
-              <button type="button" className="catalog-cancel" onClick={() => setDeleteTarget(null)} disabled={deleting}>
+              <button data-ui-action type="button" className="catalog-cancel" onClick={() => setDeleteTarget(null)} disabled={deleting}>
                 Cancelar
               </button>
-              <button type="button" className="catalog-submit catalog-submit--danger" onClick={handleDeleteConfirmed} disabled={deleting}>
+              <button data-ui-action type="button" className="catalog-submit catalog-submit--danger" onClick={handleDeleteConfirmed} disabled={deleting}>
                 {deleting ? "Excluindo..." : "Excluir"}
               </button>
             </div>

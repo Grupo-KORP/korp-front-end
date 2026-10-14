@@ -690,12 +690,12 @@ const periodo = useMemo(() => {
       )}
  
       <div className="flex-1 overflow-y-auto min-h-0 w-full">
-        <div className="flex flex-col lg:h-full px-3 py-4 sm:px-6 sm:py-6">
+        <div className="app-page-content flex flex-col lg:h-full">
  
           {/* ── Header ── */}
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
+          <div className="app-page-header flex flex-col sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs font-semibold tracking-widest text-blue-500 uppercase mb-0.5">
+              <p data-page-eyebrow className="text-xs font-semibold tracking-widest text-blue-500 uppercase mb-0.5">
                 Operações de Venda
               </p>
               <h1 className={`text-xl sm:text-2xl font-extrabold ${textoP}`}>Painel do Vendedor</h1>
@@ -978,7 +978,7 @@ const periodo = useMemo(() => {
               </div>
  
               {/* Emitir PDF */}
-              <button
+              <button data-ui-action
                 onClick={emitirPDF}
                 disabled={gerandoPdf}
                 className="w-full py-2.5 rounded-xl text-sm font-bold text-white tracking-wide transition-all duration-200 hover:opacity-90 active:scale-[0.98] shadow-md disabled:opacity-60 disabled:cursor-wait"

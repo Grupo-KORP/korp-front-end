@@ -174,7 +174,7 @@ export default function CatalogPage({
           {/* Título + Search */}
           <div className="catalog-topbar">
             <div className="catalog-title-block">
-              <p>{eyebrow}</p>
+              <p data-page-eyebrow>{eyebrow}</p>
               <h1>{title}</h1>
             </div>
 
@@ -305,7 +305,7 @@ export default function CatalogPage({
 
               <div className="catalog-form-actions">
                 {isEditing && onCancel && (
-                  <button
+                  <button data-ui-action
                     type="button"
                     className="catalog-cancel"
                     onClick={onCancel}
@@ -313,7 +313,7 @@ export default function CatalogPage({
                     Cancelar
                   </button>
                 )}
-                <button
+                <button data-ui-action
                   type="submit"
                   className="catalog-submit"
                   disabled={submitDisabled}
@@ -353,7 +353,7 @@ export default function CatalogPage({
             </p>
 
             <div className="produto-confirm-actions">
-              <button
+              <button data-ui-action
                 type="button"
                 className="catalog-cancel"
                 onClick={() => setDeleteTarget(null)}
@@ -361,7 +361,7 @@ export default function CatalogPage({
               >
                 Cancelar
               </button>
-              <button
+              <button data-ui-action
                 type="button"
                 className="catalog-submit catalog-submit--danger"
                 onClick={handleDeleteConfirmed}

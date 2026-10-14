@@ -333,12 +333,12 @@ export default function HomeFinanceiro() {
       <NavbarFinanceiro />
 
       <div className="flex-1 overflow-y-auto min-h-0 w-full">
-        <div className="flex flex-col px-3 py-4 sm:px-6 sm:py-6">
+        <div className="app-page-content flex flex-col">
 
           {/* ── Header ── */}
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
+          <div className="app-page-header flex flex-col sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs font-semibold tracking-widest text-blue-500 uppercase mb-0.5">
+              <p data-page-eyebrow className="text-xs font-semibold tracking-widest text-blue-500 uppercase mb-0.5">
                 Painel Financeiro
               </p>
               <h1 className={`text-xl sm:text-2xl font-extrabold ${textoP}`}>Visão consolidada de vendas e comissões</h1>
@@ -351,7 +351,7 @@ export default function HomeFinanceiro() {
                   refDropdown.current?.querySelector("button")?.focus();
                 }
               }}>
-                <button
+                <button data-ui-action
                   type="button"
                   aria-label="Selecionar mês e ano"
                   aria-expanded={mostrarMeses}
@@ -438,7 +438,7 @@ export default function HomeFinanceiro() {
                 )}
               </div>
 
-              <button
+              <button data-ui-action
                 type="button"
                 disabled={emitindoRelatorio}
                 aria-busy={emitindoRelatorio}
