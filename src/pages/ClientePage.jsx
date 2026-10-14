@@ -500,6 +500,7 @@ export default function ClientePage() {
   return (
     <>
       <CatalogPage
+        pageClassName="catalog-shell--leads"
         eyebrow="Clientes Cadastrados"
         title="Painel de Leads"
         searchPlaceholder="Pesquisar Clientes"

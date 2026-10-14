@@ -243,6 +243,7 @@ export default function CatalogPage({
   isEditing = false,
   submitDisabled = false,
   deleteEntityLabel = "registro",
+  pageClassName = "",
 }) {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -267,7 +268,7 @@ export default function CatalogPage({
   const hasPagination = totalPages != null && onPageChange != null;
 
   return (
-    <div className="catalog-shell">
+    <div className={`catalog-shell ${pageClassName}`.trim()}>
       <NavbarVendedor />
 
       <div className="catalog-page">

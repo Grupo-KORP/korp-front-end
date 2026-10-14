@@ -1144,6 +1144,48 @@ body.dark .produto-modal-card {
 }
 
 @media (max-width: 1400px) {
+  .catalog-shell--leads .catalog-table-card {
+    min-width: 0;
+    overflow-x: auto;
+  }
+
+  .catalog-shell--leads .catalog-table-head,
+  .catalog-shell--leads .catalog-row {
+    min-width: 0;
+  }
+
+  .catalog-shell--leads .catalog-table-head span,
+  .catalog-shell--leads .catalog-row > * {
+    min-width: 0;
+  }
+
+  .catalog-shell--leads .catalog-table-head span {
+    overflow-wrap: anywhere;
+  }
+
+  .catalog-shell--leads .catalog-table-head span:last-child {
+    font-size: 9px;
+    letter-spacing: 0.8px;
+    white-space: nowrap;
+  }
+
+  .catalog-shell--leads .catalog-identity > div {
+    min-width: 0;
+  }
+
+  .catalog-shell--leads .catalog-form-card {
+    max-height: calc(100vh - 160px);
+  }
+
+  .catalog-shell--leads .catalog-form-fields {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 6px;
+  }
+}
+
+@media (max-width: 1400px) {
 
   .catalog-page {
     gap: 16px;
