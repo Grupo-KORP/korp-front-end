@@ -1,0 +1,35 @@
+.vendedor-vendas-modal { width: min(1180px, calc(100vw - 32px)); max-width: none; max-height: 90vh; padding: 0; border: 0; border-radius: 22px; margin: auto; background: #fff; color: #1f2937; box-shadow: 0 22px 60px #0f172e40; }
+.vendedor-vendas-modal::backdrop { background: #4b586699; backdrop-filter: blur(2px); }
+.vendedor-vendas-conteudo { display: flex; flex-direction: column; max-height: 90vh; }
+.vendedor-vendas-cabecalho { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 24px; border-bottom: 1px solid #e5e7eb; }
+.vendedor-vendas-cabecalho h2 { font-size: 18px; line-height: 1.25; font-weight: 800; margin: 2px 0; overflow-wrap: anywhere; }
+.vendedor-vendas-cabecalho p { font-size: 12px; line-height: 1.3; margin: 0; color: #64748b; overflow-wrap: anywhere; }
+.vendedor-vendas-cabecalho .vendedor-vendas-rotulo { color: #2d5fa6; font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; }
+.vendedor-vendas-fechar { align-self: flex-start; font-size: 28px; line-height: 1; padding: 6px 12px; color: #64748b; background: transparent; border: 0; box-shadow: none; }
+.vendedor-vendas-fechar:hover { color: #1e4080; }
+.vendedor-vendas-corpo { padding: 20px 24px; overflow: auto; min-height: 130px; }
+.vendedor-vendas-total { font-size: 12px; color: #64748b; margin: 0 0 16px; }
+.vendedor-vendas-tabela { overflow-x: auto; }
+.vendedor-vendas-tabela table { width: 100%; min-width: 900px; border-collapse: collapse; font-size: 12px; }
+.vendedor-vendas-tabela th { text-align: left; padding: 12px; color: #64748b; background: #f8fafc; font-size: 10px; text-transform: uppercase; letter-spacing: .5px; }
+.vendedor-vendas-tabela td { padding: 16px 12px; border-bottom: 1px solid #eef2f6; max-width: 240px; overflow-wrap: anywhere; }
+.vendedor-vendas-moeda { white-space: nowrap; font-weight: 600; }
+.vendedor-vendas-status { display: inline-block; border-radius: 20px; padding: 4px 10px; background: #eff6ff; color: #1e4080; font-size: 10px; font-weight: 700; white-space: nowrap; }
+.vendedor-vendas-status[data-status="APROVADO"], .vendedor-vendas-status[data-status="FINALIZADO"] { background: #dcfce7; color: #166534; }
+.vendedor-vendas-status[data-status="CANCELADO"], .vendedor-vendas-status[data-status="REPROVADO"] { background: #fee2e2; color: #991b1b; }
+.vendedor-vendas-mensagem { text-align: center; padding: 28px 0; font-size: 14px; }
+.vendedor-vendas-rodape { display: flex; justify-content: flex-end; padding: 16px 24px; border-top: 1px solid #e5e7eb; }
+.vendedor-vendas-rodape button, .vendedor-vendas-mensagem button { background: #1e4080; color: white; border-radius: 10px; padding: 10px 24px; font-size: 13px; font-weight: 600; }
+.vendedor-vendas-mensagem button { margin-top: 16px; }
+.vendedor-vendas-rodape button:hover, .vendedor-vendas-mensagem button:hover { background: #162f5e; }
+.vendedor-vendas-modal :focus-visible { outline: 3px solid #2d5fa6; outline-offset: 2px; }
+.vendedor-vendas-modal .vendedor-vendas-fechar:focus-visible { outline: none; text-decoration: underline; text-underline-offset: 4px; }
+.vendedor-vendas-dark { background: #1f2937; color: #f3f4f6; }
+.vendedor-vendas-dark .vendedor-vendas-cabecalho, .vendedor-vendas-dark .vendedor-vendas-rodape, .vendedor-vendas-dark td { border-color: #374151; }
+.vendedor-vendas-dark .vendedor-vendas-cabecalho p, .vendedor-vendas-dark .vendedor-vendas-total { color: #a8c4eb; }
+.vendedor-vendas-dark th { background: #111827; color: #cbd5e1; }
+.vendedor-vendas-dark .vendedor-vendas-fechar:hover { color: #cbd5e1; }
+@media (max-width: 600px) {
+  .vendedor-vendas-corpo, .vendedor-vendas-rodape { padding: 16px; }
+  .vendedor-vendas-cabecalho { padding: 10px 16px; }
+}

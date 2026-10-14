@@ -7,7 +7,7 @@
 
 /* ─── Tokens (light) ─────────────────────────────────────────────────────────── */
 :root {
-  --cat-bg: #f3f4f6;
+  --cat-bg: var(--app-page-bg-light);
 
   --cat-card-bg: #ffffff;
 
@@ -47,7 +47,7 @@
 
 /* ─── Tokens (dark) ──────────────────────────────────────────────────────────── */
 body.dark {
-  --cat-bg: #111827;
+  --cat-bg: var(--app-page-bg-dark);
   --cat-card-bg: #1f2937;
   --cat-card-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
   --cat-border: #374151;
@@ -273,7 +273,7 @@ body.catalog-body {
 
 .catalog-table-head,
 .catalog-row {
-  min-width: 900px;
+  min-width: 0;
 }
 
 .catalog-section-title {
@@ -326,6 +326,8 @@ body.catalog-body {
 
 .catalog-table-head span {
   flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .catalog-table-head span:not(:first-child) {
@@ -334,7 +336,10 @@ body.catalog-body {
 
 .catalog-table-head span:last-child {
   text-align: center;
-  max-width: 100px;
+  min-width: 130px;
+  max-width: 130px;
+  white-space: nowrap;
+  overflow-wrap: normal;
 }
 
 /* Linhas */
@@ -383,10 +388,11 @@ body.catalog-body {
 /* cada célula da linha ocupa 1fr como no cabeçalho */
 .catalog-row>* {
   flex: 1;
+  min-width: 0;
 }
 
 .catalog-row>.catalog-tools {
-  flex: 0 0 100px;
+  flex: 0 0 130px;
 }
 
 /* Identidade */
@@ -395,6 +401,10 @@ body.catalog-body {
   flex-direction: row;
   align-items: center;
   gap: 12px;
+  min-width: 0;
+}
+
+.catalog-identity>div {
   min-width: 0;
 }
 
@@ -589,7 +599,8 @@ body.dark .catalog-tools button:last-child:hover {
 
   min-height: 0;
 
-  max-height: calc(100vh - 50px);
+  max-height: calc(100vh - 130px);
+  max-height: calc(100dvh - 130px);
 
   overflow: hidden;
 }
@@ -608,21 +619,6 @@ body.dark .catalog-tools button:last-child:hover {
   min-height: 0;
   overflow-y: auto;
   padding-right: 6px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
-}
-
-.catalog-extra-form-content::-webkit-scrollbar {
-  width: 8px;
-}
-
-.catalog-extra-form-content::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.catalog-extra-form-content::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.45);
-  border-radius: 999px;
 }
 
 .produto-modal-backdrop {
@@ -734,6 +730,10 @@ body.dark .catalog-tools button:last-child:hover {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 6px;
 }
 
 /* Linha com dois campos lado a lado */
@@ -962,10 +962,6 @@ body.dark .catalog-tools button:last-child:hover {
     width: 100%;
   }
 
-  .catalog-table-card {
-    overflow-x: auto;
-  }
-
   .catalog-topbar {
     flex-direction: column;
     align-items: flex-start;
@@ -973,10 +969,6 @@ body.dark .catalog-tools button:last-child:hover {
 
   .catalog-search {
     width: 100%;
-  }
-
-  .catalog-table-card {
-    overflow-x: auto;
   }
 
   .catalog-pagination {
@@ -1158,9 +1150,12 @@ body.dark .produto-modal-card {
 @media (max-width: 1200px) {
 
   .catalog-page {
-    grid-template-columns:
-      minmax(0, 1fr)
-      340px;
+    flex-direction: column;
+  }
+
+  .catalog-left {
+    width: 100%;
+    min-height: 0;
   }
 
   .catalog-right {
@@ -1177,5 +1172,65 @@ body.dark .produto-modal-card {
   .catalog-right {
     width: 100%;
     max-width: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .catalog-page {
+    width: calc(100% - 28px);
+    margin-right: 14px;
+    margin-left: 14px;
+    padding-top: 24px;
+  }
+
+  .catalog-table-card {
+    padding: 16px 12px;
+  }
+
+  .catalog-table-head {
+    display: none;
+  }
+
+  .catalog-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    padding: 14px 8px;
+    border-bottom: 1px solid var(--cat-border);
+  }
+
+  .catalog-row>* {
+    flex: initial;
+  }
+
+  .catalog-row .catalog-identity {
+    grid-column: 1 / -1;
+  }
+
+  .catalog-row>span {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    text-align: left;
+    overflow-wrap: anywhere;
+  }
+
+  .catalog-row>span::before {
+    content: attr(data-label);
+    color: var(--cat-text-s);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .catalog-row>.catalog-tools {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+
+  .catalog-form-row {
+    flex-direction: column;
   }
 }

@@ -9,19 +9,6 @@
   padding-right: 8px;
 }
 
-.pedido-form-wrapper::-webkit-scrollbar {
-  width: 6px;
-}
-
-.pedido-form-wrapper::-webkit-scrollbar-thumb {
-  background: var(--pedido-scrollbar, rgba(100, 116, 139, 0.3));
-  border-radius: 10px;
-}
-
-.pedido-form-wrapper::-webkit-scrollbar-thumb:hover {
-  background: var(--pedido-scrollbar, rgba(100, 116, 139, 0.5));
-}
-
 /* Seção */
 .form-section {
   background: var(--pedido-card-bg, #fdfeff);
@@ -222,19 +209,6 @@
   background-position: right 10px center;
   padding-right: 26px;
   cursor: pointer;
-}
-
-.form-area::-webkit-scrollbar {
-  width: 6px;
-}
-
-.form-area::-webkit-scrollbar-thumb {
-  background: var(--pedido-scrollbar, rgba(100, 116, 139, 0.25));
-  border-radius: 10px;
-}
-
-.form-area::-webkit-scrollbar-thumb:hover {
-  background: var(--pedido-scrollbar, rgba(100, 116, 139, 0.45));
 }
 
 .modal-overlay {

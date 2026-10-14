@@ -15,6 +15,24 @@ export const api = axios.create({
   },
 });
 
+let csrfRequest = null;
+
+// O cookie pode desaparecer após logout ou expirar com a página ainda aberta.
+// Obtenha o token antes de enviar alterações, sem repetir operações de escrita.
+api.interceptors.request.use(async (config) => {
+  const method = (config.method || "get").toLowerCase();
+  const requiresCsrf = !["get", "head", "options"].includes(method);
+  const hasCsrfCookie = typeof document !== "undefined" && document.cookie
+    .split(";")
+    .some((cookie) => /^XSRF-TOKEN=.+/.test(cookie.trim()));
+
+  if (requiresCsrf && !hasCsrfCookie) {
+    await initializeCsrf();
+  }
+
+  return config;
+});
+
 // Interceptor: trata erros HTTP de forma centralizada
 api.interceptors.response.use(
   (response) => response,
@@ -40,7 +58,12 @@ export async function login({ email, senha }) {
 }
 
 export async function initializeCsrf() {
-  await api.get("/auth/csrf");
+  if (!csrfRequest) {
+    csrfRequest = api.get("/auth/csrf").finally(() => {
+      csrfRequest = null;
+    });
+  }
+  await csrfRequest;
 }
 
 export async function loadSession() {
@@ -152,23 +175,87 @@ export async function atualizarPedido(idPedido, pedidoEditRequest) {
 }
 
 // ─── Painel do vendedor ─────────────────────────────────────────────────────
+// Substitui a função buscarPainelVendedor atual em services/api.js e adiciona buscarDetalheVenda.
 
-export async function buscarPainelVendedor({ ano, mes, dia } = {}) {
-  const params = {};
+/**
+ * @param pagina  1-based (o Spring é 0-based, a conversão fica aqui)
+ * @param status  "TODAS" | "LIBERADAS" | "PENDENTES"
+ */
+export async function buscarPainelVendedor({ ano, mes, dia, status, pagina = 1, tamanho = 5 } = {}) {
+  const params = { page: Math.max(pagina, 1) - 1, size: tamanho };
   if (ano !== null && ano !== undefined) params.ano = ano;
   if (mes !== null && mes !== undefined) params.mes = mes;
   if (dia !== null && dia !== undefined) params.dia = dia;
+  if (status) params.status = status;
 
   try {
     const { data } = await api.get("/vendedor/home", { params });
     return data;
   } catch (err) {
-    const status = err?.status ?? err?.response?.status;
+    const httpStatus = err?.status ?? err?.response?.status;
 
-    if (status === 404) throw new Error("Painel do vendedor sem dados.");
-    if (status === 403) throw new Error("Sem permissão para acessar o painel.");
-    if (status === 401) throw new Error("Sessão expirada. Faça login novamente.");
+    if (httpStatus === 404) throw new Error("Painel do vendedor sem dados.");
+    if (httpStatus === 403) throw new Error("Sem permissão para acessar o painel.");
+    if (httpStatus === 401) throw new Error("Sessão expirada. Faça login novamente.");
 
     throw new Error("Erro ao carregar o painel. Tente novamente.");
   }
+}
+
+export async function buscarDetalheVenda(idPedido) {
+  try {
+    const { data } = await api.get(`/vendedor/home/vendas/${idPedido}`);
+    return data;
+  } catch (err) {
+    const httpStatus = err?.status ?? err?.response?.status;
+
+    if (httpStatus === 404) throw new Error("Venda não encontrada.");
+    if (httpStatus === 403) throw new Error("Sem permissão para ver esta venda.");
+    if (httpStatus === 401) throw new Error("Sessão expirada. Faça login novamente.");
+
+    throw new Error("Erro ao carregar os detalhes da venda. Tente novamente.");
+  }
+}
+
+// ─── Painel financeiro ──────────────────────────────────────────────────────
+// Um endpoint por bloco da tela; todos aceitam o mesmo filtro { ano, mes }.
+
+async function buscarBlocoFinanceiro(caminho, params) {
+  const filtrados = Object.fromEntries(
+    Object.entries(params).filter(([, valor]) => valor !== null && valor !== undefined),
+  );
+
+  try {
+    const { data } = await api.get(`/financeiro/home/${caminho}`, { params: filtrados });
+    return data;
+  } catch (err) {
+    const httpStatus = err?.status ?? err?.response?.status;
+
+    if (httpStatus === 403) throw new Error("Sem permissão para acessar o painel financeiro.");
+    if (httpStatus === 401) throw new Error("Sessão expirada. Faça login novamente.");
+
+    throw new Error("Erro ao carregar o painel financeiro. Tente novamente.");
+  }
+}
+
+export function buscarResumoFinanceiro({ ano, mes } = {}) {
+  return buscarBlocoFinanceiro("resumo", { ano, mes });
+}
+
+export function buscarEvolucaoVendasFinanceiro({ ano, mes } = {}) {
+  return buscarBlocoFinanceiro("evolucao-vendas", { ano, mes });
+}
+
+export function buscarRankingVendedoresFinanceiro({ ano, mes, limite } = {}) {
+  return buscarBlocoFinanceiro("ranking-vendedores", { ano, mes, limite });
+}
+
+/** @param pagina 1-based (o Spring é 0-based, a conversão fica aqui) */
+export function buscarPedidosFinanceiro({ ano, mes, pagina = 1, tamanho = 5 } = {}) {
+  return buscarBlocoFinanceiro("pedidos", {
+    ano,
+    mes,
+    page: Math.max(pagina, 1) - 1,
+    size: tamanho,
+  });
 }
