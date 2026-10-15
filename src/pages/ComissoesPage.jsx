@@ -457,7 +457,7 @@ function VendaModal({ venda, onClose, onStatusChange, onNotaChange, escuro }) {
                     Cancelar
                   </button>
                   <button data-ui-action type="button" onClick={salvarPagamentos}
-                    className="px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all bg-blue-600 text-white hover:bg-blue-700">
+                    className="modal-save-button px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all bg-blue-600 text-white hover:bg-blue-700">
                     Salvar
                   </button>
                 </>
@@ -590,7 +590,8 @@ export default function ComissoesPage() {
       const data = new Date(filtro.y, filtro.m, filtro.type === "day" ? filtro.d : 1);
       const periodo = data.toLocaleDateString("pt-BR", { ...(filtro.type === "day" ? { day: "2-digit" } : {}), month: "long", year: "numeric" });
       const { criarRelatorioComissoes } = await import("../services/relatorioComissoes.js");
-      const doc = await criarRelatorioComissoes({ parcelas: parcelasFiltradas, proximasLiberacoes, periodo, status: filtroAtivo, busca });
+      const indicadores = filtrosKpi.map(({ chave, rotulo }) => ({ rotulo, valor: contadores[chave] || 0 }));
+      const doc = await criarRelatorioComissoes({ parcelas: parcelasFiltradas, proximasLiberacoes, periodo, status: filtroAtivo, busca, indicadores });
       const sufixo = `${filtro.y}-${String(filtro.m + 1).padStart(2, "0")}${filtro.type === "day" ? `-${String(filtro.d).padStart(2, "0")}` : ""}`;
       await doc.save(`relatorio-comissoes-${sufixo}.pdf`, { returnPromise: true });
       toast.success("Relatório PDF gerado com sucesso!");
@@ -657,7 +658,7 @@ export default function ComissoesPage() {
                 <table className="comissoes-table">
                   <thead>
                     <tr>
-                      <th>Venda</th>
+                      <th>Pedido de venda</th>
                       <th>Cliente</th>
                       <th>Vendedor</th>
                       <th>Comissão</th>

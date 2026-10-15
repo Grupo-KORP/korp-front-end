@@ -106,21 +106,7 @@
     border-radius: 20px;
     overflow: hidden;
 }
-.modal-contact-add {
-    margin-left: auto;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 30px;
-    height: 30px;
-    border-radius: 8px;
-    color: #2563eb;
-    background: rgba(37, 99, 235, 0.1);
-}
 
-.modal-contact-add:hover {
-    background: rgba(37, 99, 235, 0.2);
-}
 
 .modal-contact-input {
     display: block;
@@ -139,26 +125,41 @@
     font-weight: 600;
 }
 
-.modal-contact-input:focus-visible,
-.modal-contact-add:focus-visible {
+.company-details-group {
+    gap: 16px 24px;
+    align-items: start;
+}
+
+.company-details-group + .company-details-group {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.modal-frozen-dark .company-details-group + .company-details-group {
+    border-color: #374151;
+}
+
+.company-details-group .details-field {
+    align-content: start;
+    gap: 8px;
+}
+
+.company-edit-hint {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+#root .company-details-group .modal-contact-input {
+    margin-top: 0;
+}
+
+.modal-contact-input:focus-visible {
     outline: 2px solid #2563eb;
     outline-offset: 2px;
 }
 
 .modal-frozen-dark .modal-contact-input {
     border-color: #475569;
-}
-
-.modal-frozen-dark .modal-contact-add {
-    color: #93c5fd;
-}
-
-.modal-contact-add:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-}
-
-.modal-contact-add.modal-contact-delete {
-    color: #dc2626;
-    background: rgba(220, 38, 38, 0.1);
 }

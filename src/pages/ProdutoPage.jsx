@@ -1,3 +1,8 @@
+import DeleteConfirmation from "../components/modal/DeleteConfirmation";
+import ActionIcon from "../components/ui/ActionIcon";
+import FormValidationNotice from "../components/ui/FormValidationNotice";
+import RowTools from "../components/ui/RowTools";
+import RequiredMark from "../components/ui/RequiredMark";
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../services/api.js";
@@ -233,7 +238,7 @@ export default function ProdutoPage() {
   };
 
   const fields = [
-    { name: "nome", label: "Nome do Produto", placeholder: "Ex: Pacote Office 365", value: form.nome, error: errors.nome },
+    { name: "nome", required: true, label: "Nome do Produto", placeholder: "Ex: Pacote Office 365", value: form.nome, error: errors.nome },
     { name: "pn", label: "P/N (Part Number)", placeholder: "Ex: ABC-001", value: form.pn, error: errors.pn },
   ];
 
@@ -279,9 +284,10 @@ export default function ProdutoPage() {
               <h2>Base de Produtos</h2>
             </div>
 
+            <div className="catalog-data-table catalog-data-table-products">
             <div className="catalog-table-head">
               <span style={{ flex: "1" }}>Produto</span>
-              <span style={{ flex: "0 0 100px", textAlign: "center" }}>Ações</span>
+              <span className="row-tools-heading">Ferramentas</span>
             </div>
 
             <div className="catalog-table-body">
@@ -293,7 +299,7 @@ export default function ProdutoPage() {
                 <p className="catalog-empty">Nenhum produto encontrado.</p>
               ) : rows.map((produto) => (
                 <div className="catalog-row" key={produto.idProduto}>
-                  <div className="catalog-identity" style={{ flex: "1" }}>
+                  <div className="catalog-identity">
                     <span className="catalog-badge">
                       {produto.nome?.slice(0, 2).toUpperCase() ?? "PR"}
                     </span>
@@ -304,20 +310,12 @@ export default function ProdutoPage() {
                     </div>
                   </div>
 
-                  <div className="catalog-tools" style={{ flex: "0 0 100px" }}>
-                    <button type="button" aria-label={`Editar ${produto.nome}`} onClick={() => openEditModal(produto)}>
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M5 16.7 15.8 5.9l2.3 2.3L7.3 19H5v-2.3Zm14.4-9.8-2.3-2.3.7-.7a1.5 1.5 0 0 1 2.1 0l.2.2a1.5 1.5 0 0 1 0 2.1l-.7.7Z" />
-                      </svg>
-                    </button>
-                    <button type="button" aria-label={`Excluir ${produto.nome}`} onClick={() => setDeleteTarget(produto)}>
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M9 3h6l.8 2H20v1.8H4V5h4.2L9 3Zm-2.7 5h11.4l-.8 12H7.1L6.3 8Zm2 1.8.55 8.4h6.3l.55-8.4H8.3Zm2.2 1.5h1.6v5.4h-1.6v-5.4Zm3.4 0h1.6v5.4h-1.6v-5.4Z" />
-                      </svg>
-                    </button>
-                  </div>
+                  <RowTools name={produto.nome}
+                    onEdit={() => openEditModal(produto)}
+                    onDelete={() => setDeleteTarget(produto)} />
                 </div>
               ))}
+            </div>
             </div>
 
             <Pagination
@@ -338,33 +336,38 @@ export default function ProdutoPage() {
                 <p className="produto-eyebrow">{modalMode === "edit" ? "Editar produto" : "Novo produto"}</p>
                 <h2>{modalMode === "edit" ? "Salvar alterações" : "Cadastrar Produto"}</h2>
               </div>
-              <button type="button" className="produto-close-btn" onClick={closeModal} aria-label="Fechar modal">×</button>
+              <button type="button" className="produto-close-btn" onClick={closeModal} aria-label="Fechar modal"><ActionIcon name="close" /></button>
             </div>
 
             <form className="catalog-form" onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
               <div className="catalog-form-fields">
                 {fields.map((field) => (
                   <div className="catalog-form-field" key={field.name}>
-                    <span>{field.label}</span>
+                    <span>{field.label}{field.required && <RequiredMark />}</span>
                     <input
                       name={field.name}
+                      aria-required={field.required || undefined}
+                      aria-invalid={Boolean(field.error)}
+                      title={field.error || undefined}
                       type={field.type || "text"}
                       placeholder={field.placeholder}
                       value={field.value}
                       onChange={handleChange}
                     />
-                    {field.error && <span className="catalog-field-error">{field.error}</span>}
                   </div>
                 ))}
               </div>
 
+              <div className="registration-form-footer">
+                <FormValidationNotice visible={Object.values(errors).some(Boolean)} />
               <div className="catalog-form-actions" style={{ marginTop: "8px" }}>
                 <button data-ui-action type="button" className="catalog-cancel" onClick={closeModal}>
                   Cancelar
                 </button>
-                <button data-ui-action type="submit" className="catalog-submit" disabled={loading || !dirty || !form.nome.trim()}>
+                <button data-ui-action type="submit" className="catalog-submit modal-save-button" disabled={loading || !dirty || !form.nome.trim()}>
                   {loading ? "Aguarde..." : modalMode === "edit" ? "Salvar" : "Cadastrar"}
                 </button>
+              </div>
               </div>
             </form>
           </div>
@@ -372,38 +375,7 @@ export default function ProdutoPage() {
       )}
 
       {/* ── Modal: confirmar exclusão ── */}
-      {deleteTarget && (
-        <div className="produto-modal-backdrop" onClick={() => !deleting && setDeleteTarget(null)}>
-          <div className="produto-modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="produto-modal-header">
-              <div>
-                <p className="produto-eyebrow">Excluir produto</p>
-                <h2>Tem certeza?</h2>
-              </div>
-              <button
-                type="button"
-                className="produto-close-btn"
-                onClick={() => setDeleteTarget(null)}
-                disabled={deleting}
-                aria-label="Fechar modal"
-              >×</button>
-            </div>
-
-            <p className="produto-confirm-text">
-              Deseja realmente excluir <strong>{deleteTarget.nome}</strong>? Esta ação não pode ser desfeita.
-            </p>
-
-            <div className="produto-confirm-actions">
-              <button data-ui-action type="button" className="catalog-cancel" onClick={() => setDeleteTarget(null)} disabled={deleting}>
-                Cancelar
-              </button>
-              <button data-ui-action type="button" className="catalog-submit catalog-submit--danger" onClick={handleDeleteConfirmed} disabled={deleting}>
-                {deleting ? "Excluindo..." : "Excluir"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {deleteTarget && <DeleteConfirmation name={deleteTarget.nome} entityLabel="produto" busy={deleting} onCancel={() => setDeleteTarget(null)} onConfirm={handleDeleteConfirmed} />}
     </div>
   );
 }

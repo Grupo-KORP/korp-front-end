@@ -1,7 +1,36 @@
 :root {
+  --app-primary-button-bg: linear-gradient(135deg, #0f2557 0%, #1a3a7a 60%, #1e4d9b 100%);
   --app-button-radius: 0.75rem;
   --app-button-height: 2.25rem;
   --app-button-padding-x: 1rem;
+}
+
+button.modal-save-button,
+#root button.modal-save-button {
+  background: #1e4d9b;
+  color: #fff;
+  border: 0;
+  box-shadow: 0 2px 5px rgba(15, 37, 87, .16);
+  transition: filter 150ms;
+}
+
+button.modal-save-button:not(:disabled):is(:hover, :focus-visible),
+#root button.modal-save-button:not(:disabled):is(:hover, :focus-visible) {
+  background: #1e4d9b;
+  color: #fff;
+  filter: brightness(1.12);
+}
+
+button.modal-save-button:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 3px;
+}
+
+button.modal-save-button:disabled,
+#root button.modal-save-button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+  filter: none;
 }
 
 /* Curvatura comum, inclusive para navegação e células dos calendários. */
@@ -38,6 +67,36 @@
 #root button.cnpj-search-trigger > svg {
   position: relative;
   top: -1px;
+}
+
+button:is(.modal-save-button, .modal-close-button),
+.vendedor-vendas-rodape button.modal-close-button,
+#root button:is(.modal-save-button, .modal-close-button) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-end;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: auto;
+  min-width: 80px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0 16px;
+  gap: 6px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+button.modal-save-button > svg,
+#root button.modal-save-button > svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
 }
 
 #root button.cnpj-search-trigger {

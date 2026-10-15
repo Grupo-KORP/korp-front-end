@@ -121,6 +121,16 @@ body.dark {
   box-shadow: none;
 }
 
+/* The catalog header becomes a column at this breakpoint: flex-basis
+   must no longer use the desktop search width as a vertical size. */
+@media (max-width: 1050px) {
+  #root .catalog-topbar > .catalog-search {
+    flex: 0 0 auto;
+    width: 100%;
+    height: var(--app-button-height);
+  }
+}
+
 @media (max-width: 640px) {
   #root :is(.catalog-search, .comissoes-search, .app-search) {
     width: 100%;

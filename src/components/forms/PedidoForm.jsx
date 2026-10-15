@@ -1,3 +1,7 @@
+import { maskCNPJ as formatCnpj, maskCEP, maskPhone, formatMoneyInput, parseMoneyInput } from "../../utils/inputMasks";
+import { confirmDelete } from "../modal/DeleteConfirmation";
+import ActionIcon from "../ui/ActionIcon";
+import RequiredMark from "../ui/RequiredMark";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import "./PedidoForm.css";
@@ -75,14 +79,7 @@ const cnpjExists = (value, list) => {
   );
 };
 
-const formatCnpj = (value) => {
-  const digits = onlyDigits(value).slice(0, 14);
-  return digits
-    .replace(/^(\d{2})(\d)/, "$1.$2")
-    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
-    .replace(/\.(\d{3})(\d)/, ".$1/$2")
-    .replace(/(\d{4})(\d)/, "$1-$2");
-};
+
 
 const isValidCnpj = (value) => {
   const cleanedValue = removeFormatting(value);
@@ -149,21 +146,8 @@ const isValidCnpj = (value) => {
   return cnpj.endsWith(`${digit1}${digit2}`);
 };
 
-function SearchIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M10.8 5.2a5.6 5.6 0 1 1 0 11.2 5.6 5.6 0 0 1 0-11.2Zm0 1.8a3.8 3.8 0 1 0 0 7.6 3.8 3.8 0 0 0 0-7.6Zm4.15 7.25 4.18 4.18-1.27 1.27-4.18-4.18 1.27-1.27Z" />
-    </svg>
-  );
-}
-
-function AddIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5Z" />
-    </svg>
-  );
-}
+function SearchIcon() { return <ActionIcon name="search" />; }
+function AddIcon() { return <ActionIcon name="add" />; }
 
 function ChevronIcon({ open }) {
   return (
@@ -299,7 +283,7 @@ function ClienteSection({ onChange, initialData }) {
 
   const handle = (e) => {
     const value =
-      e.target.name === "cnpj" ? formatCnpj(e.target.value) : e.target.value;
+      e.target.name === "cnpj" ? formatCnpj(e.target.value) : e.target.name === "fone" ? maskPhone(e.target.value) : e.target.name === "cep" ? maskCEP(e.target.value) : e.target.value;
     const updated = { ...data, [e.target.name]: value };
     setData(updated);
     onChange?.(updated);
@@ -465,9 +449,10 @@ function ClienteSection({ onChange, initialData }) {
               <label>FONE</label>
               <input
                 name="fone"
+                inputMode="tel"
                 value={data.fone}
                 onChange={handle}
-                placeholder="(00) 0000-0000"
+                placeholder="(00) 00000-0000"
                 {...readonlyInputProps}
               />
             </div>
@@ -475,6 +460,7 @@ function ClienteSection({ onChange, initialData }) {
               <label>CEP</label>
               <input
                 name="cep"
+                inputMode="numeric"
                 value={data.cep}
                 onChange={handle}
                 placeholder="00000-000"
@@ -485,6 +471,7 @@ function ClienteSection({ onChange, initialData }) {
               <label>CNPJ</label>
               <input
                 name="cnpj"
+                inputMode="numeric"
                 value={data.cnpj}
                 onChange={handle}
                 placeholder="00.000.000/0000-00"
@@ -533,9 +520,10 @@ function ClienteSection({ onChange, initialData }) {
 
           <div className="form-row">
             <div className="form-group grow-1">
-              <label>CONTATO</label>
+              <label>CONTATO{showSaveButton && <RequiredMark />}</label>
               <input
                 name="contato"
+                aria-required={showSaveButton || undefined}
                 value={data.contato}
                 onChange={handle}
                 placeholder="Nome do Responsavel"
@@ -543,9 +531,10 @@ function ClienteSection({ onChange, initialData }) {
               />
             </div>
             <div className="form-group grow-1">
-              <label>E-MAIL</label>
+              <label>E-MAIL{showSaveButton && <RequiredMark />}</label>
               <input
                 name="email"
+                aria-required={showSaveButton || undefined}
                 type="email"
                 value={data.email}
                 onChange={handle}
@@ -565,7 +554,7 @@ function ClienteSection({ onChange, initialData }) {
               )}
               <button data-ui-action
                 type="button"
-                className="btn-salvar-cadastro"
+                className="btn-salvar-cadastro modal-save-button"
                 onClick={saveCliente}
                 disabled={!canSaveClienteCadastro}
               >
@@ -669,11 +658,14 @@ function ClienteSection({ onChange, initialData }) {
                           Para cadastrar um novo cliente, digite o CNPJ do
                           cliente que deseja cadastrar.
                         </p>
+                        <span className="block text-xs font-semibold text-gray-500">CNPJ<RequiredMark /></span>
                         <input
                           type="text"
-                          placeholder="Digite o CNPJ para cadastro"
+                          placeholder="00.000.000/0000-00"
+                          inputMode="numeric"
+                        aria-required="true"
                           value={newCadastroCnpj}
-                          onChange={(e) => setNewCadastroCnpj(e.target.value)}
+                          onChange={(e) => setNewCadastroCnpj(formatCnpj(e.target.value))}
                           className="input-cnpj-cadastro"
                         />
                         {cnpjExists(newCadastroCnpj, clientes) && (
@@ -683,7 +675,7 @@ function ClienteSection({ onChange, initialData }) {
                         )}
                         <button data-ui-action
                           type="button"
-                          className="btn-cadastrar-novo"
+                          className="btn-cadastrar-novo modal-save-button"
                           onClick={startNewCliente}
                           disabled={!canRegisterNewCliente}
                         >
@@ -739,9 +731,11 @@ function ClienteSection({ onChange, initialData }) {
                     <div className="modal-empty">
                       <p>Contato não encontrado.</p>
                       <p>Cadastre um novo contato para este cliente.</p>
+                      <span className="block text-xs font-semibold text-gray-500">Nome<RequiredMark /></span>
                       <input
                         type="text"
                         placeholder="Nome"
+                        aria-required="true"
                         value={newContact.nome}
                         onChange={(e) =>
                           setNewContact((prev) => ({
@@ -751,9 +745,11 @@ function ClienteSection({ onChange, initialData }) {
                         }
                         className="input-cnpj-cadastro"
                       />
+                      <span className="block text-xs font-semibold text-gray-500">E-mail<RequiredMark /></span>
                       <input
                         type="email"
                         placeholder="E-mail"
+                        aria-required="true"
                         value={newContact.email}
                         onChange={(e) =>
                           setNewContact((prev) => ({
@@ -765,7 +761,7 @@ function ClienteSection({ onChange, initialData }) {
                       />
                       <button data-ui-action
                         type="button"
-                        className="btn-cadastrar-novo"
+                        className="btn-cadastrar-novo modal-save-button"
                         onClick={registerClienteContact}
                         disabled={!canRegisterClienteContact}
                       >
@@ -903,7 +899,7 @@ function DistribuidorSection({ onChange, initialData }) {
 
   const handle = (e) => {
     const value =
-      e.target.name === "cnpj" ? formatCnpj(e.target.value) : e.target.value;
+      e.target.name === "cnpj" ? formatCnpj(e.target.value) : e.target.name === "fone" ? maskPhone(e.target.value) : e.target.name === "cep" ? maskCEP(e.target.value) : e.target.value;
     const updated = { ...data, [e.target.name]: value };
     setData(updated);
     onChange?.(updated);
@@ -1069,9 +1065,10 @@ function DistribuidorSection({ onChange, initialData }) {
               <label>FONE</label>
               <input
                 name="fone"
+                inputMode="tel"
                 value={data.fone}
                 onChange={handle}
-                placeholder="(00) 0000-0000"
+                placeholder="(00) 00000-0000"
                 {...readonlyInputProps}
               />
             </div>
@@ -1079,6 +1076,7 @@ function DistribuidorSection({ onChange, initialData }) {
               <label>CEP</label>
               <input
                 name="cep"
+                inputMode="numeric"
                 value={data.cep}
                 onChange={handle}
                 placeholder="00000-000"
@@ -1089,6 +1087,7 @@ function DistribuidorSection({ onChange, initialData }) {
               <label>CNPJ</label>
               <input
                 name="cnpj"
+                inputMode="numeric"
                 value={data.cnpj}
                 onChange={handle}
                 placeholder="00.000.000/0000-00"
@@ -1137,9 +1136,10 @@ function DistribuidorSection({ onChange, initialData }) {
 
           <div className="form-row">
             <div className="form-group grow-1">
-              <label>CONTATO</label>
+              <label>CONTATO{showSaveButton && <RequiredMark />}</label>
               <input
                 name="contato"
+                aria-required={showSaveButton || undefined}
                 value={data.contato}
                 onChange={handle}
                 placeholder="Nome do Responsavel"
@@ -1147,9 +1147,10 @@ function DistribuidorSection({ onChange, initialData }) {
               />
             </div>
             <div className="form-group grow-1">
-              <label>E-MAIL</label>
+              <label>E-MAIL{showSaveButton && <RequiredMark />}</label>
               <input
                 name="email"
+                aria-required={showSaveButton || undefined}
                 type="email"
                 value={data.email}
                 onChange={handle}
@@ -1169,7 +1170,7 @@ function DistribuidorSection({ onChange, initialData }) {
               )}
               <button data-ui-action
                 type="button"
-                className="btn-salvar-cadastro"
+                className="btn-salvar-cadastro modal-save-button"
                 onClick={saveDistribuidor}
                 disabled={!canSaveDistribuidorCadastro}
               >
@@ -1274,11 +1275,14 @@ function DistribuidorSection({ onChange, initialData }) {
                           Para cadastrar um novo distribuidor, digite o CNPJ do
                           distribuidor que deseja cadastrar.
                         </p>
+                        <span className="block text-xs font-semibold text-gray-500">CNPJ<RequiredMark /></span>
                         <input
                           type="text"
-                          placeholder="Digite o CNPJ para cadastro"
+                          placeholder="00.000.000/0000-00"
+                          inputMode="numeric"
+                        aria-required="true"
                           value={newCadastroCnpj}
-                          onChange={(e) => setNewCadastroCnpj(e.target.value)}
+                          onChange={(e) => setNewCadastroCnpj(formatCnpj(e.target.value))}
                           className="input-cnpj-cadastro"
                         />
                         {cnpjExists(newCadastroCnpj, distribuidores) && (
@@ -1288,7 +1292,7 @@ function DistribuidorSection({ onChange, initialData }) {
                         )}
                         <button data-ui-action
                           type="button"
-                          className="btn-cadastrar-novo"
+                          className="btn-cadastrar-novo modal-save-button"
                           onClick={startNewDistribuidor}
                           disabled={!canRegisterNewDistribuidor}
                         >
@@ -1346,9 +1350,11 @@ function DistribuidorSection({ onChange, initialData }) {
                     <div className="modal-empty">
                       <p>Contato não encontrado.</p>
                       <p>Cadastre um novo contato para este distribuidor.</p>
+                      <span className="block text-xs font-semibold text-gray-500">Nome<RequiredMark /></span>
                       <input
                         type="text"
                         placeholder="Nome"
+                        aria-required="true"
                         value={newContact.nome}
                         onChange={(e) =>
                           setNewContact((prev) => ({
@@ -1358,9 +1364,11 @@ function DistribuidorSection({ onChange, initialData }) {
                         }
                         className="input-cnpj-cadastro"
                       />
+                      <span className="block text-xs font-semibold text-gray-500">E-mail<RequiredMark /></span>
                       <input
                         type="email"
                         placeholder="E-mail"
+                        aria-required="true"
                         value={newContact.email}
                         onChange={(e) =>
                           setNewContact((prev) => ({
@@ -1372,7 +1380,7 @@ function DistribuidorSection({ onChange, initialData }) {
                       />
                       <button data-ui-action
                         type="button"
-                        className="btn-cadastrar-novo"
+                        className="btn-cadastrar-novo modal-save-button"
                         onClick={registerDistribuidorContact}
                         disabled={!canRegisterDistribuidorContact}
                       >
@@ -1464,7 +1472,8 @@ function ProdutoSection({ onChange, initialData, onRemove }) {
     if (["quantidade", "valorUnitario", "unitFaturado"].includes(field) && Number(e.target.value) < 0) {
       return;
     }
-    let updated = { ...data, [field]: e.target.value };
+    const value = ["valorUnitario", "unitFaturado"].includes(field) ? parseMoneyInput(e.target.value) : e.target.value;
+    let updated = { ...data, [field]: value };
 
     const qty = parseFloat(updated.quantidade) || 0;
     const unit = parseFloat(updated.valorUnitario) || 0;
@@ -1613,7 +1622,7 @@ function ProdutoSection({ onChange, initialData, onRemove }) {
                 name="pn"
                 value={data.pn || ""}
                 onChange={handle}
-                placeholder="00.000.000"
+                placeholder="Ex: ABC-001"
                 {...(data.fkProduto && !showSaveButton ? readonlyInputProps : {})}
               />
             </div>
@@ -1639,19 +1648,20 @@ function ProdutoSection({ onChange, initialData, onRemove }) {
                 type="number"
                 value={data.quantidade || ""}
                 onChange={handle}
-                placeholder="0000"
+                placeholder="Ex: 1"
               />
             </div>
             <div className="form-group grow-1">
               <label>VALOR UNITARIO<span className="pedido-required" aria-hidden="true">*</span></label>
               <input
                 name="valorUnitario"
-                min="0"
+
                 required
                 aria-required="true"
-                type="number"
-                step="0.01"
-                value={data.valorUnitario || ""}
+                type="text"
+                inputMode="numeric"
+
+                value={formatMoneyInput(data.valorUnitario)}
                 onChange={handle}
                 placeholder="R$ 0,00"
               />
@@ -1671,12 +1681,13 @@ function ProdutoSection({ onChange, initialData, onRemove }) {
               <label>VALOR UNIT. FATURADO<span className="pedido-required" aria-hidden="true">*</span></label>
               <input
                 name="unitFaturado"
-                min="0"
+
                 required
                 aria-required="true"
-                type="number"
-                step="0.01"
-                value={data.unitFaturado || ""}
+                type="text"
+                inputMode="numeric"
+
+                value={formatMoneyInput(data.unitFaturado)}
                 onChange={handle}
                 placeholder="R$ 0,00"
               />
@@ -1694,7 +1705,7 @@ function ProdutoSection({ onChange, initialData, onRemove }) {
           {showSaveButton && (
             <button data-ui-action
               type="button"
-              className="btn-salvar-cadastro"
+              className="btn-salvar-cadastro modal-save-button"
               onClick={saveProduto}
               disabled={!canSaveProduto}
             >
@@ -1772,7 +1783,7 @@ function ProdutoSection({ onChange, initialData, onRemove }) {
                   </p>
                   <button data-ui-action
                     type="button"
-                    className="btn-cadastrar-novo"
+                    className="btn-cadastrar-novo modal-save-button"
                     onClick={startNewProduto}
                   >
                     Cadastrar novo produto
@@ -1832,7 +1843,8 @@ export default function PedidoForm({ onFormChange, initialData }) {
     notify({ produtos: novos });
   };
 
-  const removeProduto = (index) => {
+  const removeProduto = async (index) => {
+    if (!await confirmDelete({ entityLabel: "produto do pedido", name: produtos[index]?.descricao || produtos[index]?.pn || `Produto ${index + 1}`, description: "O item será removido deste pedido." })) return;
     const novos = produtos.filter((_, i) => i !== index);
     setProdutos(novos);
     notify({ produtos: novos });
@@ -1840,7 +1852,7 @@ export default function PedidoForm({ onFormChange, initialData }) {
 
   return (
     <div className="pedido-form">
-      <p className="pedido-form-hint">* Campos obrigatórios para adicionar o pedido. Rascunhos podem ficar incompletos.</p>
+      <p className="pedido-form-hint">* Selecione um distribuidor, um cliente e um produto para preencher os campos automaticamente.</p>
       <DistribuidorSection
         initialData={distribuidor}
         onChange={(d) => {

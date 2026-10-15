@@ -1,3 +1,7 @@
+import { maskCNPJ, maskCEP, maskPhone } from "../utils/inputMasks";
+import DeleteConfirmation from "../components/modal/DeleteConfirmation";
+import ActionIcon from "../components/ui/ActionIcon";
+import RequiredMark from "../components/ui/RequiredMark";
 import { useState, useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../services/api.js";
@@ -8,27 +12,11 @@ import EntityDetailsModal from "../components/modal/EntityDetailsModal";
 const PAGE_SIZE = 8;
 
 // ─── Máscaras ─────────────────────────────────────────────────────────────────
-function maskCNPJ(raw) {
-  raw = raw.replace(/\D/g, "").slice(0, 14);
-  if (raw.length > 12) return `${raw.slice(0, 2)}.${raw.slice(2, 5)}.${raw.slice(5, 8)}/${raw.slice(8, 12)}-${raw.slice(12)}`;
-  if (raw.length > 8) return `${raw.slice(0, 2)}.${raw.slice(2, 5)}.${raw.slice(5, 8)}/${raw.slice(8)}`;
-  if (raw.length > 5) return `${raw.slice(0, 2)}.${raw.slice(2, 5)}.${raw.slice(5)}`;
-  if (raw.length > 2) return `${raw.slice(0, 2)}.${raw.slice(2)}`;
-  return raw;
-}
 
-function maskCEP(raw) {
-  raw = raw.replace(/\D/g, "").slice(0, 8);
-  if (raw.length > 5) return `${raw.slice(0, 5)}-${raw.slice(5)}`;
-  return raw;
-}
 
-function maskPhone(raw) {
-  raw = raw.replace(/\D/g, "").slice(0, 11);
-  if (raw.length > 7) return `(${raw.slice(0, 2)}) ${raw.slice(2, 7)}-${raw.slice(7)}`;
-  if (raw.length > 2) return `(${raw.slice(0, 2)}) ${raw.slice(2)}`;
-  return raw;
-}
+
+
+
 
 // ─── Estado inicial ───────────────────────────────────────────────────────────
 const emptyForm = {
@@ -308,12 +296,12 @@ export default function ClientePage() {
       inscricaoEstadual: selectedClient.inscricaoEstadual,
       nomeFantasia: company.nomeFantasia.trim(),
       telefone: company.telefone.replace(/\D/g, ""),
-      cep: company.cep.replace(/\D/g, ""),
-      endereco: company.logradouro,
-      numero: String(company.numero).trim(),
-      complemento: company.complemento,
-      cidade: company.cidade,
-      uf: company.uf,
+      cep: selectedClient.cep.replace(/\D/g, ""),
+      endereco: selectedClient.logradouro,
+      numero: String(selectedClient.numero).trim(),
+      complemento: selectedClient.complemento,
+      cidade: selectedClient.cidade,
+      uf: selectedClient.uf,
     };
     await api.put(`/cliente/${selectedClient.idCliente ?? selectedClient.id}`, payload);
     setSelectedClient((previous) => ({ ...previous, ...payload, logradouro: payload.endereco }));
@@ -471,14 +459,14 @@ export default function ClientePage() {
 
   // ── Fields da etapa 1 ──
   const fields = [
-    { name: "cnpj", label: "CNPJ", pair: "start", placeholder: "00.000.000/0000-00", value: form.cnpj, loading: loadingCNPJ, error: errors.cnpj, readOnly: !!editingId },
-    { name: "inscEst", label: "Insc. Est.", pair: "end", placeholder: "110.042.490.114", value: form.inscEst, loading: loadingCNPJ, readOnly: !!editingId },
-    { name: "razaoSocial", label: "Razão Social", placeholder: "Ex: Tech Solutions Ltda", value: form.razaoSocial, readOnly: true, loading: loadingCNPJ, error: errors.razaoSocial },
-    { name: "nomeFantasia", label: "Nome Fantasia", placeholder: "Ex: Tech Solutions", value: form.nomeFantasia, loading: loadingCNPJ, error: errors.nomeFantasia },
-    { name: "fone", label: "Fone", pair: "start", placeholder: "(00) 0000-0000", value: form.fone, error: errors.fone },
-    { name: "cep", label: "CEP", pair: "end", placeholder: "00000-000", value: form.cep, loading: loadingCEP, error: errors.cep },
+    { name: "cnpj", required: true, label: "CNPJ", pair: "start", placeholder: "00.000.000/0000-00", value: form.cnpj, loading: loadingCNPJ, error: errors.cnpj, readOnly: !!editingId },
+    { name: "inscEst", label: "Insc. Est.", pair: "end", placeholder: "Inscri\u00e7\u00e3o estadual ou Isento", value: form.inscEst, loading: loadingCNPJ, readOnly: !!editingId },
+    { name: "razaoSocial", required: true, label: "Razão Social", placeholder: "Ex: Tech Solutions Ltda", value: form.razaoSocial, readOnly: true, loading: loadingCNPJ, error: errors.razaoSocial },
+    { name: "nomeFantasia", required: true, label: "Nome Fantasia", placeholder: "Ex: Tech Solutions", value: form.nomeFantasia, loading: loadingCNPJ, error: errors.nomeFantasia },
+    { name: "fone", required: true, label: "Fone", pair: "start", placeholder: "(00) 00000-0000", value: form.fone, error: errors.fone },
+    { name: "cep", required: true, label: "CEP", pair: "end", placeholder: "00000-000", value: form.cep, loading: loadingCEP, error: errors.cep },
     { name: "endereco", label: "Endereço", placeholder: "Rua das Inovações", value: form.endereco, readOnly: true, loading: loadingCEP },
-    { name: "numero", label: "Número", pair: "start", placeholder: "104", value: form.numero, error: errors.numero },
+    { name: "numero", required: true, label: "Número", pair: "start", placeholder: "104", value: form.numero, error: errors.numero },
     { name: "complemento", label: "Complemento", pair: "end", placeholder: "Sala 104", value: form.complemento },
     { name: "cidade", label: "Cidade", pair: "start", placeholder: "São Paulo", value: form.cidade, readOnly: true, loading: loadingCEP },
     { name: "uf", label: "UF", pair: "end", type: "select", value: form.uf, readOnly: true, options: UF_OPTIONS },
@@ -502,36 +490,40 @@ export default function ClientePage() {
                   })}
                 aria-label={`Remover contato ${index + 1}`}
               >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M9 3h6l.8 2H20v1.8H4V5h4.2L9 3Zm-2.7 5h11.4l-.8 12H7.1L6.3 8Zm2 1.8.55 8.4h6.3l.55-8.4H8.3Zm2.2 1.5h1.6v5.4h-1.6v-5.4Zm3.4 0h1.6v5.4h-1.6v-5.4Z" />
-                </svg>
+                <ActionIcon name="delete" />
               </button>
             </div>
             <div className="catalog-form-row mt-4">
               <div className="catalog-form-field">
-                <span>Nome do contato</span>
+                <span>Nome do contato<RequiredMark /></span>
                 <input type="text" placeholder="Nome do contato"
+                  aria-required="true"
+                  aria-invalid={Boolean(contactErrors[index]?.nome)}
+                  title={contactErrors[index]?.nome || undefined}
                   value={contact.nome}
                   onChange={(e) => handleContactChange(index, "nome", e.target.value)}
                 />
-                {contactErrors[index]?.nome && <span className="catalog-field-error">{contactErrors[index].nome}</span>}
               </div>
               <div className="catalog-form-field">
-                <span>E-mail</span>
+                <span>E-mail<RequiredMark /></span>
                 <input type="email" placeholder="contato@empresa.com"
+                  aria-required="true"
+                  aria-invalid={Boolean(contactErrors[index]?.email)}
+                  title={contactErrors[index]?.email || undefined}
                   value={contact.email}
                   onChange={(e) => handleContactChange(index, "email", e.target.value)}
                 />
-                {contactErrors[index]?.email && <span className="catalog-field-error">{contactErrors[index].email}</span>}
               </div>
             </div>
             <div className="catalog-form-field mt-4">
-              <span>Telefone</span>
+              <span>Telefone<RequiredMark /></span>
               <input type="tel" placeholder="(00) 00000-0000"
-                value={contact.telefone}
+                  aria-required="true"
+                aria-invalid={Boolean(contactErrors[index]?.telefone)}
+                  title={contactErrors[index]?.telefone || undefined}
+                  value={contact.telefone}
                 onChange={(e) => handleContactChange(index, "telefone", e.target.value)}
               />
-              {contactErrors[index]?.telefone && <span className="catalog-field-error">{contactErrors[index].telefone}</span>}
             </div>
           </div>
         ))}
@@ -573,6 +565,7 @@ export default function ClientePage() {
         onCancel={handleCancel}
         submitLabel={loading ? "Aguarde..." : isContactStep ? "Salvar cadastro" : editingId ? "Salvar e editar contatos →" : "Salvar e adicionar contato →"}
         submitDisabled={loading}
+        validationError={isContactStep && contactErrors.some((errors) => Object.keys(errors || {}).length > 0)}
         deleteEntityLabel="cliente"
       />
 
@@ -583,60 +576,10 @@ export default function ClientePage() {
         onSaveContact={handleSaveDetailsContact}
         onDeleteContact={handleDeleteDetailsContact}
         onSaveCompany={handleSaveDetailsCompany}
-        onLookupCEP={fetchCEP}
         onSaved={() => fetchClientes(currentPage, search)}
       />
 
-      {contactToDelete && (
-        <div
-          className="produto-modal-backdrop"
-          onClick={() => !deletingContact && setContactToDelete(null)}
-        >
-          <div
-            className="produto-modal-card"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="produto-modal-header">
-              <div>
-                <p className="produto-eyebrow">Excluir contato</p>
-                <h2>Tem certeza?</h2>
-              </div>
-
-              <button
-                type="button"
-                className="produto-close-btn"
-                onClick={() => setContactToDelete(null)}
-              >
-                ×
-              </button>
-            </div>
-
-            <p className="produto-confirm-text">
-              Deseja realmente excluir o contato{" "}
-              <strong>{contactToDelete.nome}</strong>?
-            </p>
-
-            <div className="produto-confirm-actions">
-              <button data-ui-action
-                type="button"
-                className="catalog-cancel"
-                onClick={() => setContactToDelete(null)}
-              >
-                Cancelar
-              </button>
-
-              <button data-ui-action
-                type="button"
-                className="catalog-submit catalog-submit--danger"
-                onClick={handleDeleteContact}
-                disabled={deletingContact}
-              >
-                {deletingContact ? "Excluindo..." : "Excluir"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {contactToDelete && <DeleteConfirmation name={contactToDelete.nome || ('Contato ' + (contactToDelete.index + 1))} entityLabel="contato" busy={deletingContact} onCancel={() => setContactToDelete(null)} onConfirm={handleDeleteContact} />}
     </>
   );
 }

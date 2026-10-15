@@ -1,3 +1,4 @@
+import { confirmDelete } from "../components/modal/DeleteConfirmation";
 import NavbarVendedor from "../layout/NavbarVendedor";
 import "./PedidoPage.css";
 import PedidoForm from "../components/forms/PedidoForm";
@@ -103,7 +104,9 @@ export default function PedidoPage() {
         carregarPedido(draft);
     };
 
-    const excluirRascunho = (id) => {
+    const excluirRascunho = async (id) => {
+        const draft = drafts.find(item => item.id === id);
+        if (!await confirmDelete({ entityLabel: "rascunho", name: draft?.data?.cliente?.nomeFantasia || draft?.data?.cliente?.razaoSocial || "Pedido sem cliente" })) return;
         try {
             const remaining = removeDraft(localStorage, getKey(), id);
             setDrafts(remaining);
@@ -131,7 +134,7 @@ export default function PedidoPage() {
                         <div className="pedido-header">
                           <div>
                             <p data-page-eyebrow>Pedidos</p>
-                            <h1>{activeDraft ? "Editar rascunho" : "Novo Pedido"}</h1>
+                            <h1>{activeDraft ? "Editar rascunho" : "Novo Pedido de Venda"}</h1>
                           </div>
                           <div className="pedido-header-actions">
                             {drafts.length > 0 && <button data-ui-action ref={draftsButtonRef} type="button" className="btn-secondary" disabled={busy} aria-expanded={showDrafts} aria-controls="pedido-rascunhos" onClick={() => setShowDrafts(!showDrafts)}>

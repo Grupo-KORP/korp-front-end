@@ -1,6 +1,12 @@
+import { maskPhone } from "../utils/inputMasks";
+import { confirmDelete } from "../components/modal/DeleteConfirmation";
+import FormValidationNotice from "../components/ui/FormValidationNotice";
+import RowTools from "../components/ui/RowTools";
+import RequiredMark from "../components/ui/RequiredMark";
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import "../styles/base-reset.css";
 import "./VendedoresPage.css";
+import "../components/catalog/CatalogPage.css";
 import Alert from "../components/ui/Alert";
 import { api } from "../services/api.js";
 import { useAuth } from "../hooks/useAuth.js";
@@ -229,12 +235,7 @@ export default function VendedoresPage() {
     : "bg-gray-50 border-gray-200 text-gray-700 placeholder-gray-300";
   const hover = modoEscuro ? "hover:bg-gray-700" : "hover:bg-gray-50";
 
-  function maskPhone(raw) {
-    raw = raw.replace(/\D/g, "").slice(0, 11);
-    if (raw.length > 7) return `(${raw.slice(0, 2)}) ${raw.slice(2, 7)}-${raw.slice(7)}`;
-    if (raw.length > 2) return `(${raw.slice(0, 2)}) ${raw.slice(2)}`;
-    return raw;
-  }
+
 
   function handleFormChange(e) {
     const { name, value } = e.target;
@@ -333,7 +334,7 @@ export default function VendedoresPage() {
     setForm({
       nome: v.nome,
       email: v.email,
-      fone: v.telefone ?? "",
+      fone: maskPhone(v.telefone),
       comissao: v.percentualComissao != null ? `${v.percentualComissao}%` : "30%",
       status,
     });
@@ -341,6 +342,8 @@ export default function VendedoresPage() {
   }
 
   async function handleDelete(id) {
+    const vendedor = vendedores.find(item => item.idVendedor === id);
+    if (!await confirmDelete({ entityLabel: "vendedor", name: vendedor?.nome || "Vendedor" })) return;
     setLoadingList(true);
     try {
       console.log("Deletando vendedor com ID:", id);
@@ -406,30 +409,33 @@ export default function VendedoresPage() {
                 </div>
               </div>
 
-              <div className={`${cardBg} rounded-2xl shadow-sm p-4 sm:p-6 transition-colors duration-300 flex min-h-0 flex-col flex-1`}>
-                <div className="flex items-center gap-2 mb-6">
-                  <div className="w-1 h-6 rounded-full bg-blue-700" />
-                  <h2 className={`text-lg font-bold ${textoM}`}>Base de vendedores</h2>
+              <div className="catalog-table-card">
+                <div className="catalog-section-title">
+                  <span />
+                  <h2>Base de Vendedores</h2>
                 </div>
 
+                <div className="catalog-data-table vendedores-data-table" style={{
+                  "--catalog-columns": "minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) 100px",
+                }}>
                 {/* Table header */}
-                <div className="grid grid-cols-4 gap-4 px-2 mb-2">
-                  <span className={`text-[10px] font-bold tracking-widest uppercase ${textoS}`}>
+                <div className="catalog-table-head vendedores-table-head">
+                  <span>
                     Identificação dos Cadastros
                   </span>
-                  <span className={`text-[10px] font-bold tracking-widest uppercase text-center ${textoS}`}>
+                  <span>
                     Vendas Realizadas
                   </span>
-                  <span className={`text-[10px] font-bold tracking-widest uppercase text-center whitespace-nowrap ${textoS}`}>
+                  <span>
                     Status do Colaborador
                   </span>
-                  <span className={`text-[10px] font-bold tracking-widest uppercase text-center ${textoS}`}>
+                  <span className="row-tools-heading">
                     Ferramentas
                   </span>
                 </div>
 
                 {/* Rows */}
-                <div className="flex flex-col gap-1 flex-1">
+                <div className="catalog-table-body">
                   {loadingList ? (
                     Array.from({ length: PAGE_SIZE }).map((_, i) => (
                       <div key={i} className={`h-14 rounded-xl animate-pulse ${modoEscuro ? "bg-gray-700" : "bg-gray-100"}`} />
@@ -439,56 +445,40 @@ export default function VendedoresPage() {
                   ) : (displayed.map((v) => (
                     <div key={v.email}
                       onClick={() => setVendedorSelecionado(v)}
-                      className={`grid grid-cols-4 gap-4 items-center px-2 py-3.5 rounded-xl cursor-pointer ${hover} transition-colors group`}
+                      className="catalog-row catalog-row-clickable vendedores-table-row"
                     >
                       {/* Identificação */}
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${modoEscuro ? "bg-blue-900/50" : "bg-blue-50"}`}>
-                          <span className="text-xs font-bold text-blue-500">
+                      <div className="catalog-identity vendedores-identity">
+                        <span className="catalog-badge">
                             {v.nome?.split(" ").map(p => p[0]).slice(0, 2).join("").toUpperCase()}
-                          </span>
-                        </div>
-                        <div>
-                          <button type="button" onClick={(event) => { event.stopPropagation(); setVendedorSelecionado(v); }} aria-label={`Ver vendas de ${v.nome}`} className={`text-sm font-bold text-left hover:underline ${textoM}`}>{v.nome}</button>
-                          <p className={`text-xs ${textoS}`}>{v.email}</p>
+                        </span>
+                        <div className="catalog-identity-copy">
+                          <button type="button" onClick={(event) => { event.stopPropagation(); setVendedorSelecionado(v); }} aria-label={`Ver pedidos de venda de ${v.nome}`} className="vendedores-name hover:underline">{v.nome}</button>
+                          <small>{v.email}</small>
                         </div>
                       </div>
 
                       {/* Vendas */}
-                      <span className={`text-sm font-bold text-center ${textoM}`}>{v.vendasEfetivadas ?? 0}</span>
+                      <span className="catalog-centered">{v.vendasEfetivadas ?? 0}</span>
 
                       {/* Status do Colaborador */}
-                      <span className={`text-xs font-bold px-2.5 py-1 rounded-full text-center   ${v.status === true || v.status === "true"
-                        ? modoEscuro ? "bg-green-900/40 text-green-400" : "bg-green-100 text-green-700"
-                        : modoEscuro ? "bg-red-900/40 text-red-400" : "bg-red-100 text-red-600"
+                      <span className={`inline-flex items-center justify-center justify-self-center w-fit text-[10px] font-extrabold tracking-wider uppercase px-2.5 py-1 rounded-full border whitespace-nowrap ${v.status === true || v.status === "true"
+                        ? modoEscuro ? "bg-green-900/40 text-green-400 border-green-800" : "bg-green-100 text-green-700 border-green-200"
+                        : modoEscuro ? "bg-red-900/40 text-red-400 border-red-800" : "bg-red-50 text-red-600 border-red-200"
                         }`}>
                         {v.status === true || v.status === "true" ? "Ativo" : "Inativo"}
                       </span>
 
                       {/* Ferramentas */}
-                      <div className="flex items-center justify-center gap-2" onClick={(event) => event.stopPropagation()}>
-                        <button onClick={() => handleEdit(v)}
-                          className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${textoS} hover:text-blue-500 ${modoEscuro ? "hover:bg-blue-900/40" : "hover:bg-blue-50"}`}
-                          aria-label="Editar">
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-                              d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a2 2 0 01-1.414.586H8v-2.414A2 2 0 018.586 12.5L15.232 5.232z" />
-                          </svg>
-                        </button>
-                        <button onClick={() => handleDelete(v.idVendedor)}
-                          className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${textoS} hover:text-red-500 ${modoEscuro ? "hover:bg-red-900/30" : "hover:bg-red-50"}`}
-                          aria-label="Excluir">
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M8 7V5a1 1 0 011-1h6a1 1 0 011 1v2" />
-                          </svg>
-                        </button>
-                      </div>
+                      <RowTools name={v.nome}
+                        onEdit={() => handleEdit(v)}
+                        onDelete={() => handleDelete(v.idVendedor)} />
                     </div>
                   )))}
                 </div>
 
                 {/* ── Paginação ── */}
+                </div>
                 <Pagination
                   currentPage={safePage}
                   totalPages={totalPages}
@@ -499,8 +489,8 @@ export default function VendedoresPage() {
             </div>
 
             {/* ── Painel de Cadastro ── */}
-            <div className={`w-full lg:w-72 xl:w-80 2xl:w-96 flex-shrink-0 ${cardBg} rounded-2xl shadow-sm p-4 sm:p-6 flex flex-col gap-5 transition-colors duration-300`}>
-              <div>
+            <div className={`registration-panel w-full lg:w-72 xl:w-80 2xl:w-96 flex-shrink-0 ${cardBg} flex flex-col transition-colors duration-300`}>
+              <div className="registration-heading">
                 <div className="flex items-center gap-2 mb-1">
                   <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -515,46 +505,49 @@ export default function VendedoresPage() {
 
               {success && <Alert type="success" message={success} />}
 
-              <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+              <form onSubmit={handleSubmit} noValidate className="registration-form flex flex-col gap-4">
                 <div>
                   <label className={`text-[10px] font-bold tracking-widest uppercase block mb-1 ${textoS}`}>
-                    Nome Completo
+                    Nome Completo<RequiredMark />
                   </label>
-                  <input name="nome" type="text" placeholder="Ex: Maria Silva" maxLength={100}
+                  <input aria-required="true" name="nome" type="text" placeholder="Ex: Maria Silva" maxLength={100}
+                    aria-invalid={Boolean(errors.nome)}
+                    title={errors.nome || undefined}
                     value={form.nome} onChange={handleFormChange}
                     className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition ${inputBg} ${errors.nome ? "border-red-400" : ""}`}
                   />
-                  {errors.nome && <p className="text-xs text-red-500 mt-1">{errors.nome}</p>}
                 </div>
 
                 <div>
                   <label className={`text-[10px] font-bold tracking-widest uppercase block mb-1 ${textoS}`}>
-                    E-mail TND
+                    E-mail TND<RequiredMark />
                   </label>
-                  <input name="email" type="email" placeholder="rafael.santos@tndbrasil.com" maxLength={60}
+                  <input aria-required="true" name="email" type="email" placeholder="rafael.santos@tndbrasil.com" maxLength={60}
+                    aria-invalid={Boolean(errors.email)}
+                    title={errors.email || undefined}
                     value={form.email} onChange={handleFormChange}
                     className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition ${inputBg} ${errors.email ? "border-red-400" : ""}`}
                   />
-                  {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
                 </div>
 
                 <div>
                   <label className={`text-[10px] font-bold tracking-widest uppercase block mb-1 ${textoS}`}>
-                    Telefone
+                    Telefone<RequiredMark />
                   </label>
-                  <input name="fone" type="tel" placeholder="(00) 0000-0000"
+                  <input aria-required="true" name="fone" type="tel" placeholder="(00) 00000-0000"
+                    aria-invalid={Boolean(errors.fone)}
+                    title={errors.fone || undefined}
                     value={form.fone} onChange={handleFormChange}
                     className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition ${inputBg} ${errors.fone ? "border-red-400" : ""}`}
                   />
-                  {errors.fone && <p className="text-xs text-red-500 mt-1">{errors.fone}</p>}
                 </div>
 
                 <div>
                   <label className={`text-[10px] font-bold tracking-widest uppercase block mb-1 ${textoS}`}>
-                    Percentual de Comissão
+                    Percentual de Comissão (%)
                   </label>
-                  <input name="comissao" type="text" placeholder="30%"
-                    value={form.comissao} onChange={handleFormChange}
+                  <input name="comissao" type="number" min="0" max="100" step="0.01" placeholder="Ex: 30"
+                    value={String(form.comissao).replace("%", "")} onChange={handleFormChange}
                     className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition ${inputBg}`}
                   />
                 </div>
@@ -587,6 +580,8 @@ export default function VendedoresPage() {
                   )}
                 </div>
 
+                <div className="registration-form-footer">
+                  <FormValidationNotice visible={Object.keys(errors).length > 0} />
                 <div className="flex gap-2 mt-1">
                   {editingId && (
                     <button data-ui-action type="button" onClick={handleCancel}
@@ -599,6 +594,7 @@ export default function VendedoresPage() {
                     style={{ background: "linear-gradient(135deg, #1a3a7a 0%, #2d5fa6 100%)" }}>
                     {loading ? "Aguarde..." : editingId ? "Salvar" : "Cadastrar"}
                   </button>
+                </div>
                 </div>
               </form>
             </div>

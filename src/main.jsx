@@ -9,6 +9,8 @@ import './styles/buttons.css'
 import './styles/search-fields.css'
 import './styles/headings.css'
 import './styles/page-layout.css'
+import './styles/modal-layout.css'
+import './styles/registration-forms.css'
 import { Toaster } from 'sonner'
 import { AuthProvider } from './context/AuthContext'
 

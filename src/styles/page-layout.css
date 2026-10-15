@@ -25,6 +25,10 @@
   margin: 0 0 var(--app-page-content-gap);
 }
 
+#root .pedido-page .pedido-header {
+  margin-bottom: 0.5rem;
+}
+
 #root :is(.app-page-header, .catalog-topbar, .comissoes-header, .pedido-header) h1 {
   margin: 0;
 }
