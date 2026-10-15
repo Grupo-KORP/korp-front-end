@@ -185,7 +185,7 @@ const buildDoc = async () => {
 
   const productColumns = [
     { label: "#",          width: 7,                    value: (_, i) => String(i + 1), align: "left" },
-    { label: "Descricao",  width: 67,                   value: (p) => pdfText(p.descricao), align: "left" },
+    { label: "Descrição",  width: 67,                   value: (p) => pdfText(p.descricao), align: "left" },
     { label: "P/N",        width: 24,                   value: (p) => pdfText(p.pn), align: "left" },
     { label: "Entrega",    width: 26,                   value: (p) => pdfText(p.entrega), align: "left" },
     { label: "Qtd.",       width: 14,                   value: (p) => pdfText(p.quantidade), align: "right" },
@@ -233,7 +233,7 @@ const buildDoc = async () => {
       doc.setFontSize(bodyFontSize);
       doc.setTextColor(30, 41, 59);
       productColumns.forEach((cell) => {
-        const maxLines = cell.label === "Descricao" ? descriptionLines : 1;
+        const maxLines = cell.label === "Descrição" ? descriptionLines : 1;
         doc.setFontSize(bodyFontSize);
         const lines = fitTextLines(cell.value(produto, index), cell.width - 2, maxLines);
         const textX = cell.align === "right" ? x + cell.width - 1 : x + 1;
@@ -323,12 +323,12 @@ const buildDoc = async () => {
 
   compactFieldPanel("Dados do Cliente", [
     { label: "Nome Fantasia", value: cliente.nomeFantasia },
-    { label: "Razao Social",  value: cliente.razaoSocial },
+    { label: "Razão Social",  value: cliente.razaoSocial },
     { label: "CNPJ",          value: cliente.cnpj },
     { label: "Insc. Est.",    value: cliente.inscEst },
     { label: "Fone",          value: cliente.fone },
     { label: "CEP",           value: cliente.cep },
-    { label: "Endereco",      value: cliente.endereco },
+    { label: "Endereço",      value: cliente.endereco },
     { label: "Cidade",        value: cliente.cidade },
     { label: "UF",            value: cliente.uf },
     { label: "Contato",       value: cliente.contato },
@@ -337,12 +337,12 @@ const buildDoc = async () => {
 
   compactFieldPanel("Dados do Distribuidor", [
     { label: "Nome Fantasia", value: distribuidor.nomeFantasia },
-    { label: "Razao Social",  value: distribuidor.razaoSocial },
+    { label: "Razão Social",  value: distribuidor.razaoSocial },
     { label: "CNPJ",          value: distribuidor.cnpj },
     { label: "Insc. Est.",    value: distribuidor.inscEst },
     { label: "Fone",          value: distribuidor.fone },
     { label: "CEP",           value: distribuidor.cep },
-    { label: "Endereco",      value: distribuidor.endereco },
+    { label: "Endereço",      value: distribuidor.endereco },
     { label: "Cidade",        value: distribuidor.cidade },
     { label: "UF",            value: distribuidor.uf },
     { label: "Contato",       value: distribuidor.contato },
