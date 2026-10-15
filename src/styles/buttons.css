@@ -1,0 +1,118 @@
+:root {
+  --app-primary-button-bg: linear-gradient(135deg, #0f2557 0%, #1a3a7a 60%, #1e4d9b 100%);
+  --app-button-radius: 0.75rem;
+  --app-button-height: 2.25rem;
+  --app-button-padding-x: 1rem;
+}
+
+button.modal-save-button,
+#root button.modal-save-button {
+  background: #1e4d9b;
+  color: #fff;
+  border: 0;
+  box-shadow: 0 2px 5px rgba(15, 37, 87, .16);
+  transition: filter 150ms;
+}
+
+button.modal-save-button:not(:disabled):is(:hover, :focus-visible),
+#root button.modal-save-button:not(:disabled):is(:hover, :focus-visible) {
+  background: #1e4d9b;
+  color: #fff;
+  filter: brightness(1.12);
+}
+
+button.modal-save-button:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 3px;
+}
+
+button.modal-save-button:disabled,
+#root button.modal-save-button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+  filter: none;
+}
+
+/* Curvatura comum, inclusive para navegação e células dos calendários. */
+#root button {
+  border-radius: var(--app-button-radius);
+}
+
+/* Medidas do botão Emitir relatório; largura acompanha o conteúdo ou o layout. */
+#root button[data-ui-action] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-sizing: border-box;
+  height: var(--app-button-height);
+  min-height: var(--app-button-height);
+  padding: 0 var(--app-button-padding-x);
+  font-size: 0.875rem;
+  line-height: 1rem;
+  white-space: nowrap;
+}
+
+/* Ícones e texto usam a mesma caixa de linha nos botões de ação. */
+#root button[data-ui-action] > svg {
+  display: block;
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 1rem;
+  align-self: center;
+}
+
+/* Compensação óptica da fonte; preserva a rotação da seta e do spinner. */
+#root button[data-ui-action]:not(.btn-pdf-icon):not(.btn-modal-search) > svg,
+#root button.cnpj-search-trigger > svg {
+  position: relative;
+  top: -1px;
+}
+
+button:is(.modal-save-button, .modal-close-button),
+.vendedor-vendas-rodape button.modal-close-button,
+#root button:is(.modal-save-button, .modal-close-button) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-end;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: auto;
+  min-width: 80px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0 16px;
+  gap: 6px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+button.modal-save-button > svg,
+#root button.modal-save-button > svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+}
+
+#root button.cnpj-search-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+#root button.cnpj-search-trigger > svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+/* A ação de PDF usa somente ícone dentro do resumo do pedido. */
+#root button[data-ui-action].btn-pdf-icon {
+  width: var(--app-button-height);
+  flex-basis: var(--app-button-height);
+  padding: 0;
+}

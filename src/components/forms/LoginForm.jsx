@@ -66,6 +66,8 @@ function LoginForm() {
         <Alert type="error" message={error} />
 
         <InputField
+          required
+          showRequiredMark={false}
           name="email"
           type="email"
           placeholder="E-mail TND"
@@ -77,6 +79,8 @@ function LoginForm() {
         />
 
         <InputField
+          required
+          showRequiredMark={false}
           name="senha"
           type="password"
           placeholder="Senha"

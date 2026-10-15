@@ -271,9 +271,21 @@ body.catalog-body {
   transition: .2s;
 }
 
+.catalog-data-table {
+  min-width: 0;
+  overflow-x: auto;
+}
+
 .catalog-table-head,
 .catalog-row {
-  min-width: 0;
+  display: grid;
+  grid-template-columns: var(--catalog-columns, minmax(0, 1fr) 100px);
+  column-gap: 20px;
+  min-width: 760px;
+}
+
+.catalog-data-table-products :is(.catalog-table-head, .catalog-row) {
+  min-width: 440px;
 }
 
 .catalog-section-title {
@@ -303,7 +315,7 @@ body.catalog-body {
 
 /* Cabeçalho */
 .catalog-table-head {
-  display: flex;
+  display: grid;
   flex-direction: row;
   align-items: center;
 
@@ -315,7 +327,7 @@ body.catalog-body {
 
   font-weight: 800;
 
-  letter-spacing: 1.8px;
+  letter-spacing: 0.08em;
 
   text-transform: uppercase;
 
@@ -325,8 +337,8 @@ body.catalog-body {
 }
 
 .catalog-table-head span {
-  flex: 1;
   min-width: 0;
+  line-height: 1.4;
   overflow-wrap: anywhere;
 }
 
@@ -334,12 +346,11 @@ body.catalog-body {
   text-align: center;
 }
 
-.catalog-table-head span:last-child {
+.catalog-table-head span.row-tools-heading {
   text-align: center;
-  min-width: 130px;
-  max-width: 130px;
+  flex: 0 0 100px;
+  max-width: 100px;
   white-space: nowrap;
-  overflow-wrap: normal;
 }
 
 /* Linhas */
@@ -351,11 +362,11 @@ body.catalog-body {
 
 .catalog-row {
 
-  display: flex;
+  display: grid;
 
   align-items: center;
 
-  padding: 16px 10px;
+  padding: 16px 8px;
 
   border-radius: 12px;
 
@@ -387,19 +398,20 @@ body.catalog-body {
 
 /* cada célula da linha ocupa 1fr como no cabeçalho */
 .catalog-row>* {
-  flex: 1;
   min-width: 0;
 }
 
-.catalog-row>.catalog-tools {
-  flex: 0 0 130px;
+.catalog-row > .row-tools {
+  flex: 0 0 100px;
 }
+
+
 
 /* Identidade */
 .catalog-identity {
   display: flex;
   flex-direction: row;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   min-width: 0;
 }
@@ -425,9 +437,16 @@ body.catalog-body {
 .catalog-identity strong,
 .catalog-identity small {
   display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  text-align: left;
+}
+
+.catalog-identity-copy,
+.catalog-identity > div {
+  min-width: 0;
+  flex: 1;
+  text-align: left;
 }
 
 .catalog-identity strong {
@@ -450,49 +469,6 @@ body.catalog-body {
 
 .catalog-link {
   color: var(--cat-accent);
-}
-
-/* Ferramentas */
-.catalog-tools {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-}
-
-.catalog-tools button {
-  width: 32px;
-  height: 32px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  padding: 0;
-  border-radius: 0.5rem;
-  background: transparent;
-  color: var(--cat-text-s);
-  cursor: pointer;
-  transition: color 0.15s, background 0.15s;
-}
-
-.catalog-tools button:first-child:hover {
-  color: #3b82f6;
-  background: var(--cat-badge-bg);
-}
-
-.catalog-tools button:last-child:hover {
-  color: #ef4444;
-  background: #fef2f2;
-}
-
-body.dark .catalog-tools button:last-child:hover {
-  background: rgba(127, 29, 29, 0.3);
-}
-
-.catalog-tools svg {
-  width: 16px;
-  height: 16px;
-  fill: currentColor;
 }
 
 /* ─── Paginação ───────────────────────────────────────────────────────────────── */
@@ -1172,65 +1148,5 @@ body.dark .produto-modal-card {
   .catalog-right {
     width: 100%;
     max-width: none;
-  }
-}
-
-@media (max-width: 640px) {
-  .catalog-page {
-    width: calc(100% - 28px);
-    margin-right: 14px;
-    margin-left: 14px;
-    padding-top: 24px;
-  }
-
-  .catalog-table-card {
-    padding: 16px 12px;
-  }
-
-  .catalog-table-head {
-    display: none;
-  }
-
-  .catalog-row {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-    padding: 14px 8px;
-    border-bottom: 1px solid var(--cat-border);
-  }
-
-  .catalog-row>* {
-    flex: initial;
-  }
-
-  .catalog-row .catalog-identity {
-    grid-column: 1 / -1;
-  }
-
-  .catalog-row>span {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-    text-align: left;
-    overflow-wrap: anywhere;
-  }
-
-  .catalog-row>span::before {
-    content: attr(data-label);
-    color: var(--cat-text-s);
-    font-size: 9px;
-    font-weight: 800;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-  }
-
-  .catalog-row>.catalog-tools {
-    grid-column: 1 / -1;
-    justify-content: flex-end;
-  }
-
-  .catalog-form-row {
-    flex-direction: column;
   }
 }

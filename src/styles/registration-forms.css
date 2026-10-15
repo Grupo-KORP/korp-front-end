@@ -1,0 +1,335 @@
+:root,
+.modal-frozen-light {
+  --registration-bg: #fdfdfe;
+  --registration-border: #e3e7ec;
+  --registration-divider: #edf0f3;
+  --registration-text: #1f2937;
+  --registration-muted: #64748b;
+  --registration-placeholder: #a4acb8;
+  --registration-blue: #1e4d9b;
+  --registration-blue-soft: #eff6ff;
+}
+
+body.dark,
+.modal-frozen-dark {
+  --registration-bg: #1f2937;
+  --registration-border: #4b5563;
+  --registration-divider: #374151;
+  --registration-text: #d1d5db;
+  --registration-muted: #9ca3af;
+  --registration-placeholder: #6b7280;
+  --registration-blue: #60a5fa;
+  --registration-blue-soft: rgba(30, 58, 138, .5);
+}
+
+#root :is(.catalog-form-card, .registration-panel) {
+  background: var(--registration-bg);
+  border: 1px solid var(--registration-border);
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: none;
+  gap: 20px;
+}
+
+#root :is(.catalog-form-heading, .registration-heading) {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 4px 10px;
+  align-items: start;
+  flex-shrink: 0;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--registration-divider);
+}
+
+#root :is(.catalog-form-heading, .registration-heading) > div {
+  display: contents;
+}
+
+#root :is(.catalog-form-heading, .registration-heading) svg {
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  padding: 7px;
+  border-radius: 8px;
+  background: var(--registration-blue-soft);
+  color: var(--registration-blue);
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  align-self: start;
+}
+
+#root .catalog-form-heading svg { fill: var(--registration-blue); }
+
+#root .produto-modal-card:has(.catalog-form) .produto-eyebrow { color: var(--registration-blue); }
+
+#root :is(.catalog-form-heading, .registration-heading) p {
+  grid-column: 2;
+  grid-row: 2;
+  margin: 0;
+}
+
+#root :is(.catalog-form-heading h2, .registration-heading h3) {
+  grid-column: 2;
+  grid-row: 1;
+  margin: 0;
+  color: var(--registration-text);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+#root :is(.catalog-form-heading p, .registration-heading p) {
+  color: var(--registration-muted);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: .035em;
+}
+
+#root :is(.catalog-form, .registration-form) {
+  gap: 20px;
+}
+
+#root .catalog-form-card {
+  max-height: none;
+  overflow: visible;
+}
+
+#root .catalog-form-card .catalog-form {
+  overflow: visible;
+}
+
+#root .catalog-form-fields {
+  gap: 18px;
+}
+
+#root .catalog-form-card .catalog-form-fields {
+  flex: 1;
+  justify-content: space-between;
+}
+
+#root .catalog-form-card .catalog-form-actions {
+  margin: 0;
+}
+
+#root .registration-form-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-top: auto;
+}
+
+#root .registration-notice {
+  min-height: 18px;
+  color: var(--registration-blue);
+  font-size: 11px;
+  line-height: 18px;
+}
+
+#root .registration-panel {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+#root .registration-panel .registration-form {
+  flex: 1 0 auto;
+}
+
+#root .registration-panel .registration-form > div:last-child {
+  margin-top: auto;
+}
+
+#root :is(.catalog-form, .registration-form) :is(input, select),
+#root .registration-details .modal-contact-input,
+#root .pedido-form .modal-empty .input-cnpj-cadastro {
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+  height: 40px;
+  padding: 0 2px;
+  border: 0;
+  border-bottom: 1px solid var(--registration-border);
+  border-radius: 0;
+  outline: none;
+  background: transparent;
+  color: var(--registration-text);
+  font-family: inherit;
+  font-size: 12px;
+  box-shadow: none;
+  transition: border-color 150ms, box-shadow 150ms;
+}
+
+#root :is(.catalog-form, .registration-form) input::placeholder,
+#root .registration-details .modal-contact-input::placeholder,
+#root .pedido-form .modal-empty .input-cnpj-cadastro::placeholder {
+  color: var(--registration-placeholder);
+}
+
+#root :is(.catalog-form, .registration-form) select option {
+  background: var(--registration-bg);
+  color: var(--registration-text);
+}
+
+#root :is(.catalog-form, .registration-form) :is(input, select):focus,
+#root .registration-details .modal-contact-input:focus,
+#root .pedido-form .modal-empty .input-cnpj-cadastro:focus {
+  border-bottom-color: var(--registration-blue);
+  box-shadow: 0 1px 0 var(--registration-blue);
+}
+
+#root :is(.catalog-form, .registration-form) :is(input:read-only, select:disabled) {
+  background: transparent;
+  opacity: .65;
+}
+
+#root .catalog-form-field > span:not(.catalog-field-error),
+#root .registration-form :is(label, .input-label),
+#root .registration-details label > span {
+  color: var(--registration-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .035em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+#root :is(.catalog-form, .registration-form) :is(input, select):is([aria-invalid="true"], .border-red-400),
+#root .catalog-form-field.has-error :is(input, select),
+#root .catalog-form-field:has(> .catalog-field-error) :is(input, select) {
+  border-bottom-color: #ef4444;
+}
+
+#root .catalog-submit {
+  height: 36px;
+  font-size: 13px;
+  box-shadow: none;
+}
+
+#root .catalog-cancel {
+  height: 36px;
+  font-size: 13px;
+  background: transparent;
+}
+
+@media (min-width: 1051px) {
+  #root .catalog-shell:has(.catalog-right) {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  #root .catalog-shell:has(.catalog-right) > .navbar { flex-shrink: 0; }
+
+  #root .catalog-page:has(.catalog-right) {
+    flex: 1;
+    min-height: 0;
+    align-items: stretch;
+    overflow: hidden;
+  }
+
+  #root .catalog-page:has(.catalog-right) .catalog-left {
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  #root .catalog-right {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  #root .catalog-form-card {
+    flex: 1;
+    min-height: 0;
+    max-height: 100%;
+    overflow: hidden;
+    container-name: registration-card;
+    container-type: size;
+  }
+
+  #root .catalog-form-card .catalog-form {
+    gap: 12px;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  #root .catalog-form-card .catalog-form-fields {
+    min-height: 0;
+    gap: 12px;
+    overflow-y: auto;
+  }
+
+  #root .catalog-form-card .catalog-form-fields > * { flex-shrink: 0; }
+
+  #root .catalog-form-card .catalog-form-fields:empty { display: none; }
+
+  #root .catalog-extra-form-content { min-height: 0; overflow-y: auto; }
+
+  #root .registration-panel {
+    overflow: hidden;
+  }
+
+  #root .registration-panel .registration-form {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+}
+
+/* Use the actual space in the card, including changes caused by browser zoom. */
+@container registration-card (max-height: 700px) {
+  #root .catalog-form-heading {
+    padding-bottom: 10px;
+  }
+
+  #root .catalog-form-card .catalog-form-fields {
+    gap: 8px;
+  }
+
+  #root .catalog-form-card .catalog-form-field {
+    gap: 4px;
+  }
+
+  #root .catalog-form-card .catalog-form :is(input, select) {
+    height: 32px;
+  }
+}
+
+@container registration-card (max-height: 580px) {
+  #root .catalog-form-heading {
+    padding-bottom: 6px;
+  }
+
+  #root .catalog-form-card .catalog-form {
+    gap: 6px;
+  }
+
+  #root .catalog-form-card .catalog-form-fields {
+    gap: 4px;
+  }
+
+  #root .catalog-form-card .catalog-form-field {
+    gap: 2px;
+  }
+
+  #root .catalog-form-card .catalog-form :is(input, select) {
+    height: 28px;
+  }
+
+  #root .catalog-form-card .registration-form-footer {
+    gap: 4px;
+  }
+}
+
+@media (max-width: 720px) {
+  #root :is(.catalog-form, .registration-form) :is(input, select),
+  #root .registration-details .modal-contact-input,
+  #root .pedido-form .modal-empty .input-cnpj-cadastro {
+    height: 42px;
+    font-size: 16px;
+  }
+}

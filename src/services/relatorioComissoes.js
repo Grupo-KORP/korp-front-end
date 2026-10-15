@@ -1,7 +1,7 @@
 import { formatarStatusPagamento } from "./statusPagamento.js";
-import { carregarLogoPdf, adicionarLogoPdf } from "./pdfBranding.js";
+import { carregarLogoPdf, adicionarLogoPdf, COR_FUNDO_LOGO_PDF } from "./pdfBranding.js";
 
-export async function criarRelatorioComissoes({ parcelas, proximasLiberacoes = [], periodo, status, busca, geradoEm = new Date() }) {
+export async function criarRelatorioComissoes({ parcelas, proximasLiberacoes = [], periodo, status, busca, indicadores = [], geradoEm = new Date() }) {
   const { jsPDF } = await import("jspdf");
   const logo = await carregarLogoPdf();
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
@@ -11,7 +11,7 @@ export async function criarRelatorioComissoes({ parcelas, proximasLiberacoes = [
   const moeda = (valor) => Number(valor ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   let y;
   const colunas = [
-    { titulo: "Venda / Pedido", largura: 37 },
+    { titulo: "Pedido de venda", largura: 37 },
     { titulo: "Cliente", largura: 44 },
     { titulo: "Vendedor", largura: 42 },
     { titulo: "Comissão", largura: 30 },
@@ -22,7 +22,7 @@ export async function criarRelatorioComissoes({ parcelas, proximasLiberacoes = [
   ];
 
   function cabecalho() {
-    doc.setFillColor(30, 64, 128);
+    doc.setFillColor(COR_FUNDO_LOGO_PDF);
     doc.rect(0, 0, largura, 27, "F");
     doc.setFont("helvetica", "bold"); doc.setFontSize(15); doc.setTextColor(255, 255, 255);
     doc.text("Relatório de Comissões", margem, 12);
@@ -34,6 +34,11 @@ export async function criarRelatorioComissoes({ parcelas, proximasLiberacoes = [
     const filtros = doc.splitTextToSize(`Status: ${formatarStatusPagamento(status) || "Todos"} | Busca: ${busca?.trim() || "Todos os vendedores e pedidos"}`, largura - margem * 2);
     doc.text(filtros, margem, 40);
     y = 44 + filtros.length * 3.5;
+    if (indicadores.length) {
+      const resumo = doc.splitTextToSize(indicadores.map(({ rotulo, valor }) => `${rotulo}: ${valor}`).join(" | "), largura - margem * 2);
+      doc.text(resumo, margem, y);
+      y += resumo.length * 3.5 + 5;
+    }
   }
 
   function cabecalhoTabela() {
@@ -103,7 +108,6 @@ export async function criarRelatorioComissoes({ parcelas, proximasLiberacoes = [
     doc.line(margem, altura - 13, largura - margem, altura - 13);
     doc.setFont("helvetica", "normal"); doc.setFontSize(7); doc.setTextColor(100, 116, 139);
     doc.text(`Gerado em ${geradoEm.toLocaleString("pt-BR")}`, margem, altura - 8);
-    adicionarLogoPdf(doc, logo, largura / 2 - 10, altura - 12);
     doc.text(`Página ${pagina} de ${paginas}`, largura - margem, altura - 8, { align: "right" });
   }
   return doc;

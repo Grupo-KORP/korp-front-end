@@ -209,11 +209,11 @@ export async function buscarDetalheVenda(idPedido) {
   } catch (err) {
     const httpStatus = err?.status ?? err?.response?.status;
 
-    if (httpStatus === 404) throw new Error("Venda não encontrada.");
-    if (httpStatus === 403) throw new Error("Sem permissão para ver esta venda.");
+    if (httpStatus === 404) throw new Error("Pedido de venda não encontrado.");
+    if (httpStatus === 403) throw new Error("Sem permissão para ver este pedido de venda.");
     if (httpStatus === 401) throw new Error("Sessão expirada. Faça login novamente.");
 
-    throw new Error("Erro ao carregar os detalhes da venda. Tente novamente.");
+    throw new Error("Erro ao carregar os detalhes do pedido de venda. Tente novamente.");
   }
 }
 
