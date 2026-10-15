@@ -416,6 +416,10 @@ body.catalog-body {
   min-width: 0;
 }
 
+.catalog-identity>div {
+  min-width: 0;
+}
+
 .catalog-badge {
   width: 34px;
   height: 34px;
@@ -571,7 +575,8 @@ body.catalog-body {
 
   min-height: 0;
 
-  max-height: calc(100vh - 50px);
+  max-height: calc(100vh - 130px);
+  max-height: calc(100dvh - 130px);
 
   overflow: hidden;
 }
@@ -701,6 +706,10 @@ body.catalog-body {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 6px;
 }
 
 /* Linha com dois campos lado a lado */
@@ -929,10 +938,6 @@ body.catalog-body {
     width: 100%;
   }
 
-  .catalog-table-card {
-    overflow-x: auto;
-  }
-
   .catalog-topbar {
     flex-direction: column;
     align-items: flex-start;
@@ -940,10 +945,6 @@ body.catalog-body {
 
   .catalog-search {
     width: 100%;
-  }
-
-  .catalog-table-card {
-    overflow-x: auto;
   }
 
   .catalog-pagination {
@@ -1125,9 +1126,12 @@ body.dark .produto-modal-card {
 @media (max-width: 1200px) {
 
   .catalog-page {
-    grid-template-columns:
-      minmax(0, 1fr)
-      340px;
+    flex-direction: column;
+  }
+
+  .catalog-left {
+    width: 100%;
+    min-height: 0;
   }
 
   .catalog-right {
