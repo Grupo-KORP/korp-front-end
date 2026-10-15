@@ -186,7 +186,7 @@ const buildDoc = async () => {
 
   const productColumns = [
     { label: "#",          width: 7,                    value: (_, i) => String(i + 1), align: "left" },
-    { label: "Descrição",  width: 67,                   value: (p) => pdfText(p.descricao), align: "left" },
+    { label: "Descricao",  width: 67,                   value: (p) => pdfText(p.descricao), align: "left" },
     { label: "P/N",        width: 24,                   value: (p) => pdfText(p.pn), align: "left" },
     { label: "Entrega",    width: 26,                   value: (p) => pdfText(p.entrega), align: "left" },
     { label: "Qtd.",       width: 14,                   value: (p) => pdfText(p.quantidade), align: "right" },
@@ -319,12 +319,12 @@ const buildDoc = async () => {
 
   compactFieldPanel("Dados do Cliente", [
     { label: "Nome Fantasia", value: cliente.nomeFantasia },
-    { label: "Razão Social",  value: cliente.razaoSocial },
+    { label: "Razao Social",  value: cliente.razaoSocial },
     { label: "CNPJ",          value: cliente.cnpj },
     { label: "Insc. Est.",    value: cliente.inscricaoEstadual || cliente.inscEst },
     { label: "Fone",          value: cliente.fone },
     { label: "CEP",           value: cliente.cep },
-    { label: "Endereço",      value: cliente.endereco },
+    { label: "Endereco",      value: cliente.endereco },
     { label: "Cidade",        value: cliente.cidade },
     { label: "UF",            value: cliente.uf },
     { label: "Contato",       value: cliente.contato },
@@ -333,12 +333,12 @@ const buildDoc = async () => {
 
   compactFieldPanel("Dados do Distribuidor", [
     { label: "Nome Fantasia", value: distribuidor.nomeFantasia },
-    { label: "Razão Social",  value: distribuidor.razaoSocial },
+    { label: "Razao Social",  value: distribuidor.razaoSocial },
     { label: "CNPJ",          value: distribuidor.cnpj },
     { label: "Insc. Est.",    value: distribuidor.inscEst || distribuidor.inscricaoEstadual },
     { label: "Fone",          value: distribuidor.fone },
     { label: "CEP",           value: distribuidor.cep },
-    { label: "Endereço",      value: distribuidor.endereco },
+    { label: "Endereco",      value: distribuidor.endereco },
     { label: "Cidade",        value: distribuidor.cidade },
     { label: "UF",            value: distribuidor.uf },
     { label: "Contato",       value: distribuidor.contato },
