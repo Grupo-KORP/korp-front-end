@@ -423,7 +423,7 @@ function ClienteSection({ onChange, initialData }) {
               />
             </div>
             <div className="form-group grow-1">
-              <label>RAZÃO SOCIAL</label>
+              <label>RAZAO SOCIAL</label>
               <input
                 name="razaoSocial"
                 value={data.razaoSocial}
@@ -482,7 +482,7 @@ function ClienteSection({ onChange, initialData }) {
 
           <div className="form-row">
             <div className="form-group grow-2">
-              <label>ENDEREÇO</label>
+              <label>ENDERECO</label>
               <input
                 name="endereco"
                 value={data.endereco}
@@ -1039,7 +1039,7 @@ function DistribuidorSection({ onChange, initialData }) {
               />
             </div>
             <div className="form-group grow-1">
-              <label>RAZÃO SOCIAL</label>
+              <label>RAZAO SOCIAL</label>
               <input
                 name="razaoSocial"
                 value={data.razaoSocial}
@@ -1098,7 +1098,7 @@ function DistribuidorSection({ onChange, initialData }) {
 
           <div className="form-row">
             <div className="form-group grow-2">
-              <label>ENDEREÇO</label>
+              <label>ENDERECO</label>
               <input
                 name="endereco"
                 value={data.endereco}
@@ -1605,7 +1605,7 @@ function ProdutoSection({ onChange, initialData, onRemove }) {
         <div className="section-body">
           <div className="form-row">
             <div className="form-group grow-2">
-              <label>DESCRIÇÃO DO PRODUTO<span className="pedido-required" aria-hidden="true">*</span></label>
+              <label>DESCRICAO DO PRODUTO<span className="pedido-required" aria-hidden="true">*</span></label>
               <input
                 name="descricao"
                 required
@@ -1652,7 +1652,7 @@ function ProdutoSection({ onChange, initialData, onRemove }) {
               />
             </div>
             <div className="form-group grow-1">
-              <label>VALOR UNITÁRIO<span className="pedido-required" aria-hidden="true">*</span></label>
+              <label>VALOR UNITARIO<span className="pedido-required" aria-hidden="true">*</span></label>
               <input
                 name="valorUnitario"
 
