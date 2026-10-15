@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import './InputField.css'
+import RequiredMark from './RequiredMark'
 
 function InputField({
   label,
@@ -13,6 +14,9 @@ function InputField({
   error,
   disabled    = false,
   autoFocus   = false,
+  required    = false,
+  showRequiredMark = true,
+  showError = true,
 }) {
   const [showPassword, setShowPassword] = useState(false)
   const isPassword = type === 'password'
@@ -20,9 +24,10 @@ function InputField({
 
   return (
     <div className={`input-wrapper ${className}`}>
-      {label && (
-        <label className="input-label">
-          {label.toUpperCase()}
+      {(label || required) && (
+        <label htmlFor={name} className="input-label">
+          {(label || placeholder).toUpperCase()}
+          {required && showRequiredMark && <RequiredMark />}
         </label>
       )}
 
@@ -30,6 +35,10 @@ function InputField({
         <input
           id={name}
           name={name}
+          required={required}
+          aria-required={required || undefined}
+          aria-invalid={Boolean(error)}
+          aria-label={label || placeholder}
           type={resolvedType}
           value={value}
           onChange={onChange}
@@ -38,14 +47,15 @@ function InputField({
           disabled={disabled}
           autoFocus={autoFocus}
           autoComplete={isPassword ? 'current-password' : 'on'}
-          className="input-field"
+          className={`input-field${isPassword ? ' input-field-password' : ''}`}
         />
 
         {/* Botão show/hide senha */}
         {isPassword && (
           <button
             type="button"
-            tabIndex={-1}
+            aria-pressed={showPassword}
+            disabled={disabled}
             onClick={() => setShowPassword(p => !p)}
             className="input-toggle-password"
             aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
@@ -56,7 +66,7 @@ function InputField({
       </div>
 
       {/* Mensagem de erro */}
-      {error && (
+      {error && showError && (
         <p className="input-error">{error}</p>
       )}
     </div>

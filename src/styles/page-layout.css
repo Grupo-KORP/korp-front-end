@@ -1,0 +1,50 @@
+/* Espaçamento de referência: Painel do Vendedor. */
+:root {
+  --app-page-padding-x: 0.75rem;
+  --app-page-padding-y: 1rem;
+  --app-page-header-gap: 0.75rem;
+  --app-page-content-gap: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --app-page-padding-x: 1.5rem;
+    --app-page-padding-y: 1.5rem;
+  }
+}
+
+#root :is(.app-page-content, .catalog-page, .comissoes-content, .pedido-wrapper) {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: var(--app-page-padding-y) var(--app-page-padding-x);
+}
+
+#root :is(.app-page-header, .comissoes-header, .pedido-header) {
+  gap: var(--app-page-header-gap);
+  margin: 0 0 var(--app-page-content-gap);
+}
+
+#root .pedido-page .pedido-header {
+  margin-bottom: 0.5rem;
+}
+
+#root :is(.app-page-header, .catalog-topbar, .comissoes-header, .pedido-header) h1 {
+  margin: 0;
+}
+
+#root .catalog-topbar {
+  gap: var(--app-page-header-gap);
+  margin: 0;
+}
+
+/* O catálogo usa gap no contêiner em vez de margem no cabeçalho. */
+#root .catalog-left {
+  gap: var(--app-page-content-gap);
+}
+
+@media (min-width: 640px) {
+  #root :is(.app-page-header, .comissoes-header, .pedido-header) {
+    align-items: flex-end;
+  }
+}

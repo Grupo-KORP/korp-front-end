@@ -1,3 +1,7 @@
+import { maskCNPJ, maskCEP, maskPhone } from "../../utils/inputMasks";
+import { confirmDelete } from "./DeleteConfirmation";
+import ActionIcon from "../ui/ActionIcon";
+import RequiredMark from "../ui/RequiredMark";
 import { formatarStatusPagamento } from "../../services/statusPagamento.js";
 // Importa os hooks do React usados para guardar estado e executar efeitos.
 import { useState, useEffect } from "react";
@@ -6,29 +10,10 @@ import { toast } from "sonner";
 import { atualizarPedido } from "../../services/api";
 
 // Cria um componente pequeno para mostrar o icone de lapis.
-const IconeLapis = () => (
-    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5
-         m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-    </svg>
-);
+const IconeLapis = () => <ActionIcon name="edit" />;
+const IconeCheck = () => <ActionIcon name="check" />;
+const IconeX = () => <ActionIcon name="close" />;
 
-// Cria um componente pequeno para mostrar o icone de confirmado.
-const IconeCheck = () => (
-    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-    </svg>
-);
-
-// Cria um componente pequeno para mostrar o icone de cancelar.
-const IconeX = () => (
-    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-    </svg>
-);
-
-/* ── Campo somente leitura ── */
 function CampoLeitura({ rotulo, valor, escuro, colSpan = 1 }) {
     const classeLabel = escuro ? "text-gray-500" : "text-gray-400";
     const classeInput = escuro
@@ -36,7 +21,7 @@ function CampoLeitura({ rotulo, valor, escuro, colSpan = 1 }) {
         : "bg-white border-gray-200 text-gray-700";
 
     return (
-        <div className={colSpan === 2 ? "col-span-2" : colSpan === 3 ? "col-span-3" : colSpan === 4 ? "col-span-4" : ""}>
+        <div className={`details-field ${colSpan === 2 ? "col-span-2" : colSpan === 3 ? "col-span-3" : colSpan === 4 ? "col-span-4" : ""}`}>
             <label className={`block text-[9px] font-bold tracking-widest uppercase mb-1 ${classeLabel}`}>
                 {rotulo}
             </label>
@@ -65,7 +50,7 @@ function CampoQuantidade({ valor, modoEdicao, aoAlterar, escuro, rotulo = "Quant
         : "bg-blue-50 border-blue-400 text-blue-900 ring-1 ring-blue-300/50";
 
     return (
-        <div>
+        <div className="details-field">
             <label className={`block text-[9px] font-bold tracking-widest uppercase mb-1 ${classeLabel}`}>
                 {rotulo}
                 {/* Mostra a etiqueta apenas quando o campo esta editavel. */}
@@ -89,7 +74,7 @@ function CampoQuantidade({ valor, modoEdicao, aoAlterar, escuro, rotulo = "Quant
 }
 
 /* Campo de texto editavel */
-function CampoTextoEditavel({ rotulo, valor, modoEdicao, aoAlterar, escuro, colSpan = 1, placeholder = "" }) {
+function CampoTextoEditavel({ rotulo, valor, modoEdicao, aoAlterar, escuro, colSpan = 1, placeholder = "", obrigatorio = false }) {
     const classeLabel = escuro ? "text-gray-500" : "text-gray-400";
     const classeBase = "w-full px-3 py-1.5 rounded-lg border text-xs font-semibold focus:outline-none transition-all duration-200";
     const classeLeitura = escuro
@@ -100,9 +85,9 @@ function CampoTextoEditavel({ rotulo, valor, modoEdicao, aoAlterar, escuro, colS
         : "bg-blue-50 border-blue-400 text-blue-900 ring-1 ring-blue-300/50";
 
     return (
-        <div className={colSpan === 2 ? "col-span-2" : colSpan === 3 ? "col-span-3" : colSpan === 4 ? "col-span-4" : ""}>
+        <div className={`details-field ${colSpan === 2 ? "col-span-2" : colSpan === 3 ? "col-span-3" : colSpan === 4 ? "col-span-4" : ""}`}>
             <label className={`block text-[9px] font-bold tracking-widest uppercase mb-1 ${classeLabel}`}>
-                {rotulo}
+                {rotulo}{modoEdicao && obrigatorio && <RequiredMark />}
                 {modoEdicao && (
                     <span className={`ml-1.5 text-[8px] font-bold tracking-wider normal-case px-1.5 py-0.5 rounded-full
             ${escuro ? "bg-blue-900/60 text-blue-300" : "bg-blue-100 text-blue-600"}`}>
@@ -112,6 +97,7 @@ function CampoTextoEditavel({ rotulo, valor, modoEdicao, aoAlterar, escuro, colS
             </label>
             <input
                 type="text"
+                aria-required={modoEdicao && obrigatorio || undefined}
                 value={valor}
                 readOnly={!modoEdicao}
                 onChange={(e) => aoAlterar(e.target.value)}
@@ -346,20 +332,20 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
             onClick={(e) => { if (e.target === e.currentTarget) tentarFechar(); }}
         >
             <div
-                className={`w-full max-w-[96vw] max-h-[92vh] overflow-hidden rounded-2xl shadow-2xl border flex flex-col ${classeCard}`}
+                className={`details-panel max-h-[92vh] overflow-hidden rounded-2xl shadow-2xl border flex flex-col ${classeCard}`}
                 style={{ animation: "modalEntrar 0.2s ease-out" }}
             >
                 {/* ── Cabeçalho ── */}
                 <div
-                    className="flex items-center justify-between px-8 py-4 rounded-t-2xl flex-shrink-0"
+                    className="details-header flex justify-between rounded-t-2xl flex-shrink-0"
                     style={{ background: "linear-gradient(135deg, #0f2557 0%, #1a3a7a 60%, #1e4d9b 100%)" }}
                 >
-                    <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center">
+                    <div className="details-identity">
+                        <div className="details-code rounded-xl bg-white/15 flex items-center justify-center">
                             <span className="text-xs font-extrabold text-white">{venda.id}</span>
                         </div>
-                        <div>
-                            <p className="text-[9px] font-bold tracking-widest text-blue-200 uppercase">Detalhes da Venda</p>
+                        <div className="details-heading">
+                            <p className="text-[9px] font-bold tracking-widest text-blue-200 uppercase">Detalhes do pedido de venda</p>
                             <p className="text-sm font-extrabold text-white">{venda.nome} – {venda.cliente}</p>
                         </div>
                     </div>
@@ -376,16 +362,16 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                 </div>
 
                 {/* ── Corpo ── */}
-                <div className="modal-detalhe-scroll flex flex-col gap-4 p-8 overflow-y-auto flex-1 min-h-0">
+                <div className="details-body modal-detalhe-scroll flex flex-col gap-4 overflow-y-auto flex-1 min-h-0">
                     {detalhes ? (
                         <>
                             {/* Cliente e Distribuidor */}
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="details-section-grid grid grid-cols-2 gap-4">
 
                                 {/* Dados do Cliente */}
                                 <div className={`rounded-xl border p-5 ${classeSecao}`}>
                                     <CabecalhoSecao titulo="Dados do Cliente" cor="bg-blue-600" escuro={escuro} />
-                                    <div className="grid grid-cols-2 gap-x-5 gap-y-3">
+                                    <div className="details-field-grid grid grid-cols-2 gap-x-5 gap-y-3">
                                         <CampoLeitura rotulo="Razão Social" valor={detalhes.cliente.razaoSocial} escuro={escuro} colSpan={2} />
                                         <CampoTextoEditavel
                                             rotulo="Nome Fantasia"
@@ -396,10 +382,10 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                                             colSpan={2}
                                             placeholder="Nome fantasia do cliente"
                                         />
-                                        <CampoLeitura rotulo="CNPJ" valor={detalhes.cliente.cnpj} escuro={escuro} />
+                                        <CampoLeitura rotulo="CNPJ" valor={maskCNPJ(detalhes.cliente.cnpj)} escuro={escuro} />
                                         <CampoLeitura rotulo="Inscrição Estadual" valor={detalhes.cliente.inscricaoEstadual} escuro={escuro} />
-                                        <CampoLeitura rotulo="Telefone" valor={detalhes.cliente.telefone} escuro={escuro} />
-                                        <CampoLeitura rotulo="CEP" valor={detalhes.cliente.cep} escuro={escuro} />
+                                        <CampoLeitura rotulo="Telefone" valor={maskPhone(detalhes.cliente.telefone)} escuro={escuro} />
+                                        <CampoLeitura rotulo="CEP" valor={maskCEP(detalhes.cliente.cep)} escuro={escuro} />
                                         <CampoLeitura rotulo="Endereço" valor={detalhes.cliente.endereco} escuro={escuro} colSpan={2} />
                                         <CampoLeitura rotulo="Cidade" valor={detalhes.cliente.cidade} escuro={escuro} />
                                         <CampoLeitura rotulo="UF" valor={detalhes.cliente.uf} escuro={escuro} />
@@ -411,7 +397,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                                 {/* Dados do Distribuidor */}
                                 <div className={`rounded-xl border p-5 ${classeSecao}`}>
                                     <CabecalhoSecao titulo="Dados do Distribuidor" cor="bg-indigo-500" escuro={escuro} />
-                                    <div className="grid grid-cols-2 gap-x-5 gap-y-3">
+                                    <div className="details-field-grid grid grid-cols-2 gap-x-5 gap-y-3">
                                         <CampoLeitura rotulo="Razão Social" valor={detalhes.distribuidor.razaoSocial} escuro={escuro} colSpan={2} />
                                         <CampoTextoEditavel
                                             rotulo="Nome Fantasia"
@@ -422,10 +408,10 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                                             colSpan={2}
                                             placeholder="Nome fantasia do distribuidor"
                                         />
-                                        <CampoLeitura rotulo="CNPJ" valor={detalhes.distribuidor.cnpj} escuro={escuro} />
+                                        <CampoLeitura rotulo="CNPJ" valor={maskCNPJ(detalhes.distribuidor.cnpj)} escuro={escuro} />
                                         <CampoLeitura rotulo="Inscrição Estadual" valor={detalhes.distribuidor.inscricaoEstadual} escuro={escuro} />
-                                        <CampoLeitura rotulo="Telefone" valor={detalhes.distribuidor.telefone} escuro={escuro} />
-                                        <CampoLeitura rotulo="CEP" valor={detalhes.distribuidor.cep} escuro={escuro} />
+                                        <CampoLeitura rotulo="Telefone" valor={maskPhone(detalhes.distribuidor.telefone)} escuro={escuro} />
+                                        <CampoLeitura rotulo="CEP" valor={maskCEP(detalhes.distribuidor.cep)} escuro={escuro} />
                                         <CampoLeitura rotulo="Endereço" valor={detalhes.distribuidor.endereco} escuro={escuro} colSpan={2} />
                                         <CampoLeitura rotulo="Cidade" valor={detalhes.distribuidor.cidade} escuro={escuro} />
                                         <CampoLeitura rotulo="UF" valor={detalhes.distribuidor.uf} escuro={escuro} />
@@ -438,7 +424,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                             {/* Dados do Pedido */}
                             <div className={`rounded-xl border p-5 ${classeSecao}`}>
                                 <CabecalhoSecao titulo="Dados do Pedido" cor="bg-sky-500" escuro={escuro} />
-                                <div className="grid grid-cols-4 gap-x-5 gap-y-3">
+                                <div className="details-field-grid grid grid-cols-4 gap-x-5 gap-y-3">
                                     <CampoTextoEditavel
                                         rotulo="Número da Nota"
                                         valor={numeroNotaDistribuidor}
@@ -485,15 +471,15 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                                                                 />
                                                                 {modoEdicao && datasPagamento.length > 1 && (
                                                                     <button type="button" disabled={salvando} aria-label={`Remover data de pagamento ${indice + 1}`}
-                                                                        onClick={() => setDatasPagamento(datas => datas.filter((_, i) => i !== indice))}
-                                                                        className="text-gray-400 hover:text-red-500">×</button>
+                                                                        onClick={async () => { if (await confirmDelete({ entityLabel: "data de pagamento", name: `Data ${indice + 1}: ${data || "sem valor"}` })) setDatasPagamento(datas => datas.filter((_, i) => i !== indice)); }}
+                                                                        className="text-gray-400 hover:text-red-500"><ActionIcon name="close" /></button>
                                                                 )}
                                                             </div>
                                                         ))}
                                                         {modoEdicao && (
                                                             <button type="button" aria-label="Adicionar data de pagamento" disabled={salvando || datasPagamento.length >= 7}
                                                                 onClick={() => setDatasPagamento(datas => datas.length < 7 ? [...datas, ""] : datas)}
-                                                                className="w-12 h-12 rounded-lg border border-blue-400 text-blue-500 text-xl disabled:opacity-40 disabled:cursor-not-allowed">+</button>
+                                                                className="inline-flex items-center justify-center w-12 h-12 rounded-lg border border-blue-400 text-blue-500 disabled:opacity-40 disabled:cursor-not-allowed"><ActionIcon name="add" /></button>
                                                         )}
                                                     </div>
                                                     {modoEdicao && <p className="mt-1 text-xs text-gray-400">Preencha todos os campos para finalizar. Máximo de 7 datas, com até 3 dígitos cada.</p>}
@@ -566,7 +552,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                             {/* ── Parcelas */}
                             {parcelasConteudo ?? (venda.parcelas?.length > 0 && (
                                 <div className={`rounded-xl border p-5 ${classeSecao}`}>
-                                    <CabecalhoSecao titulo="Parcelas desta Venda" cor="bg-emerald-500" escuro={escuro} />
+                                    <CabecalhoSecao titulo="Parcelas deste pedido de venda" cor="bg-emerald-500" escuro={escuro} />
                                     <div className="grid grid-cols-3 gap-3">
                                         {venda.parcelas.map((parcela, indice) => (
                                             <div
@@ -586,7 +572,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                         </>
                     ) : (
                         <div className={`rounded-xl border p-8 text-center ${classeSecao}`}>
-                            <p className="text-sm text-gray-400">Detalhes não disponíveis para esta venda.</p>
+                            <p className="text-sm text-gray-400">Detalhes não disponíveis para este pedido de venda.</p>
                         </div>
                     )}
                 </div>
@@ -602,7 +588,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                     )}
                     {modoEdicao ? (
                         <>
-                            <button
+                            <button data-ui-action
                                 onClick={() => confirmarEdicao(true)}
                                 disabled={salvando || !numeroNotaDistribuidor.trim() || !observacoes.trim() || (boleto && !datasPagamentoValidas)}
                                 className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all
@@ -611,10 +597,10 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                                 <IconeCheck />
                                 Finalizar Pedido
                             </button>
-                            <button
+                            <button data-ui-action
                                 onClick={() => confirmarEdicao(false)}
                                 disabled={salvando}
-                                className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all
+                                className="modal-save-button flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all
               bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <IconeCheck />
@@ -622,7 +608,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                             </button>
                         </>
                     ) : !somenteLeitura && (
-                        <button
+                        <button data-ui-action
                             onClick={iniciarEdicao}
                             disabled={!pedidoEmAndamento}
                             className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all border
@@ -632,9 +618,9 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                             Editar Informações
                         </button>
                     )}
-                    <button
+                    <button data-ui-action
                         onClick={tentarFechar}
-                        className="px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all
+                        className="modal-close-button px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all
               bg-blue-600 text-white hover:bg-blue-700"
                     >
                         Fechar

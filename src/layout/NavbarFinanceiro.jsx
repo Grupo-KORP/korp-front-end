@@ -73,8 +73,8 @@ export default function NavbarFinanceiro() {
             <h2>Deseja sair?</h2>
             <p className="modal-subtitle">Você será desconectado da sua conta.</p>
             <div className="modal-buttons">
-              <button className="modal-btn modal-btn-primary" onClick={confirmLogout}>Sair</button>
-              <button className="modal-btn modal-btn-secondary" onClick={() => setShowModal(false)}>Cancelar</button>
+              <button data-ui-action className="modal-btn modal-btn-primary" onClick={confirmLogout}>Sair</button>
+              <button data-ui-action className="modal-btn modal-btn-secondary" onClick={() => setShowModal(false)}>Cancelar</button>
             </div>
           </div>
         </div>

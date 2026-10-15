@@ -3,7 +3,6 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import "../styles/base-reset.css";
 import "./HomeVendedor.css";
 import Navbar from "../layout/NavbarVendedor";
-import { carregarLogoPdf, adicionarLogoPdf } from "../services/pdfBranding.js";
 import { useDarkMode } from "../hooks/useDarkMode";
 import { toast } from "sonner";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -255,6 +254,8 @@ function CardMetrica({ icone, rotulo, valor, badge, sub, ativo, aoClicar, dark }
  
   return (
     <button
+      type="button"
+      aria-pressed={Boolean(ativo)}
       onClick={aoClicar}
       className={`rounded-xl px-4 py-3 flex flex-col gap-1.5 ${dark ? "shadow-none border-0" : "shadow-sm"} text-left transition-all duration-200 cursor-pointer focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400
         ${ativo
@@ -290,6 +291,9 @@ function CardMetrica({ icone, rotulo, valor, badge, sub, ativo, aoClicar, dark }
       {sub && (
         <p className={`text-[10px] ${ativo ? "text-blue-200" : dark ? "text-gray-500" : "text-gray-400"}`}>{sub}</p>
       )}
+      <small className={`text-[10px] ${ativo ? "text-blue-200" : "text-gray-400"}`}>
+        {ativo ? "Filtro aplicado" : "Clique para filtrar"}
+      </small>
     </button>
   );
 }
@@ -447,7 +451,7 @@ const periodo = useMemo(() => {
   const tituloTabela =
     cardAtivo === "liberadas" ? "Comissões Liberadas"
       : cardAtivo === "pendentes" ? "Pagamentos Pendentes"
-        : "Todas as Vendas";
+        : "Todos os pedidos de venda";
  
   const tendenciaPositiva = dados.tendencia.startsWith("+");
   const periodoSelecionado = periodo.dia
@@ -493,7 +497,7 @@ const periodo = useMemo(() => {
         detalhes: { ...detalhes, produto: normalizarProduto(detalhes?.produto) },
       });
     } catch (error) {
-      toast.error(error.message || "Não foi possível carregar os detalhes da venda.");
+      toast.error(error.message || "Não foi possível carregar os detalhes do pedido de venda.");
     } finally {
       setAbrindoVendaId(null);
     }
@@ -510,7 +514,7 @@ const periodo = useMemo(() => {
         ano: periodo.ano,
         mes: periodo.mes,
         dia: periodo.dia,
-        status: STATUS_API.vendas,
+        status: STATUS_API[cardAtivo ?? "vendas"],
         pagina,
         tamanho: TAMANHO_PAGINA_PDF,
       });
@@ -537,123 +541,24 @@ const periodo = useMemo(() => {
   }
  
   async function gerarPDFRelatorio(vendasPdf) {
-    const { jsPDF } = await import("jspdf");
-    const logo = await carregarLogoPdf(); 
-    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 14;
-    const usableWidth = pageWidth - margin * 2;
-    let y = 16;
- 
-    const safeText = (value) => String(value ?? "").trim() || "-";
-    const ensureSpace = (h) => { if (y + h > pageHeight - 18) { doc.addPage(); y = 16; } };
- 
-    const sectionTitle = (title) => {
-      ensureSpace(14);
-      y += y > 18 ? 5 : 0;
-      doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.setTextColor(6, 29, 81);
-      doc.text(title, margin, y); y += 3;
-      doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.45);
-      doc.line(margin, y, pageWidth - margin, y); y += 7;
-    };
- 
-    const metricCards = () => {
-      const gap = 4; const cardWidth = (usableWidth - gap * 3) / 4;
-      const metrics = [
-        { label: "Total de Vendas", value: dados.totalVendas, color: [30, 41, 59] },
-        { label: "Comissoes Liberadas", value: dados.comissoesLiberadas, color: [22, 163, 74] },
-        { label: "Pagamentos Pendentes", value: dados.pagamentosPendentes, color: [217, 119, 6] },
-        { label: "Projecao Bruta", value: dados.projecao, color: [30, 58, 138] },
+    const { criarRelatorioVendedor } = await import("../services/relatorioVendedor.js");
+    const linhasPdf = montarLinhasTabela(vendasPdf, periodo).map((linha) => {
+      const pagamento = linha.tipoLinha === "pagamento";
+      return [
+        pagamento ? "Pagamento" : "Pedido de venda",
+        pagamento ? (linha.parcela.numeroParcela ?? "-") : linha.venda.id,
+        pagamento
+          ? `${linha.venda.nome} - ${linha.parcela.label}`
+          : `${linha.venda.nome} - ${linha.venda.cliente}`,
+        pagamento ? linha.parcela.valor : linha.venda.comissao,
+        pagamento ? textoStatusParcela(linha.parcela.status) : formatarStatusPagamento(linha.venda.status),
       ];
-      ensureSpace(30);
-      metrics.forEach((metric, index) => {
-        const x = margin + index * (cardWidth + gap);
-        doc.setDrawColor(226, 232, 240); doc.setFillColor(255, 255, 255);
-        doc.roundedRect(x, y, cardWidth, 25, 2, 2, "FD");
-        doc.setFont("helvetica", "bold"); doc.setFontSize(6.8); doc.setTextColor(148, 163, 184);
-        doc.text(metric.label.toUpperCase(), x + 3, y + 6);
-        doc.setFontSize(16); doc.setTextColor(...metric.color);
-        doc.text(String(metric.value), x + 3, y + 17);
-      });
-      y += 32;
-    };
- 
-    const tableHeader = (columns) => {
-      ensureSpace(10);
-      doc.setFillColor(15, 37, 87); doc.rect(0, 0, pageWidth, 22, "F");
-      doc.setTextColor(255, 255, 255); 
-      adicionarLogoPdf(doc, logo, margin, 5, 22);
-      doc.text(`Painel do Consultor – ${periodoSelecionado}`, margin + 28, 13);
-      let x = margin;
-      columns.forEach((col) => { doc.text(col.label, x + 1.5, y + 5.8, { maxWidth: col.width - 3 }); x += col.width; });
-      y += 9;
-    };
- 
-    const salesTable = () => {
-      const columns = [
-        { label: "ID", width: 16, value: (v) => v.id },
-        { label: "Venda", width: 34, value: (v) => v.nome },
-        { label: "Cliente", width: 58, value: (v) => v.cliente },
-        { label: "Comissao", width: 38, value: (v) => v.comissao },
-        { label: "Status", width: 36, value: (v) => formatarStatusPagamento(v.status) },
-      ];
-      tableHeader(columns);
-      vendasPdf.forEach((venda) => {
-        const cells = columns.map((col) => ({ ...col, lines: doc.splitTextToSize(safeText(col.value(venda)), col.width - 3) }));
-        const rowHeight = Math.max(12, ...cells.map((c) => 5 + c.lines.length * 4));
-        if (y + rowHeight > pageHeight - 18) { doc.addPage(); y = 16; tableHeader(columns); }
-        let x = margin;
-        doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(30, 41, 59);
-        cells.forEach((cell, index) => {
-          if (index === 4) {
-            const aprovada = venda.tipo === "aprovada";
-            if (aprovada) doc.setFillColor(240, 253, 244);
-            else doc.setFillColor(255, 247, 237);
-            const bW = Math.min(cell.width - 4, 34);
-            doc.roundedRect(x + 1, y + 2, bW, 6, 1.5, 1.5, "F");
-            doc.setFont("helvetica", "bold"); doc.setFontSize(6.5);
-            if (aprovada) doc.setTextColor(22, 163, 74);
-            else doc.setTextColor(217, 119, 6);
-            doc.text(safeText(cell.value(venda)), x + 3, y + 6.2, { maxWidth: bW - 4 });
-            doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(30, 41, 59);
-          } else {
-            cell.lines.forEach((line, li) => { doc.text(line, x + 1.5, y + 5 + li * 4); });
-          }
-          x += cell.width;
-        });
-        doc.setDrawColor(241, 245, 249); doc.setLineWidth(0.3);
-        doc.line(margin, y + rowHeight, pageWidth - margin, y + rowHeight);
-        y += rowHeight;
-      });
-    };
- 
-    doc.setFillColor(15, 37, 87); doc.rect(0, 0, pageWidth, 22, "F");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(13); doc.setTextColor(255, 255, 255);
-    doc.text(`Painel do Consultor – ${periodoSelecionado}`, margin, 13);
-    doc.setFontSize(7.5); doc.setTextColor(147, 174, 219);
-    doc.text("OPERAÇÕES DE VENDA", pageWidth - margin, 13, { align: "right" });
-    y = 32;
- 
-    sectionTitle("Resumo do Mês");
-    metricCards();
-    sectionTitle("Transações do Período");
-    salesTable();
- 
-    const totalPages = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= totalPages; i++) {
-      doc.setPage(i);
-      doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.3);
-      doc.line(margin, pageHeight - 12, pageWidth - margin, pageHeight - 12);
-      doc.setFont("helvetica", "normal"); doc.setFontSize(7); doc.setTextColor(148, 163, 184);
-      doc.text(`Gerado em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR")}`, margin, pageHeight - 7);
-      adicionarLogoPdf(doc, logo, pageWidth / 2 - 9, pageHeight - 11, 18);
-      doc.text(`Página ${i} de ${totalPages}`, pageWidth - margin, pageHeight - 7, { align: "right" });
-    }
- 
-    doc.save(`relatorio-comissoes-${periodoArquivo}.pdf`);
+    });
+    const filtro = ({ liberadas: "Comiss?es liberadas", pendentes: "Pagamentos pendentes" })[cardAtivo] || "Todos os pedidos de venda";
+    const doc = await criarRelatorioVendedor({ dados, linhas: linhasPdf, periodo: periodoSelecionado, filtro });
+    await doc.save(`relatorio-comissoes-${periodoArquivo}.pdf`, { returnPromise: true });
   }
- 
+
   /* classes de tema */
   const bg = modoEscuro ? "bg-[var(--app-page-bg-dark)]" : "bg-[var(--app-page-bg-light)]";
   const cardBg = modoEscuro ? "bg-gray-800" : "bg-white";
@@ -690,12 +595,12 @@ const periodo = useMemo(() => {
       )}
  
       <div className="flex-1 overflow-y-auto min-h-0 w-full">
-        <div className="flex flex-col lg:h-full px-3 py-4 sm:px-6 sm:py-6">
+        <div className="app-page-content flex flex-col lg:h-full">
  
           {/* ── Header ── */}
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
+          <div className="app-page-header flex flex-col sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs font-semibold tracking-widest text-blue-500 uppercase mb-0.5">
+              <p data-page-eyebrow className="text-xs font-semibold tracking-widest text-blue-500 uppercase mb-0.5">
                 Operações de Venda
               </p>
               <h1 className={`text-xl sm:text-2xl font-extrabold ${textoP}`}>Painel do Vendedor</h1>
@@ -763,7 +668,7 @@ const periodo = useMemo(() => {
                 </div>
  
                 {/* Cabeçalho */}
-                <div className="hidden sm:grid grid-cols-[80px_2fr_1.3fr_1.3fr_auto] gap-4 px-2 mb-2">
+                <div className="hidden sm:grid grid-cols-[110px_2fr_1.3fr_1.3fr_auto] gap-4 px-2 mb-2">
                   <span className={`text-[9px] font-bold tracking-widest uppercase ${textoS}`}>Tipo</span>
                   <span className={`text-[9px] font-bold tracking-widest uppercase ${textoS}`}>Identificação</span>
                   <span className={`text-[9px] font-bold tracking-widest uppercase text-center ${textoS}`}>Comissão Total</span>
@@ -772,7 +677,7 @@ const periodo = useMemo(() => {
                 </div>
                 {/* Cabeçalho mobile */}
                 <div className="grid sm:hidden grid-cols-[1fr_auto] gap-2 px-2 mb-2">
-                  <span className={`text-[9px] font-bold tracking-widest uppercase ${textoS}`}>Venda / Pagamento</span>
+                  <span className={`text-[9px] font-bold tracking-widest uppercase ${textoS}`}>Pedido de venda / Pagamento</span>
                   <span />
                 </div>
 
@@ -784,7 +689,7 @@ const periodo = useMemo(() => {
                 >
                   {linhas.length === 0 && (
                     <p className={`text-sm text-center py-6 ${textoS}`}>
-                      {carregandoPainel ? "Carregando..." : "Nenhuma venda encontrada para este filtro."}
+                      {carregandoPainel ? "Carregando..." : "Nenhum pedido de venda encontrado para este filtro."}
                     </p>
                   )}
  
@@ -806,12 +711,12 @@ const periodo = useMemo(() => {
                         key={linha.chave}
                         onClick={() => abrirVenda(linha.venda)}
                         disabled={carregandoEssaVenda}
-                        className={`w-full grid grid-cols-[auto_1fr] sm:grid-cols-[80px_2fr_1.3fr_1.3fr_auto] gap-2 sm:gap-4 items-center px-2 py-3 rounded-xl transition-colors text-left group disabled:opacity-60 disabled:cursor-wait ${hover}`}
+                        className={`w-full grid grid-cols-[auto_1fr] sm:grid-cols-[110px_2fr_1.3fr_1.3fr_auto] gap-2 sm:gap-4 items-center px-2 py-3 rounded-xl transition-colors text-left group disabled:opacity-60 disabled:cursor-wait ${hover}`}
                       >
                         {/* Tipo — badge Venda/Pagamento, só desktop (no mobile vira etiqueta acima da identificação) */}
                         <div className="hidden sm:flex">
                           <span className={`text-[9px] font-bold tracking-wider px-2 py-0.5 rounded-full uppercase border ${corBadgeTipoLinha(linha.tipoLinha)}`}>
-                            {ehPagamento ? "Comissão" : "Venda"}
+                            {ehPagamento ? "Comissão" : "Pedido de venda"}
                           </span>
                         </div>
  
@@ -827,7 +732,7 @@ const periodo = useMemo(() => {
                           </div>
                           <div className="min-w-0">
                             <span className={`sm:hidden inline-block mb-0.5 text-[8px] font-bold tracking-wider px-1.5 py-0.5 rounded-full uppercase border ${corBadgeTipoLinha(linha.tipoLinha)}`}>
-                              {ehPagamento ? "Comissão" : "Venda"}
+                              {ehPagamento ? "Comissão" : "Pedido de venda"}
                             </span>
                             <p className={`text-xs font-bold truncate ${textoM}`}>{identificacao}</p>
                             {/* Comissão + status visíveis só no mobile */}
@@ -978,7 +883,7 @@ const periodo = useMemo(() => {
               </div>
  
               {/* Emitir PDF */}
-              <button
+              <button data-ui-action
                 onClick={emitirPDF}
                 disabled={gerandoPdf}
                 className="w-full py-2.5 rounded-xl text-sm font-bold text-white tracking-wide transition-all duration-200 hover:opacity-90 active:scale-[0.98] shadow-md disabled:opacity-60 disabled:cursor-wait"

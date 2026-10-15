@@ -1,0 +1,17 @@
+.row-tools,
+.row-tools-heading {
+  box-sizing: border-box;
+  width: 100px;
+  min-width: 100px;
+  flex: 0 0 100px;
+  justify-self: center;
+  text-align: center;
+}
+
+.row-tools {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
