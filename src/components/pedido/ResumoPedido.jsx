@@ -6,7 +6,7 @@ import perfilDistribuidor from "../../assets/distribuidor.png";
 import { cadastrarPedido } from "../../services/api";
 import { mapperFormDataToPedidoRequest } from "../../services/pedidoRequestMapper";
 import { validarCamposPedido } from "../../services/pedidoValidation";
-import { carregarLogoPdf, adicionarLogoPdf } from "../../services/pdfBranding.js";
+import { carregarLogoPdf, adicionarLogoPdf, COR_FUNDO_LOGO_PDF } from "../../services/pdfBranding.js";
 
 export default function ResumoPedido({ formData, onSaveDraft, onPedidoSaved, onBusyChange }) {
   const cliente = formData?.cliente || {};
@@ -71,8 +71,21 @@ const buildDoc = async () => {
   const footerHeight = 11;
   const contentBottom = pageHeight - margin - footerHeight;
   const usableWidth = pageWidth - margin * 2;
-  let y = 8;
+  const contentTop = 30;
+  let y = contentTop;
   const pedidoId = formData?.pedidoId || "{{pedidoId}}";
+
+  const drawPageHeader = () => {
+    doc.setFillColor(COR_FUNDO_LOGO_PDF);
+    doc.rect(0, 0, pageWidth, 24, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(255, 255, 255);
+    doc.text("OPERACOES DE VENDA", margin, 8);
+    doc.setFontSize(16);
+    doc.text("Novo Pedido", margin, 17);
+    adicionarLogoPdf(doc, logo, pageWidth - margin - 30, 3, 30);
+  };
 
   const entregaAtual = {
     endereco: localEntrega,
@@ -154,18 +167,6 @@ const buildDoc = async () => {
     doc.line(margin, topY + 2, pageWidth - margin, topY + 2);
   };
 
-  const fitTextLines = (value, width, maxLines) => {
-    let fontSize = doc.getFontSize();
-    const minFontSize = 3.8;
-    let lines = doc.splitTextToSize(pdfText(value), width);
-    while (lines.length > maxLines && fontSize > minFontSize) {
-      fontSize -= 0.25;
-      doc.setFontSize(fontSize);
-      lines = doc.splitTextToSize(pdfText(value), width);
-    }
-    return lines.slice(0, maxLines);
-  };
-
   const tableHeader = (columns, topY, rowHeight) => {
     doc.setFillColor(241, 245, 249);
     doc.rect(margin, topY, usableWidth, rowHeight, "F");
@@ -185,7 +186,7 @@ const buildDoc = async () => {
 
   const productColumns = [
     { label: "#",          width: 7,                    value: (_, i) => String(i + 1), align: "left" },
-    { label: "Descricao",  width: 67,                   value: (p) => pdfText(p.descricao), align: "left" },
+    { label: "Descrição",  width: 67,                   value: (p) => pdfText(p.descricao), align: "left" },
     { label: "P/N",        width: 24,                   value: (p) => pdfText(p.pn), align: "left" },
     { label: "Entrega",    width: 26,                   value: (p) => pdfText(p.entrega), align: "left" },
     { label: "Qtd.",       width: 14,                   value: (p) => pdfText(p.quantidade), align: "right" },
@@ -220,30 +221,31 @@ const buildDoc = async () => {
       doc.rect(margin, topY + 5, usableWidth, 14);
       return tableY + 8;
     }
-    const rowHeight = 6.2;
     const bodyFontSize = 5.8;
-    const descriptionLines = 1;
     produtos.forEach((produto, index) => {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(bodyFontSize);
+      const cells = productColumns.map((cell) => ({
+        ...cell,
+        lines: doc.splitTextToSize(pdfText(cell.value(produto, index)), cell.width - 2),
+      }));
+      const rowHeight = Math.max(6.2, ...cells.map((cell) => cell.lines.length * 2.5 + 3));
       if (tableY + rowHeight > contentBottom) {
         doc.addPage();
-        tableY = startProductTable(8, "Produtos (continuação)");
+        drawPageHeader();
+        tableY = startProductTable(contentTop, "Produtos (continuação)");
       }
       let x = margin;
       doc.setFont("helvetica", "normal");
       doc.setFontSize(bodyFontSize);
       doc.setTextColor(30, 41, 59);
-      productColumns.forEach((cell) => {
-        const maxLines = cell.label === "Descricao" ? descriptionLines : 1;
-        doc.setFontSize(bodyFontSize);
-        const lines = fitTextLines(cell.value(produto, index), cell.width - 2, maxLines);
+      cells.forEach((cell) => {
         const textX = cell.align === "right" ? x + cell.width - 1 : x + 1;
-        const cellFontSize = doc.getFontSize();
-        doc.text(lines, textX, tableY + 3.9, {
+        doc.text(cell.lines, textX, tableY + 3.9, {
           align: cell.align,
           maxWidth: cell.width - 2,
-          lineHeightFactor: 0.9,
+          lineHeightFactor: 1.2,
         });
-        doc.setFontSize(cellFontSize);
         x += cell.width;
       });
       doc.setDrawColor(241, 245, 249);
@@ -278,7 +280,7 @@ const buildDoc = async () => {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(6.5);
     const productLines = doc.splitTextToSize(pdfText(produtosResumo), halfWidth - 6);
-    return Math.max(42, 12 + 5 * 7 + productLines.length * 3.2 + 5);
+    return Math.max(49, 12 + 6 * 7 + productLines.length * 3.2 + 5);
   };
 
   const financialPanel = (title, x, topY, width, height) => {
@@ -310,25 +312,19 @@ const buildDoc = async () => {
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(6.6);
-  doc.setTextColor(59, 130, 246);
-  doc.text("OPERACOES DE VENDA", margin, y);
-  y += 6;
-  doc.setFontSize(16);
-  doc.setTextColor(26, 58, 122);
-  doc.text("Novo Pedido", margin, y);
-  y += 6;
+  drawPageHeader();
 
   const partyY = y;
   const partyHeight = 50;
 
   compactFieldPanel("Dados do Cliente", [
     { label: "Nome Fantasia", value: cliente.nomeFantasia },
-    { label: "Razao Social",  value: cliente.razaoSocial },
+    { label: "Razão Social",  value: cliente.razaoSocial },
     { label: "CNPJ",          value: cliente.cnpj },
-    { label: "Insc. Est.",    value: cliente.inscEst },
+    { label: "Insc. Est.",    value: cliente.inscricaoEstadual || cliente.inscEst },
     { label: "Fone",          value: cliente.fone },
     { label: "CEP",           value: cliente.cep },
-    { label: "Endereco",      value: cliente.endereco },
+    { label: "Endereço",      value: cliente.endereco },
     { label: "Cidade",        value: cliente.cidade },
     { label: "UF",            value: cliente.uf },
     { label: "Contato",       value: cliente.contato },
@@ -337,12 +333,12 @@ const buildDoc = async () => {
 
   compactFieldPanel("Dados do Distribuidor", [
     { label: "Nome Fantasia", value: distribuidor.nomeFantasia },
-    { label: "Razao Social",  value: distribuidor.razaoSocial },
+    { label: "Razão Social",  value: distribuidor.razaoSocial },
     { label: "CNPJ",          value: distribuidor.cnpj },
-    { label: "Insc. Est.",    value: distribuidor.inscEst },
+    { label: "Insc. Est.",    value: distribuidor.inscEst || distribuidor.inscricaoEstadual },
     { label: "Fone",          value: distribuidor.fone },
     { label: "CEP",           value: distribuidor.cep },
-    { label: "Endereco",      value: distribuidor.endereco },
+    { label: "Endereço",      value: distribuidor.endereco },
     { label: "Cidade",        value: distribuidor.cidade },
     { label: "UF",            value: distribuidor.uf },
     { label: "Contato",       value: distribuidor.contato },
@@ -360,10 +356,12 @@ const buildDoc = async () => {
 
   if (y + summaryHeight > contentBottom) {
     doc.addPage();
-    y = 8;
+    drawPageHeader();
+    y = contentTop;
   }
 
   summaryFieldsPanel("Resumo do Pedido", [
+    { label: "Forma de pagamento", value: ({ AVISTA: "À vista", BOLETO: "Boleto" })[formaPagamento] || formaPagamento },
     { label: "Distribuidor Responsavel", value: distribuidorName },
     { label: "Cliente Faturado",         value: clienteFaturado },
     { label: "Local de Entrega",         value: entregaAtual.endereco },
@@ -373,7 +371,7 @@ const buildDoc = async () => {
       label: "Produtos",
       value: produtosResumo,
       maxLines: productSummaryLines.length,
-      height: Math.max(7, summaryHeight - 47),
+      height: Math.max(7, summaryHeight - 54),
     },
   ], margin, y, halfWidth, summaryHeight);
 
@@ -401,7 +399,6 @@ const buildDoc = async () => {
     doc.text(`Pagina ${page} de ${totalPages}`, pageWidth - margin, pageHeight - 3.5, {
       align: "right",
     });
-    adicionarLogoPdf(doc, logo, pageWidth / 2 - 9, pageHeight - 10, 18);
   }
 
   return doc;
@@ -590,13 +587,13 @@ const gerarPDFBase64 = async () => {
         </div>
 
         <div className="botoes-resumo">
-          <button className="btn-primary" onClick={adicionarPedido} disabled={loading}>
+          <button data-ui-action className="btn-primary" onClick={adicionarPedido} disabled={loading}>
             {loading ? "Salvando..." : "Adicionar Pedido"}
           </button>
-          <button type="button" className="btn-secondary" onClick={() => onSaveDraft?.({ formaPagamento })} disabled={loading}>
+          <button data-ui-action type="button" className="btn-secondary" onClick={() => onSaveDraft?.({ formaPagamento })} disabled={loading}>
             Salvar rascunho
           </button>
-          <button type="button" className="btn-secondary btn-pdf-icon" onClick={gerarPDF}
+          <button data-ui-action type="button" className="btn-secondary btn-pdf-icon" onClick={gerarPDF}
             disabled={loading} aria-label="Pré visualizar PDF">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
@@ -614,7 +611,7 @@ const gerarPDFBase64 = async () => {
             <h3>Erro ao salvar pedido</h3>
             <p>{error}</p>
             <div className="resumo-modal-actions">
-              <button
+              <button data-ui-action
                 type="button"
                 className="btn-primary"
                 onClick={() => {
@@ -624,7 +621,7 @@ const gerarPDFBase64 = async () => {
               >
                 Tentar novamente
               </button>
-              <button
+              <button data-ui-action
                 type="button"
                 className="btn-secondary"
                 onClick={() => setError(null)}
@@ -648,7 +645,7 @@ const gerarPDFBase64 = async () => {
             </p>
 
             <div className="resumo-modal-actions">
-              <button
+              <button data-ui-action
                 type="button"
                 className="btn-primary"
                 onClick={() => finalizarPedido(true)}
@@ -656,7 +653,7 @@ const gerarPDFBase64 = async () => {
               >
                 Sim
               </button>
-              <button
+              <button data-ui-action
                 type="button"
                 className="btn-secondary"
                 onClick={() => finalizarPedido(false)}

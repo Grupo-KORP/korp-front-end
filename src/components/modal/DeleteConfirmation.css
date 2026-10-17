@@ -1,0 +1,35 @@
+.delete-confirmation {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(90vw, 360px);
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  border: 0;
+  border-radius: 22px;
+  background: #fff;
+  color: #111827;
+  box-shadow: 0 22px 60px rgba(15, 23, 42, .18);
+  overflow-y: auto;
+}
+.delete-confirmation::backdrop { background: rgba(75, 88, 102, .6); backdrop-filter: blur(2px); }
+.delete-confirmation-card { padding: 18px; text-align: center; }
+.delete-confirmation-heading { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.delete-confirmation-icon { display: flex; align-items: center; justify-content: center; flex: 0 0 32px; width: 32px; height: 32px; border-radius: 8px; background: rgba(30, 64, 128, .12); color: #1e4080; }
+.delete-confirmation-icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.delete-confirmation h2 { margin: 0; min-width: 0; text-align: left; font-size: 20px; line-height: 1.3; font-weight: 700; color: inherit; }
+.delete-confirmation p { margin: 10px 0 18px; font-size: 13px; line-height: 1.6; color: #4b5563; overflow-wrap: anywhere; }
+.delete-confirmation-actions { display: flex; gap: 10px; }
+.delete-confirmation-actions button { flex: 1; min-width: 0; min-height: 42px; padding: 8px 12px; border: 1px solid transparent; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color 150ms; }
+.delete-confirmation-primary { background: #1e4080; color: #fff; }
+.delete-confirmation-primary:not(:disabled):hover { background: #162f5e; }
+.delete-confirmation-actions .delete-confirmation-secondary { background: #fff; color: #1f2937; border-color: #d1d5db; }
+.delete-confirmation-secondary:not(:disabled):hover { background: #f3f4f6; }
+.delete-confirmation button:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+.delete-confirmation button:disabled { opacity: .5; cursor: not-allowed; }
+body.dark .delete-confirmation { background: #111827; color: #f3f4f6; }
+body.dark .delete-confirmation p { color: #cbd5e1; }
+body.dark .delete-confirmation-icon { background: rgba(45, 95, 166, .2); color: #a8c4eb; }
+body.dark .delete-confirmation-secondary { background: #111827; color: #f3f4f6; border-color: #475569; }
+body.dark .delete-confirmation-secondary:not(:disabled):hover { background: #1f2937; }
+@media (max-width: 400px) { .delete-confirmation-actions { flex-direction: column; } }

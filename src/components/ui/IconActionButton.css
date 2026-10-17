@@ -1,0 +1,101 @@
+#root .app-action-icon {
+  display: block;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+#root :is(.icon-action, .produto-close-btn, .vendedor-vendas-fechar, .catalog-contact-delete) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: color 150ms, background-color 150ms;
+}
+
+#root :is(.icon-action, .produto-close-btn, .vendedor-vendas-fechar):not(:disabled):is(:hover, :focus-visible) {
+  color: #3b82f6;
+  background: #eff6ff;
+}
+
+#root :is(.icon-action-delete, .catalog-contact-delete):not(:disabled):is(:hover, :focus-visible) {
+  color: #ef4444;
+  background: #fef2f2;
+}
+
+body.dark #root :is(.icon-action, .produto-close-btn, .vendedor-vendas-fechar):not(:disabled):is(:hover, :focus-visible) {
+  color: #60a5fa;
+  background: rgba(30, 58, 138, .4);
+}
+
+body.dark #root :is(.icon-action-delete, .catalog-contact-delete):not(:disabled):is(:hover, :focus-visible) {
+  color: #f87171;
+  background: rgba(127, 29, 29, .3);
+}
+
+#root .icon-action-contrast { color: #dbeafe; }
+#root .icon-action-contrast:not(:disabled):is(:hover, :focus-visible) { color: #fff; background: rgba(255, 255, 255, .15); }
+
+#root :is(.icon-action, .produto-close-btn, .vendedor-vendas-fechar, .catalog-contact-delete):focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+#root .icon-action:disabled { opacity: .45; cursor: not-allowed; }
+.modal-contact-action { margin-left: auto; }
+
+.modal-close-button,
+#root .modal-close-button,
+.vendedor-vendas-rodape .modal-close-button {
+  padding: 10px 24px;
+  border: 0;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #0f2557 0%, #1a3a7a 60%, #1e4d9b 100%);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 150ms;
+}
+
+.modal-close-button:not(:disabled):hover,
+#root .modal-close-button:not(:disabled):hover,
+.vendedor-vendas-rodape .modal-close-button:not(:disabled):hover {
+  background: linear-gradient(135deg, #0f2557 0%, #1a3a7a 60%, #1e4d9b 100%);
+  color: #fff;
+  filter: brightness(1.12);
+}
+
+.modal-close-button:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 3px;
+}
+
+.modal-close-button:disabled { opacity: .45; cursor: not-allowed; }
+
+#root :is(.icon-action-close, .produto-close-btn, .vendedor-vendas-fechar),
+.vendedor-vendas-modal .vendedor-vendas-fechar {
+  color: #1e4d9b;
+}
+
+body.dark #root :is(.icon-action-close, .produto-close-btn, .vendedor-vendas-fechar),
+.vendedor-vendas-dark .vendedor-vendas-fechar {
+  color: #60a5fa;
+}
+
+#root .icon-action-close.icon-action-contrast {
+  color: #bfdbfe;
+}

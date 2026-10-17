@@ -1,6 +1,36 @@
 /* Auto-generated static CSS replacing Tailwind utility classes used in VendedoresPage.jsx */
 /* Generated 1:1 from the original Tailwind class names so the JSX did not need to change. */
 
+.vendedores-data-table {
+  min-height: 0;
+  overflow: auto;
+}
+
+.vendedores-table-head,
+.vendedores-table-row {
+  grid-template-columns: var(--catalog-columns);
+  min-width: 760px;
+}
+
+.vendedores-table-row > *,
+.vendedores-identity > div {
+  min-width: 0;
+}
+
+.vendedores-identity :is(button, small) {
+  display: block;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+
+.vendedores-identity .vendedores-name {
+  color: var(--cat-text-m);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
 @keyframes tw-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: .5; }

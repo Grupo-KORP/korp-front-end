@@ -1,5 +1,5 @@
 import { formatarStatusPagamento } from "./statusPagamento.js";
-import { carregarLogoPdf, adicionarLogoPdf } from "./pdfBranding.js";
+import { carregarLogoPdf, adicionarLogoPdf, COR_FUNDO_LOGO_PDF } from "./pdfBranding.js";
 
 const moeda = (valor) => Number(valor ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const quantidade = (valor) => valor == null ? "-" : Number(valor).toLocaleString("pt-BR");
@@ -15,7 +15,7 @@ export async function criarRelatorioFinanceiro({ dados, periodo, geradoEm = new 
   let y;
 
   function cabecalho() {
-    doc.setFillColor(30, 64, 128);
+    doc.setFillColor(COR_FUNDO_LOGO_PDF);
     doc.rect(0, 0, largura, 27, "F");
     doc.setFont("helvetica", "bold");
     doc.setFontSize(15);
@@ -92,7 +92,9 @@ export async function criarRelatorioFinanceiro({ dados, periodo, geradoEm = new 
   tabela([{ titulo: "Indicador", largura: 112 }, { titulo: "Valor", largura: 70 }], [
     ["Faturamento total estimado", moeda(dados.faturamentoTotalEstimado)],
     ["Total de vendas", quantidade(dados.totalVendas)],
-    ["Pagamentos pendentes", `${moeda(dados.pagamentosPendentes)} (${quantidade(dados.qtdPagamentosPendentes)} pagamentos)`],
+    ["Tendência de faturamento vs mês anterior", dados.tendenciaFaturamento ?? "-"],
+    ["Tendência de vendas vs mês anterior", dados.tendenciaVendas ?? "-"],
+    ["Pagamentos pendentes do distribuidor", `${moeda(dados.pagamentosPendentes)} (${quantidade(dados.qtdPagamentosPendentes)} pagamentos)`],
     ["Comissões pagas", `${moeda(dados.comissoesPagas)} (${quantidade(dados.qtdVendasComissoesPagas)} vendas)`],
     ["Comissão a pagar", `${moeda(dados.comissaoAPagar)} (${quantidade(dados.qtdVendasComissaoAPagar)} vendas)`],
   ]);
@@ -132,7 +134,6 @@ export async function criarRelatorioFinanceiro({ dados, periodo, geradoEm = new 
     doc.setFontSize(7);
     doc.setTextColor(100, 116, 139);
     doc.text(`Gerado em ${geradoEm.toLocaleString("pt-BR")}`, margem, altura - 8);
-    adicionarLogoPdf(doc, logo, largura / 2 - 10, altura - 12);
     doc.text(`Página ${pagina} de ${paginas}`, largura - margem, altura - 8, { align: "right" });
   }
   return doc;

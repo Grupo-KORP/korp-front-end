@@ -1,3 +1,4 @@
+import RequiredMark from "../components/ui/RequiredMark";
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import bgLogin from './../assets/bg-azul-preto.png'
@@ -103,6 +104,7 @@ export default function PaginaRecuperarSenha() {
             </div>
 
             {/* Campo e-mail */}
+            <label htmlFor="recuperar-email" className="text-[11px] font-bold uppercase text-gray-600">E-mail<RequiredMark /></label>
             <div className="flex flex-col gap-1">
               <div className={[
                 'flex items-center gap-2 px-3 h-10 rounded-xl border bg-white transition-all duration-200',
@@ -114,6 +116,8 @@ export default function PaginaRecuperarSenha() {
                   <IcoEmail tamanho={15} />
                 </span>
                 <input
+                  id="recuperar-email"
+                  aria-required="true"
                   type="email"
                   value={email}
                   onChange={(e) => {

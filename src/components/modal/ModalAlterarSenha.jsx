@@ -1,3 +1,5 @@
+import IconActionButton from "../ui/IconActionButton";
+import RequiredMark from "../ui/RequiredMark";
 import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 
@@ -57,7 +59,7 @@ function CampoSenha({ id, label, valor, onChange, onBlur, erro, visivel, onToggl
       <label htmlFor={id}
         className="text-[11px] font-bold tracking-[0.1em] uppercase select-none"
         style={{ color: "#0a3490" }}>
-        {label}
+        {label}<RequiredMark />
       </label>
       <div className={[
         "flex items-center gap-3 px-3 h-9 rounded-xl border bg-white transition-all duration-200",
@@ -70,6 +72,7 @@ function CampoSenha({ id, label, valor, onChange, onBlur, erro, visivel, onToggl
         </span>
         <input
           id={id}
+          aria-required="true"
           type={visivel ? "text" : "password"}
           value={valor}
           onChange={(e) => onChange(e.target.value)}
@@ -233,16 +236,7 @@ const handleSubmit = async () => {
             </p>
           </div>
           {!obrigatorio && (
-          <button
-            type="button"
-            onClick={tentarFechar}
-            className="text-gray-300 hover:text-gray-500 transition-colors flex-shrink-0"
-            aria-label="Fechar"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </button>
+          <IconActionButton icon="close" title="Fechar" onClick={tentarFechar} className="flex-shrink-0" />
           )}
         </div>
 
@@ -280,12 +274,7 @@ const handleSubmit = async () => {
             type="button"
             onClick={handleSubmit}
             disabled={!podeSalvar || carregando}
-            className="w-full h-9 rounded-xl text-[13px] font-bold text-white transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.98] mt-1"
-            style={{
-              background: podeSalvar && !carregando ? "#0a3490" : "#94a3b8",
-              cursor: podeSalvar && !carregando ? "pointer" : "not-allowed",
-              boxShadow: podeSalvar ? "0 4px 14px rgba(10,52,144,0.28)" : "none",
-            }}
+            className="modal-save-button w-full h-9 rounded-xl text-[13px] font-bold text-white transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.98] mt-1"
           >
             <IcoCadeado size={13} />
             {carregando ? "Salvando..." : "Salvar senha"}

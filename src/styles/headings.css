@@ -1,0 +1,39 @@
+/* Referência: título principal do Painel do Vendedor. */
+#root h1 {
+  font-family: inherit;
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 800;
+  letter-spacing: normal;
+  color: #111827;
+  overflow-wrap: break-word;
+}
+
+body.dark #root h1 {
+  color: #fff;
+}
+
+#root [data-page-eyebrow] {
+  margin: 0 0 0.125rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #3b82f6;
+}
+
+#root :is(.catalog-title-block, .comissoes-header, .pedido-header) h1 {
+  margin: 0;
+}
+
+#root .catalog-title-block {
+  gap: 0;
+}
+
+@media (min-width: 640px) {
+  #root h1 {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+}

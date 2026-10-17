@@ -1,7 +1,12 @@
+import DeleteConfirmation from "../modal/DeleteConfirmation";
+
+import RowTools from "../ui/RowTools";
 import { useEffect, useState } from "react";
 import NavbarVendedor from "../../layout/NavbarVendedor";
 import "./CatalogPage.css";
 import Pagination from "../pagination/pagination";
+import RequiredMark from "../ui/RequiredMark";
+import FormValidationNotice from "../ui/FormValidationNotice";
 
 function SearchIcon() {
   return (
@@ -15,22 +20,6 @@ function RegisterIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M6 3h9.2L20 7.8V21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm8 1.9V9h4.1L14 4.9ZM6 5v14h12v-8h-6V5H6Zm2 8h8v1.7H8V13Zm0 3h6v1.7H8V16Z" />
-    </svg>
-  );
-}
-
-function EditIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M5 16.7 15.8 5.9l2.3 2.3L7.3 19H5v-2.3Zm14.4-9.8-2.3-2.3.7-.7a1.5 1.5 0 0 1 2.1 0l.2.2a1.5 1.5 0 0 1 0 2.1l-.7.7Z" />
-    </svg>
-  );
-}
-
-function DeleteIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M9 3h6l.8 2H20v1.8H4V5h4.2L9 3Zm-2.7 5h11.4l-.8 12H7.1L6.3 8Zm2 1.8.55 8.4h6.3l.55-8.4H8.3Zm2.2 1.5h1.6v5.4h-1.6v-5.4Zm3.4 0h1.6v5.4h-1.6v-5.4Z" />
     </svg>
   );
 }
@@ -58,12 +47,16 @@ function FormField({ field, onChange }) {
     <div className={cls}>
       <span>
         {field.label}
+        {field.required && <RequiredMark />}
         {field.loading && <span className="catalog-field-spinner" />}
       </span>
 
       {field.type === "select" ? (
         <select
           name={field.name}
+          aria-required={field.required || undefined}
+          aria-invalid={hasError}
+          title={field.error || undefined}
           value={field.value || ""}
           disabled={field.readOnly}
           onChange={onChange}
@@ -75,7 +68,11 @@ function FormField({ field, onChange }) {
       ) : (
         <input
           name={field.name}
+          aria-required={field.required || undefined}
+          aria-invalid={hasError}
+          title={field.error || undefined}
           type={field.type || "text"}
+          inputMode={field.name === "cnpj" || field.name === "cep" ? "numeric" : field.name === "fone" ? "tel" : undefined}
           placeholder={field.placeholder}
           value={field.value || ""}
           readOnly={field.readOnly}
@@ -83,7 +80,6 @@ function FormField({ field, onChange }) {
         />
       )}
 
-      {hasError && <span className="catalog-field-error">{field.error}</span>}
     </div>
   );
 }
@@ -138,6 +134,7 @@ export default function CatalogPage({
   onCancel,
   isEditing = false,
   submitDisabled = false,
+  validationError = false,
   deleteEntityLabel = "registro",
 }) {
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -174,7 +171,7 @@ export default function CatalogPage({
           {/* Título + Search */}
           <div className="catalog-topbar">
             <div className="catalog-title-block">
-              <p>{eyebrow}</p>
+              <p data-page-eyebrow>{eyebrow}</p>
               <h1>{title}</h1>
             </div>
 
@@ -196,14 +193,17 @@ export default function CatalogPage({
               <h2>{tableTitle}</h2>
             </div>
 
+            <div className="catalog-data-table" style={{
+              "--catalog-columns": `${tableColumns.map((col) => `minmax(0, ${col.flex || "1"}fr)`).join(" ")} 100px`,
+            }}>
             {/* Cabeçalho */}
             <div className="catalog-table-head">
               {tableColumns.map((col) => (
-                <span key={col.label} style={{ flex: col.flex || "1" }}>
+                <span key={col.label || "reserved-column"}>
                   {col.label}
                 </span>
               ))}
-              <span style={{ flex: "0 0 130px", textAlign: "center" }}>
+              <span className="row-tools-heading">
                 Ferramentas
               </span>
             </div>
@@ -225,10 +225,9 @@ export default function CatalogPage({
                   {/* Identidade */}
                   <div
                     className="catalog-identity"
-                    style={{ flex: tableColumns[0]?.flex || "1" }}
                   >
                     <span className="catalog-badge">{row.badge ?? row.id}</span>
-                    <div>
+                    <div className="catalog-identity-copy">
                       <strong>{row.title}</strong>
                       {row.subtitle && <small>{row.subtitle}</small>}
                     </div>
@@ -238,34 +237,17 @@ export default function CatalogPage({
                     <span
                       key={idx}
                       className={cell.className || "catalog-centered"}
-                      data-label={tableColumns[idx + 1]?.label}
-                      style={{ flex: tableColumns[idx + 1]?.flex || "1" }}
                     >
                       {cell.value}
                     </span>
                   ))}
 
-                  <div className="catalog-tools">
-                    <button
-                      type="button"
-                      aria-label={`Editar ${row.title}`}
-                      onClick={(e) => { e.stopPropagation(); row.onEdit?.(row); }}
-                    >
-                      <EditIcon />
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={`Excluir ${row.title}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDeleteTarget(row); 
-                      }}
-                    >
-                      <DeleteIcon />
-                    </button>
-                  </div>
+                  <RowTools name={row.title}
+                    onEdit={() => row.onEdit?.(row)}
+                    onDelete={() => setDeleteTarget(row)} />
                 </div>
               ))}
+            </div>
             </div>
 
             {/* Paginação */}
@@ -292,6 +274,7 @@ export default function CatalogPage({
 
             <form
               className="catalog-form"
+              noValidate
               onSubmit={(e) => { e.preventDefault(); onSubmit(); }}
             >
               <div className="catalog-form-fields">
@@ -304,9 +287,11 @@ export default function CatalogPage({
                 </div>
               )}
 
+              <div className="registration-form-footer">
+                <FormValidationNotice visible={validationError || fields.some((field) => Boolean(field.error))} />
               <div className="catalog-form-actions">
                 {isEditing && onCancel && (
-                  <button
+                  <button data-ui-action
                     type="button"
                     className="catalog-cancel"
                     onClick={onCancel}
@@ -314,13 +299,14 @@ export default function CatalogPage({
                     Cancelar
                   </button>
                 )}
-                <button
+                <button data-ui-action
                   type="submit"
                   className="catalog-submit"
                   disabled={submitDisabled}
                 >
                   {submitLabel}
                 </button>
+              </div>
               </div>
             </form>
           </div>
@@ -329,51 +315,7 @@ export default function CatalogPage({
       </div>
 
       {/* ── Modal de confirmação de exclusão ── */}
-      {deleteTarget && (
-        <div
-          className="produto-modal-backdrop"
-          onClick={() => !deleting && setDeleteTarget(null)}
-        >
-          <div className="produto-modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="produto-modal-header">
-              <div>
-                <p className="produto-eyebrow">Excluir registro</p>
-                <h2>Tem certeza?</h2>
-              </div>
-              <button
-                type="button"
-                className="produto-close-btn"
-                onClick={() => setDeleteTarget(null)}
-                disabled={deleting}
-                aria-label="Fechar modal"
-              >×</button>
-            </div>
-
-            <p className="produto-confirm-text">
-              Deseja realmente excluir <strong>{deleteTarget.title}</strong>? Esta ação não pode ser desfeita.
-            </p>
-
-            <div className="produto-confirm-actions">
-              <button
-                type="button"
-                className="catalog-cancel"
-                onClick={() => setDeleteTarget(null)}
-                disabled={deleting}
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                className="catalog-submit catalog-submit--danger"
-                onClick={handleDeleteConfirmed}
-                disabled={deleting}
-              >
-                {deleting ? "Excluindo..." : "Excluir"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {deleteTarget && <DeleteConfirmation name={deleteTarget.title} entityLabel={deleteEntityLabel} busy={deleting} onCancel={() => setDeleteTarget(null)} onConfirm={handleDeleteConfirmed} />}
 
     </div>
   );

@@ -723,6 +723,15 @@
   text-align: center;
 }
 
+.comissoes-table :is(th, td):nth-child(-n+3) {
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.comissoes-table td:nth-child(1) { max-width: 280px; }
+.comissoes-table td:nth-child(2),
+.comissoes-table td:nth-child(3) { max-width: 220px; }
+
 .comissoes-parcela-vencimento {
   display: flex;
   flex-direction: column;

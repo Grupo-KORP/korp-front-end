@@ -1,5 +1,7 @@
 import logoTnd from "../assets/logo-tnd.webp";
 
+export const COR_FUNDO_LOGO_PDF = "#0f2557";
+
 let logoPromise;
 
 // Converte a imagem da navbar para PNG, preservando o contraste da logo branca.
@@ -13,7 +15,7 @@ export function carregarLogoPdf() {
           canvas.width = imagem.naturalWidth;
           canvas.height = imagem.naturalHeight;
           const contexto = canvas.getContext("2d");
-          contexto.fillStyle = "#0f2557";
+          contexto.fillStyle = COR_FUNDO_LOGO_PDF;
           contexto.fillRect(0, 0, canvas.width, canvas.height);
           contexto.drawImage(imagem, 0, 0);
           resolve({ data: canvas.toDataURL("image/png"), proporcao: canvas.width / canvas.height });
