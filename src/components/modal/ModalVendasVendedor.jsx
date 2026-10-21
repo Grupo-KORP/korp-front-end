@@ -5,7 +5,7 @@ import { api } from "../../services/api.js";
 import "./ModalVendasVendedor.css";
 
 const moeda = (valor) => valor == null ? "Não informada" : Number(valor).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const pagamentos = { PIX: "Pix", BOLETO: "Boleto", CARTAO_CREDITO: "Cartão de crédito", CARTAO_DEBITO: "Cartão de débito", TRANSFERENCIA: "Transferência", DINHEIRO: "Dinheiro" };
+const pagamentos = { AVISTA: "À vista", BOLETO: "Boleto" };
 const statusVenda = { EM_ANDAMENTO: "Em andamento", APROVADO: "Aprovada", CANCELADO: "Cancelada", REPROVADO: "Reprovada", FINALIZADO: "Finalizada", PENDENTE: "Pendente" };
 
 export default function ModalVendasVendedor({ vendedor, dark, onClose }) {
