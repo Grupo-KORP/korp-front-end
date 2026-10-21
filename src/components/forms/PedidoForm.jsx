@@ -217,6 +217,7 @@ function ClienteSection({ onChange, initialData }) {
         setClientes(dados);
       } catch (error) {
         console.error("Erro ao carregar clientes:", error);
+        toast.error("Não foi possível carregar os clientes. Atualize a página para tentar novamente.");
         setClientes([]);
       }
     };
@@ -831,6 +832,7 @@ function DistribuidorSection({ onChange, initialData }) {
         setDistribuidores(dados);
       } catch (error) {
         console.error("Erro ao carregar distribuidores:", error);
+        toast.error("Não foi possível carregar os distribuidores. Atualize a página para tentar novamente.");
         setDistribuidores([]);
       }
     };
@@ -1450,6 +1452,7 @@ function ProdutoSection({ onChange, initialData, onRemove }) {
         setProdutos(dados || []);
       } catch (error) {
         console.error("Erro ao carregar produtos:", error);
+        toast.error("Não foi possível carregar os produtos. Atualize a página para tentar novamente.", { id: "erro-carregar-produtos" });
         setProdutos([]);
       }
     };
