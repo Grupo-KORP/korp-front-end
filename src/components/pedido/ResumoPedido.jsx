@@ -8,7 +8,7 @@ import { mapperFormDataToPedidoRequest } from "../../services/pedidoRequestMappe
 import { validarCamposPedido } from "../../services/pedidoValidation";
 import { carregarLogoPdf, adicionarLogoPdf, COR_FUNDO_LOGO_PDF } from "../../services/pdfBranding.js";
 
-export default function ResumoPedido({ formData, onSaveDraft, onPedidoSaved, onBusyChange }) {
+export default function ResumoPedido({ formData, idRascunho, onSaveDraft, onPedidoSaved, onBusyChange, onFormaPagamentoChange }) {
   const cliente = formData?.cliente || {};
   const distribuidor = formData?.distribuidor || {};
   const produtos = formData?.produtos || [];
@@ -23,7 +23,9 @@ export default function ResumoPedido({ formData, onSaveDraft, onPedidoSaved, onB
   const [localEntrega, setLocalEntrega] = useState(entrega.endereco);
   const [cidadeEntrega, setCidadeEntrega] = useState(entrega.cidade);
   const [cepEntrega, setCepEntrega] = useState(entrega.cep);
-  const [formaPagamento, setFormaPagamento] = useState(formData?.formaPagamento || "");
+  // A forma de pagamento vive na página para entrar no controle de alterações e no rascunho.
+  const formaPagamento = formData?.formaPagamento || "";
+  const setFormaPagamento = (valor) => onFormaPagamentoChange?.(valor);
   const [formaPagamentoError, setFormaPagamentoError] = useState("");
   const [showEnviarPdfModal, setShowEnviarPdfModal] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -425,6 +427,7 @@ const gerarPDFBase64 = async () => {
 
   try {
     const pedidoRequest = mapperFormDataToPedidoRequest({ ...formData, formaPagamento });
+    if (idRascunho) pedidoRequest.idRascunho = idRascunho;
 
     if (enviarPdf && distribuidorEmail) {
       const pdfBase64 = await gerarPDFBase64();
@@ -641,7 +644,7 @@ const gerarPDFBase64 = async () => {
               Deseja enviar o PDF deste pedido para o distribuidor no e-mail{" "}
               <strong>{distribuidorEmail || "não informado"}</strong>?
               <br />
-              Por enquanto, ao confirmar, o PDF será baixado.
+              Ao confirmar, o PDF será baixado e enviado por e-mail ao distribuidor.
             </p>
 
             <div className="resumo-modal-actions">

@@ -16,6 +16,10 @@ export function validarCamposPedido(data) {
         return `${prefix}informe o ${label} (zero ou maior).`;
       }
     }
+    // Comissão nunca negativa: o faturado pode ser igual, jamais menor que o do distribuidor.
+    if (Math.round(Number(produto.unitFaturado) * 100) < Math.round(Number(produto.valorUnitario) * 100)) {
+      return `${prefix}o valor unitário faturado não pode ser menor que o valor unitário do distribuidor.`;
+    }
   }
   return "";
 }

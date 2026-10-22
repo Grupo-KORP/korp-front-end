@@ -1,31 +1,31 @@
-export function draftStorageKey(token) {
-  const payload = token?.split(".")[1];
-  if (!payload) throw new Error("Entre na sua conta para acessar os rascunhos.");
-  const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
-  const user = JSON.parse(atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, "=")));
-  const owner = user.id ?? user.sub;
-  if (!owner) throw new Error("Não foi possível identificar sua conta.");
-  return `korp:pedido-drafts:v1:${encodeURIComponent(owner)}`;
+export const LIMITE_RASCUNHOS = 10;
+
+const dadosVazios = () => ({
+  cliente: {},
+  distribuidor: {},
+  produtos: [],
+  entrega: {},
+  formaPagamento: "",
+});
+
+// Conteúdo enviado ao back; o PDF nunca entra no rascunho.
+export function montarDadosRascunho(formData, resumoData = {}) {
+  const { cliente, distribuidor, produtos, entrega, formaPagamento } = { ...formData, ...resumoData };
+  return {
+    cliente: cliente || {},
+    distribuidor: distribuidor || {},
+    produtos: produtos || [],
+    entrega: entrega || {},
+    formaPagamento: formaPagamento || "",
+  };
 }
 
-export function readDrafts(storage, key) {
-  const drafts = JSON.parse(storage.getItem(key) || "[]");
-  if (!Array.isArray(drafts) || drafts.some(d => !d?.id || !d.updatedAt ||
-    !d.data?.cliente || !d.data?.distribuidor || !Array.isArray(d.data?.produtos))) {
-    throw new Error("Não foi possível ler os rascunhos salvos.");
-  }
-  return drafts;
+// Converte a resposta do back no formData da tela, garantindo todas as chaves.
+export function dadosParaFormData(dados) {
+  return { ...dadosVazios(), ...(dados || {}) };
 }
 
-export function saveDraft(storage, key, data, id = crypto.randomUUID()) {
-  const draft = { id, updatedAt: new Date().toISOString(), data };
-  const drafts = [draft, ...readDrafts(storage, key).filter(item => item.id !== id)];
-  storage.setItem(key, JSON.stringify(drafts));
-  return { draft, drafts };
-}
-
-export function removeDraft(storage, key, id) {
-  const drafts = readDrafts(storage, key).filter(item => item.id !== id);
-  storage.setItem(key, JSON.stringify(drafts));
-  return drafts;
+export function diasParaExpirar(dtExpiracao, agora = new Date()) {
+  const restante = new Date(dtExpiracao).getTime() - agora.getTime();
+  return Math.max(0, Math.ceil(restante / 86_400_000));
 }
