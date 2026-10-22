@@ -59,7 +59,7 @@ const vendasMockadas = [
     detalhesPedido: {
       numeroPedido: "PED-1001",
       vendedor: "Marina Lopes",
-      metodoPagamento: "Cartão de Crédito",
+      metodoPagamento: "À vista",
       notaFiscal: "NF-7741",
       observacoes: "Cliente com implantação prioritária",
       statusPedido: "Em andamento",
@@ -194,7 +194,7 @@ const vendasMockadas = [
     detalhesPedido: {
       numeroPedido: "PED-1003",
       vendedor: "Camila Andrade",
-      metodoPagamento: "PIX",
+      metodoPagamento: "À vista",
       notaFiscal: "NF-7730",
       observacoes: "Pedido concluído com faturamento fechado",
       statusPedido: "Finalizado",
@@ -260,7 +260,7 @@ const vendasMockadas = [
     detalhesPedido: {
       numeroPedido: "PED-1004",
       vendedor: "Marina Lopes",
-      metodoPagamento: "Cartão de Débito",
+      metodoPagamento: "À vista",
       notaFiscal: "NF-7718",
       observacoes: "Contrato anual com renovação automática",
       statusPedido: "Em andamento",
@@ -413,7 +413,7 @@ function VendaModal({ venda, onClose, onStatusChange, onNotaChange, escuro }) {
   };
   const produto = pedido.produto || {};
   const status = statusVenda(venda);
-  const metodos = { "cartao de credito": "CARTAO_CREDITO", "cartao de debito": "CARTAO_DEBITO", boleto: "BOLETO", pix: "PIX", transferencia: "TRANSFERENCIA", dinheiro: "DINHEIRO" };
+  const metodos = { "a vista": "AVISTA", boleto: "BOLETO" };
   const pessoa = (dados = {}) => ({ ...dados, telefone: dados.telefone ?? dados.fone });
   const detalhes = {
     cliente: pessoa(pedido.cliente),
