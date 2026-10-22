@@ -517,7 +517,9 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                                                                             const valor = event.target.value.replace(/\D/g, "").slice(0, 3);
                                                                             setDatasPagamento(datas => datas.map((atual, i) => i === indice ? valor : atual));
                                                                         }}
-                                                                        className={`w-12 h-12 text-center rounded-lg border text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 ${escuro ? "bg-gray-800 border-gray-700 text-gray-200" : "bg-white border-gray-200 text-gray-700"}`}
+                                                                        className={`w-14 px-2 py-1.5 text-center rounded-lg border text-xs font-semibold focus:outline-none transition-all duration-200 ${modoEdicao
+                                                                            ? (escuro ? "bg-blue-950/60 border-blue-500 text-white ring-1 ring-blue-500/40" : "bg-blue-50 border-blue-400 text-blue-900 ring-1 ring-blue-300/50")
+                                                                            : (escuro ? "bg-gray-800/80 border-gray-700 text-gray-200 cursor-default" : "bg-white border-gray-200 text-gray-700 cursor-default")}`}
                                                                     />
                                                                     {modoEdicao && boleto && datasPagamento.length > 1 && (
                                                                         <button type="button" disabled={salvando} aria-label={`Remover prazo de pagamento ${indice + 1}`}
@@ -533,7 +535,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                                                         {modoEdicao && boleto && (
                                                             <button type="button" aria-label="Adicionar prazo de pagamento" disabled={salvando || datasPagamento.length >= MAX_PARCELAS_BOLETO}
                                                                 onClick={() => setDatasPagamento(datas => datas.length < MAX_PARCELAS_BOLETO ? [...datas, ""] : datas)}
-                                                                className="inline-flex items-center justify-center w-12 h-12 rounded-lg border border-blue-400 text-blue-500 disabled:opacity-40 disabled:cursor-not-allowed"><ActionIcon name="add" /></button>
+                                                                className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-blue-400 text-blue-500 disabled:opacity-40 disabled:cursor-not-allowed"><ActionIcon name="add" /></button>
                                                         )}
                                                     </div>
                                                     {modoEdicao && <p className="mt-1 text-xs text-gray-400">{boleto ? `Informe o prazo em dias de cada parcela, de 0 a 999, em ordem crescente (máximo de ${MAX_PARCELAS_BOLETO} parcelas).` : "Informe o prazo em dias para o pagamento (0 = no dia da finalização)."} A data prevista aparece abaixo de cada prazo.</p>}
