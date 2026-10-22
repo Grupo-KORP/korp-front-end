@@ -508,7 +508,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                                                     <span className="block text-[9px] font-bold uppercase mb-1 text-gray-400">Prazo de pagamento (dias após a finalização) *</span>
                                                     <div className="flex flex-wrap items-start gap-2">
                                                         {datasPagamento.map((data, indice) => (
-                                                            <div key={indice} className="flex flex-col items-center gap-1">
+                                                            <div key={indice} className="flex flex-col items-start gap-1">
                                                                 <div className="flex items-center gap-1">
                                                                     <input type="text" inputMode="numeric" pattern="[0-9]{1,3}" maxLength={3} required
                                                                         aria-label={`Prazo de pagamento ${indice + 1}`}
@@ -524,11 +524,11 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                                                                     {modoEdicao && boleto && datasPagamento.length > 1 && (
                                                                         <button type="button" disabled={salvando} aria-label={`Remover prazo de pagamento ${indice + 1}`}
                                                                             onClick={async () => { if (await confirmDelete({ entityLabel: "prazo de pagamento", name: `Prazo ${indice + 1}: ${data || "sem valor"}` })) setDatasPagamento(datas => datas.filter((_, i) => i !== indice)); }}
-                                                                            className="text-gray-400 hover:text-red-500"><ActionIcon name="close" /></button>
+                                                                            className="text-gray-400 hover:text-red-500"><ActionIcon name="delete" /></button>
                                                                     )}
                                                                 </div>
                                                                 {pedidoEmAndamento && data !== "" && (
-                                                                    <span className="text-[10px] text-gray-400">{vencimentoPrevisto(data)}</span>
+                                                                    <span className="w-14 text-center text-[10px] text-gray-400">{vencimentoPrevisto(data)}</span>
                                                                 )}
                                                             </div>
                                                         ))}
