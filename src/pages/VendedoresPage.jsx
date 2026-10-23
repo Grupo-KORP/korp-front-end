@@ -145,7 +145,6 @@ export default function VendedoresPage() {
   const [errors, setErrors] = useState({});
   const [editingId, setEditingId] = useState(null);
   const [vendedorSelecionado, setVendedorSelecionado] = useState(null);
-  const [statusOriginal, setStatusOriginal] = useState("Ativo");
   const [success, setSuccess] = useState(null);
   const [search, setSearch] = useState(searchParams.get("busca") || "");
 
@@ -273,16 +272,6 @@ export default function VendedoresPage() {
           status: form.status === "Ativo",
         };
         await api.put(`/usuario/${editingId}`, payload);
-        if (statusOriginal === "Ativo" && form.status === "Inativo") {
-          try {
-            // Este endpoint faz a inativação lógica e preserva o cadastro.
-            await api.delete(`/usuario/${editingId}`);
-          } catch {
-            await fetchVendedores(currentPage, search);
-            toast.error("Os dados foram salvos, mas não foi possível inativar o vendedor. Tente salvar novamente.");
-            return;
-          }
-        }
         toast.success("Vendedor atualizado com sucesso!", { duration: 5000 });
         setEditingId(null);
       } else {
@@ -331,7 +320,6 @@ export default function VendedoresPage() {
   function handleEdit(v) {
     const status = v.status === true || v.status === "true" ? "Ativo" : "Inativo";
     setEditingId(v.idVendedor);
-    setStatusOriginal(status);
     setForm({
       nome: v.nome,
       email: v.email,
