@@ -1,9 +1,8 @@
-﻿import { formatarStatusPagamento } from "../services/statusPagamento.js";
+import { formatarStatusPagamento } from "../services/statusPagamento.js";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import "../styles/base-reset.css";
 import "./HomeVendedor.css";
 import Navbar from "../layout/NavbarVendedor";
-import { carregarLogoPdf, adicionarLogoPdf } from "../services/pdfBranding.js";
 import { useDarkMode } from "../hooks/useDarkMode";
 import { toast } from "sonner";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -34,12 +33,14 @@ const DIA_ATUAL = HOJE.getDate();
 const TAMANHO_PAGINA = 5;
 const TAMANHO_PAGINA_PDF = 100;
  
-/* Valor do card na URL (?status=liberadas) -> valor esperado pela API */
+/* Valor do card na URL (?status=liberadas) -> valor esperado pela API.
+   Sem card selecionado a tabela mistura vendas e parcelas (TODAS). */
 const STATUS_API = {
-  vendas: "TODAS",
+  vendas: "VENDAS",
   liberadas: "LIBERADAS",
   pendentes: "PENDENTES",
 };
+const STATUS_API_PADRAO = "TODAS";
  
 const inteiroOuNulo = (valor) => {
   const n = parseInt(valor, 10);
@@ -96,28 +97,48 @@ const normalizarProduto = (produto = {}) => ({
   totalFaturado: formatarValorMoeda(produto.totalFaturado),
 });
  
+const normalizarVenda = (venda = {}) => ({
+  ...venda,
+  comissao: formatarValorMoeda(
+    calcularComissaoTotal(venda.parcelasDaVenda || venda.parcelas || [])
+  ),
+  parcelas: (venda.parcelas || []).map(normalizarParcela),
+  parcelasDaVenda: (venda.parcelasDaVenda || []).map(normalizarParcela),
+});
+
+/* Linha da tabela já paginada pelo back: VENDA ou PAGAMENTO (parcela de comissão). */
+const normalizarLinha = (linha = {}) => {
+  const venda = normalizarVenda(linha.venda);
+  if (linha.tipo !== "PAGAMENTO") {
+    return { tipoLinha: "venda", chave: venda.id, venda };
+  }
+  const parcela = normalizarParcela(linha.parcela);
+  return {
+    tipoLinha: "pagamento",
+    chave: `${venda.id}-${parcela.idParcela ?? parcela.label}`,
+    venda,
+    parcela,
+  };
+};
+ 
 const normalizarPainelVendedor = (painel) => {
   const resumo = painel?.resumo || {};
-  const pagina = painel?.vendas || {};
+  const pagina = painel?.linhas || {};
  
-  const vendas = (pagina.content || []).map((venda) => ({
-    ...venda,
-    comissao: formatarValorMoeda(
-  calcularComissaoTotal(venda.parcelasDaVenda || venda.parcelas || [])
-    ),
-    parcelas: (venda.parcelas || []).map(normalizarParcela),
-    parcelasDaVenda: (venda.parcelasDaVenda || []).map(normalizarParcela),
-  }));
+  const linhas = (pagina.content || []).map(normalizarLinha);
  
   return {
     totalVendas: resumo.totalVendas || 0,
     comissoesLiberadas: resumo.comissoesLiberadas || 0,
     pagamentosPendentes: resumo.pagamentosPendentes || 0,
     projecao: formatarValorMoeda(resumo.projecao),
-    parcelas: resumo.parcelas || 0,
+    parcelasPagas: resumo.parcelasPagas || 0,
+    totalParcelas: resumo.totalParcelas || 0,
     tendencia: resumo.tendencia || "0%",
-    parcelasLiberadas: (painel?.parcelasLiberadas || []).map(normalizarParcela),
-    vendas,
+    tendenciaVendas: resumo.tendenciaVendas || "0%",
+    tendenciaLiberadas: resumo.tendenciaLiberadas || "0%",
+    parcelasDoPeriodo: (painel?.parcelasDoPeriodo || []).map(normalizarParcela),
+    linhas,
     totalPages: pagina.totalPages ?? 1,
     totalElements: pagina.totalElements ?? 0,
   };
@@ -147,42 +168,23 @@ function textoStatusParcela(status) {
   if (status === "LIBERADA") return "Liberado";
   return "Pendente";
 }
- 
-/* Achata cada venda + as parcelas dela (já filtradas por período/status) em uma lista só,
-   na ordem em que devem aparecer: a venda, seguida de cada pagamento dela. */
-function montarLinhasTabela(vendas, periodo) {
-  return vendas.flatMap((venda) => {
-    const dataVenda = venda.dataVenda;
 
-    // Verifica se a venda pertence ao período selecionado
-    let vendaDoPeriodo = false;
+/* Fundo/borda de cada parcela do Resumo de Comissões, nos mesmos tons dos status. */
+function corCardParcela(status, dark) {
+  if (status === "PAGA") return dark ? "bg-green-900/25 border-green-700/50" : "bg-green-50 border-green-200";
+  if (status === "LIBERADA") return dark ? "bg-blue-900/25 border-blue-700/50" : "bg-blue-50 border-blue-200";
+  return dark ? "bg-orange-900/25 border-orange-700/50" : "bg-orange-50 border-orange-200"; // PENDENTE
+}
 
-    if (dataVenda) {
-      const [anoVenda, mesVenda, diaVenda] = dataVenda
-        .split("-")
-        .map(Number);
+/* Tendência vem do back como "+25%", "-10%", "0%" ou "Novo" (sem base no mês anterior). */
+function sentidoTendencia(tendencia) {
+  if (tendencia === "Novo" || tendencia.startsWith("+")) return "alta";
+  if (tendencia.startsWith("-")) return "baixa";
+  return "estavel";
+}
 
-      vendaDoPeriodo =
-        anoVenda === periodo.ano &&
-        mesVenda === periodo.mes &&
-        (periodo.dia === null || diaVenda === periodo.dia);
-    }
-
-    // A venda só aparece no mês/dia em que foi realizada
-    const linhaVenda = vendaDoPeriodo
-      ? [{ tipoLinha: "venda", chave: venda.id, venda }]
-      : [];
-
-    // As parcelas continuam aparecendo normalmente no período
-    const linhasParcelas = (venda.parcelas || []).map((parcela) => ({
-      tipoLinha: "pagamento",
-      chave: `${venda.id}-${parcela.idParcela ?? parcela.label}`,
-      venda,
-      parcela,
-    }));
-
-    return [...linhaVenda, ...linhasParcelas];
-  });
+function textoBadgeTendencia(tendencia) {
+  return tendencia === "Novo" ? "Sem base no mês ant." : `${tendencia} vs mês ant.`;
 }
  
 /* ══════════════════════════════════════════
@@ -255,6 +257,8 @@ function CardMetrica({ icone, rotulo, valor, badge, sub, ativo, aoClicar, dark }
  
   return (
     <button
+      type="button"
+      aria-pressed={Boolean(ativo)}
       onClick={aoClicar}
       className={`rounded-xl px-4 py-3 flex flex-col gap-1.5 ${dark ? "shadow-none border-0" : "shadow-sm"} text-left transition-all duration-200 cursor-pointer focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400
         ${ativo
@@ -290,6 +294,9 @@ function CardMetrica({ icone, rotulo, valor, badge, sub, ativo, aoClicar, dark }
       {sub && (
         <p className={`text-[10px] ${ativo ? "text-blue-200" : dark ? "text-gray-500" : "text-gray-400"}`}>{sub}</p>
       )}
+      <small className={`text-[10px] ${ativo ? "text-blue-200" : "text-gray-400"}`}>
+        {ativo ? "Filtro aplicado" : "Clique para filtrar"}
+      </small>
     </button>
   );
 }
@@ -405,7 +412,7 @@ const periodo = useMemo(() => {
       ano: periodo.ano,
       mes: periodo.mes,
       dia: periodo.dia,
-      status: STATUS_API[cardAtivo ?? "vendas"],
+      status: STATUS_API[cardAtivo] ?? STATUS_API_PADRAO,
       pagina: paginaAtual,
       tamanho: TAMANHO_PAGINA,
     })
@@ -439,17 +446,19 @@ const periodo = useMemo(() => {
   }, [initialized, isAuthenticated, hasRole, periodo.ano, periodo.mes, periodo.dia, cardAtivo, paginaAtual, atualizacaoPainel]);
  
   const dados = painelVendedor || normalizarPainelVendedor(null);
-  const linhas = useMemo(
-  () => montarLinhasTabela(dados.vendas, periodo),
-  [dados.vendas, periodo]
-);
+  const linhas = dados.linhas;
  
   const tituloTabela =
-    cardAtivo === "liberadas" ? "Comissões Liberadas"
-      : cardAtivo === "pendentes" ? "Pagamentos Pendentes"
-        : "Todas as Vendas";
+    cardAtivo === "vendas" ? "Pedidos de venda"
+      : cardAtivo === "liberadas" ? "Comissões Liberadas"
+        : cardAtivo === "pendentes" ? "Pagamentos Pendentes"
+          : "Todos os pedidos de venda";
  
-  const tendenciaPositiva = dados.tendencia.startsWith("+");
+  const sentido = sentidoTendencia(dados.tendencia);
+  const corTendencia = sentido === "alta" ? "text-green-500" : sentido === "baixa" ? "text-red-400" : "text-gray-400";
+  const percentualPago = dados.totalParcelas > 0
+    ? Math.min((dados.parcelasPagas / dados.totalParcelas) * 100, 100)
+    : 0;
   const periodoSelecionado = periodo.dia
     ? `${periodo.dia} de ${mesSelecionado} de ${periodo.ano}`
     : `${mesSelecionado} de ${periodo.ano}`;
@@ -493,15 +502,15 @@ const periodo = useMemo(() => {
         detalhes: { ...detalhes, produto: normalizarProduto(detalhes?.produto) },
       });
     } catch (error) {
-      toast.error(error.message || "Não foi possível carregar os detalhes da venda.");
+      toast.error(error.message || "Não foi possível carregar os detalhes do pedido de venda.");
     } finally {
       setAbrindoVendaId(null);
     }
   }
  
-  /* ── PDF: precisa de TODAS as vendas do período, não só da página atual ── */
-  async function buscarTodasVendasDoPeriodo() {
-    const vendas = [];
+  /* ── PDF: precisa de TODAS as linhas do período, não só da página atual ── */
+  async function buscarTodasLinhasDoPeriodo() {
+    const linhasPeriodo = [];
     let pagina = 1;
     let totalPages = 1;
  
@@ -510,25 +519,25 @@ const periodo = useMemo(() => {
         ano: periodo.ano,
         mes: periodo.mes,
         dia: periodo.dia,
-        status: STATUS_API.vendas,
+        status: STATUS_API[cardAtivo] ?? STATUS_API_PADRAO,
         pagina,
         tamanho: TAMANHO_PAGINA_PDF,
       });
       const painel = normalizarPainelVendedor(response);
-      vendas.push(...painel.vendas);
+      linhasPeriodo.push(...painel.linhas);
       totalPages = painel.totalPages;
       pagina += 1;
     } while (pagina <= totalPages);
  
-    return vendas;
+    return linhasPeriodo;
   }
  
   async function emitirPDF() {
     if (gerandoPdf) return;
     setGerandoPdf(true);
     try {
-      const vendasPdf = await buscarTodasVendasDoPeriodo();
-      await gerarPDFRelatorio(vendasPdf);
+      const linhasPeriodo = await buscarTodasLinhasDoPeriodo();
+      await gerarPDFRelatorio(linhasPeriodo);
     } catch (error) {
       toast.error(error.message || "Não foi possível gerar o PDF.");
     } finally {
@@ -536,124 +545,25 @@ const periodo = useMemo(() => {
     }
   }
  
-  async function gerarPDFRelatorio(vendasPdf) {
-    const { jsPDF } = await import("jspdf");
-    const logo = await carregarLogoPdf(); 
-    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 14;
-    const usableWidth = pageWidth - margin * 2;
-    let y = 16;
- 
-    const safeText = (value) => String(value ?? "").trim() || "-";
-    const ensureSpace = (h) => { if (y + h > pageHeight - 18) { doc.addPage(); y = 16; } };
- 
-    const sectionTitle = (title) => {
-      ensureSpace(14);
-      y += y > 18 ? 5 : 0;
-      doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.setTextColor(6, 29, 81);
-      doc.text(title, margin, y); y += 3;
-      doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.45);
-      doc.line(margin, y, pageWidth - margin, y); y += 7;
-    };
- 
-    const metricCards = () => {
-      const gap = 4; const cardWidth = (usableWidth - gap * 3) / 4;
-      const metrics = [
-        { label: "Total de Vendas", value: dados.totalVendas, color: [30, 41, 59] },
-        { label: "Comissoes Liberadas", value: dados.comissoesLiberadas, color: [22, 163, 74] },
-        { label: "Pagamentos Pendentes", value: dados.pagamentosPendentes, color: [217, 119, 6] },
-        { label: "Projecao Bruta", value: dados.projecao, color: [30, 58, 138] },
+  async function gerarPDFRelatorio(linhasPeriodo) {
+    const { criarRelatorioVendedor } = await import("../services/relatorioVendedor.js");
+    const linhasPdf = linhasPeriodo.map((linha) => {
+      const pagamento = linha.tipoLinha === "pagamento";
+      return [
+        pagamento ? "Pagamento" : "Pedido de venda",
+        pagamento ? (linha.parcela.numeroParcela ?? "-") : linha.venda.id,
+        pagamento
+          ? `${linha.venda.nome} - ${linha.parcela.label}`
+          : `${linha.venda.nome} - ${linha.venda.cliente}`,
+        pagamento ? linha.parcela.valor : linha.venda.comissao,
+        pagamento ? textoStatusParcela(linha.parcela.status) : formatarStatusPagamento(linha.venda.status),
       ];
-      ensureSpace(30);
-      metrics.forEach((metric, index) => {
-        const x = margin + index * (cardWidth + gap);
-        doc.setDrawColor(226, 232, 240); doc.setFillColor(255, 255, 255);
-        doc.roundedRect(x, y, cardWidth, 25, 2, 2, "FD");
-        doc.setFont("helvetica", "bold"); doc.setFontSize(6.8); doc.setTextColor(148, 163, 184);
-        doc.text(metric.label.toUpperCase(), x + 3, y + 6);
-        doc.setFontSize(16); doc.setTextColor(...metric.color);
-        doc.text(String(metric.value), x + 3, y + 17);
-      });
-      y += 32;
-    };
- 
-    const tableHeader = (columns) => {
-      ensureSpace(10);
-      doc.setFillColor(15, 37, 87); doc.rect(0, 0, pageWidth, 22, "F");
-      doc.setTextColor(255, 255, 255); 
-      adicionarLogoPdf(doc, logo, margin, 5, 22);
-      doc.text(`Painel do Consultor – ${periodoSelecionado}`, margin + 28, 13);
-      let x = margin;
-      columns.forEach((col) => { doc.text(col.label, x + 1.5, y + 5.8, { maxWidth: col.width - 3 }); x += col.width; });
-      y += 9;
-    };
- 
-    const salesTable = () => {
-      const columns = [
-        { label: "ID", width: 16, value: (v) => v.id },
-        { label: "Venda", width: 34, value: (v) => v.nome },
-        { label: "Cliente", width: 58, value: (v) => v.cliente },
-        { label: "Comissao", width: 38, value: (v) => v.comissao },
-        { label: "Status", width: 36, value: (v) => formatarStatusPagamento(v.status) },
-      ];
-      tableHeader(columns);
-      vendasPdf.forEach((venda) => {
-        const cells = columns.map((col) => ({ ...col, lines: doc.splitTextToSize(safeText(col.value(venda)), col.width - 3) }));
-        const rowHeight = Math.max(12, ...cells.map((c) => 5 + c.lines.length * 4));
-        if (y + rowHeight > pageHeight - 18) { doc.addPage(); y = 16; tableHeader(columns); }
-        let x = margin;
-        doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(30, 41, 59);
-        cells.forEach((cell, index) => {
-          if (index === 4) {
-            const aprovada = venda.tipo === "aprovada";
-            if (aprovada) doc.setFillColor(240, 253, 244);
-            else doc.setFillColor(255, 247, 237);
-            const bW = Math.min(cell.width - 4, 34);
-            doc.roundedRect(x + 1, y + 2, bW, 6, 1.5, 1.5, "F");
-            doc.setFont("helvetica", "bold"); doc.setFontSize(6.5);
-            if (aprovada) doc.setTextColor(22, 163, 74);
-            else doc.setTextColor(217, 119, 6);
-            doc.text(safeText(cell.value(venda)), x + 3, y + 6.2, { maxWidth: bW - 4 });
-            doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(30, 41, 59);
-          } else {
-            cell.lines.forEach((line, li) => { doc.text(line, x + 1.5, y + 5 + li * 4); });
-          }
-          x += cell.width;
-        });
-        doc.setDrawColor(241, 245, 249); doc.setLineWidth(0.3);
-        doc.line(margin, y + rowHeight, pageWidth - margin, y + rowHeight);
-        y += rowHeight;
-      });
-    };
- 
-    doc.setFillColor(15, 37, 87); doc.rect(0, 0, pageWidth, 22, "F");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(13); doc.setTextColor(255, 255, 255);
-    doc.text(`Painel do Consultor – ${periodoSelecionado}`, margin, 13);
-    doc.setFontSize(7.5); doc.setTextColor(147, 174, 219);
-    doc.text("OPERAÇÕES DE VENDA", pageWidth - margin, 13, { align: "right" });
-    y = 32;
- 
-    sectionTitle("Resumo do Mês");
-    metricCards();
-    sectionTitle("Transações do Período");
-    salesTable();
- 
-    const totalPages = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= totalPages; i++) {
-      doc.setPage(i);
-      doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.3);
-      doc.line(margin, pageHeight - 12, pageWidth - margin, pageHeight - 12);
-      doc.setFont("helvetica", "normal"); doc.setFontSize(7); doc.setTextColor(148, 163, 184);
-      doc.text(`Gerado em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR")}`, margin, pageHeight - 7);
-      adicionarLogoPdf(doc, logo, pageWidth / 2 - 9, pageHeight - 11, 18);
-      doc.text(`Página ${i} de ${totalPages}`, pageWidth - margin, pageHeight - 7, { align: "right" });
-    }
- 
-    doc.save(`relatorio-comissoes-${periodoArquivo}.pdf`);
+    });
+    const filtro = ({ vendas: "Pedidos de venda", liberadas: "Comissões liberadas", pendentes: "Pagamentos pendentes" })[cardAtivo] || "Todos os pedidos de venda";
+    const doc = await criarRelatorioVendedor({ dados, linhas: linhasPdf, periodo: periodoSelecionado, filtro });
+    await doc.save(`relatorio-comissoes-${periodoArquivo}.pdf`, { returnPromise: true });
   }
- 
+
   /* classes de tema */
   const bg = modoEscuro ? "bg-[var(--app-page-bg-dark)]" : "bg-[var(--app-page-bg-light)]";
   const cardBg = modoEscuro ? "bg-gray-800" : "bg-white";
@@ -690,12 +600,12 @@ const periodo = useMemo(() => {
       )}
  
       <div className="flex-1 overflow-y-auto min-h-0 w-full">
-        <div className="flex flex-col lg:h-full px-3 py-4 sm:px-6 sm:py-6">
+        <div className="app-page-content flex flex-col lg:h-full">
  
           {/* ── Header ── */}
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
+          <div className="app-page-header flex flex-col sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs font-semibold tracking-widest text-blue-500 uppercase mb-0.5">
+              <p data-page-eyebrow className="text-xs font-semibold tracking-widest text-blue-500 uppercase mb-0.5">
                 Operações de Venda
               </p>
               <h1 className={`text-xl sm:text-2xl font-extrabold ${textoP}`}>Painel do Vendedor</h1>
@@ -722,7 +632,7 @@ const periodo = useMemo(() => {
                   icone={<IconCarrinho />}
                   rotulo="Total de Vendas"
                   valor={dados.totalVendas}
-                  badge={`${dados.tendencia} vs mês ant.`}
+                  badge={textoBadgeTendencia(dados.tendenciaVendas)}
                   ativo={cardAtivo === "vendas"}
                   aoClicar={() => alternarCard("vendas")}
                   dark={modoEscuro}
@@ -731,7 +641,7 @@ const periodo = useMemo(() => {
                   icone={<IconConfirmado />}
                   rotulo="Comissões Liberadas"
                   valor={dados.comissoesLiberadas}
-                  badge={`${dados.tendencia} vs mês ant.`}
+                  badge={textoBadgeTendencia(dados.tendenciaLiberadas)}
                   ativo={cardAtivo === "liberadas"}
                   aoClicar={() => alternarCard("liberadas")}
                   dark={modoEscuro}
@@ -763,7 +673,7 @@ const periodo = useMemo(() => {
                 </div>
  
                 {/* Cabeçalho */}
-                <div className="hidden sm:grid grid-cols-[80px_2fr_1.3fr_1.3fr_auto] gap-4 px-2 mb-2">
+                <div className="hidden sm:grid grid-cols-[110px_2fr_1.3fr_1.3fr_auto] gap-4 px-2 mb-2">
                   <span className={`text-[9px] font-bold tracking-widest uppercase ${textoS}`}>Tipo</span>
                   <span className={`text-[9px] font-bold tracking-widest uppercase ${textoS}`}>Identificação</span>
                   <span className={`text-[9px] font-bold tracking-widest uppercase text-center ${textoS}`}>Comissão Total</span>
@@ -772,7 +682,7 @@ const periodo = useMemo(() => {
                 </div>
                 {/* Cabeçalho mobile */}
                 <div className="grid sm:hidden grid-cols-[1fr_auto] gap-2 px-2 mb-2">
-                  <span className={`text-[9px] font-bold tracking-widest uppercase ${textoS}`}>Venda / Pagamento</span>
+                  <span className={`text-[9px] font-bold tracking-widest uppercase ${textoS}`}>Pedido de venda / Pagamento</span>
                   <span />
                 </div>
 
@@ -784,7 +694,7 @@ const periodo = useMemo(() => {
                 >
                   {linhas.length === 0 && (
                     <p className={`text-sm text-center py-6 ${textoS}`}>
-                      {carregandoPainel ? "Carregando..." : "Nenhuma venda encontrada para este filtro."}
+                      {carregandoPainel ? "Carregando..." : "Nenhum pedido de venda encontrado para este filtro."}
                     </p>
                   )}
  
@@ -806,12 +716,12 @@ const periodo = useMemo(() => {
                         key={linha.chave}
                         onClick={() => abrirVenda(linha.venda)}
                         disabled={carregandoEssaVenda}
-                        className={`w-full grid grid-cols-[auto_1fr] sm:grid-cols-[80px_2fr_1.3fr_1.3fr_auto] gap-2 sm:gap-4 items-center px-2 py-3 rounded-xl transition-colors text-left group disabled:opacity-60 disabled:cursor-wait ${hover}`}
+                        className={`w-full grid grid-cols-[auto_1fr] sm:grid-cols-[110px_2fr_1.3fr_1.3fr_auto] gap-2 sm:gap-4 items-center px-2 py-3 rounded-xl transition-colors text-left group disabled:opacity-60 disabled:cursor-wait ${hover}`}
                       >
                         {/* Tipo — badge Venda/Pagamento, só desktop (no mobile vira etiqueta acima da identificação) */}
                         <div className="hidden sm:flex">
                           <span className={`text-[9px] font-bold tracking-wider px-2 py-0.5 rounded-full uppercase border ${corBadgeTipoLinha(linha.tipoLinha)}`}>
-                            {ehPagamento ? "Comissão" : "Venda"}
+                            {ehPagamento ? "Comissão" : "Pedido de venda"}
                           </span>
                         </div>
  
@@ -827,7 +737,7 @@ const periodo = useMemo(() => {
                           </div>
                           <div className="min-w-0">
                             <span className={`sm:hidden inline-block mb-0.5 text-[8px] font-bold tracking-wider px-1.5 py-0.5 rounded-full uppercase border ${corBadgeTipoLinha(linha.tipoLinha)}`}>
-                              {ehPagamento ? "Comissão" : "Venda"}
+                              {ehPagamento ? "Comissão" : "Pedido de venda"}
                             </span>
                             <p className={`text-xs font-bold truncate ${textoM}`}>{identificacao}</p>
                             {/* Comissão + status visíveis só no mobile */}
@@ -891,10 +801,10 @@ const periodo = useMemo(() => {
                 {/* Tendência */}
                 <div className="flex flex-col gap-0.5">
                   <div className="flex items-center gap-1.5">
-                    <span className={tendenciaPositiva ? "text-green-500" : "text-red-400"}>
-                      {tendenciaPositiva ? <IconTendenciaAlta /> : <IconTendenciaBaixa />}
+                    <span className={corTendencia}>
+                      {sentido === "baixa" ? <IconTendenciaBaixa /> : <IconTendenciaAlta />}
                     </span>
-                    <span className={`text-[9px] font-bold tracking-wider ${tendenciaPositiva ? "text-green-500" : "text-red-400"}`}>
+                    <span className={`text-[9px] font-bold tracking-wider ${corTendencia}`}>
                       {dados.tendencia}
                     </span>
                     <span className={`text-[9px] uppercase tracking-wider ml-auto ${textoS}`}>Previsão</span>
@@ -905,51 +815,52 @@ const periodo = useMemo(() => {
                 {/* Divisor */}
                 <div className={`border-t ${borda}`} />
  
-                {/* Parcelas em aberto */}
+                {/* Parcelas pagas / total de parcelas do período */}
                 <div className="flex items-center justify-between">
-                  <span className={`text-xs ${textoS}`}>Parcelas em aberto</span>
+                  <span className={`text-xs ${textoS}`}>Parcelas pagas</span>
                   <span className={`text-sm font-bold ${textoM}`}>
-                    {String(dados.parcelas).padStart(2, "0")}
+                    {dados.parcelasPagas}/{dados.totalParcelas}
                   </span>
                 </div>
  
-                {/* Barra de progresso */}
+                {/* Barra de progresso: parcelas pagas sobre o total do período */}
                 <div className={`w-full h-1 rounded-full ${modoEscuro ? "bg-gray-700" : "bg-gray-100"}`}>
                   <div
                     className="h-1 rounded-full bg-blue-600 transition-all duration-500"
-                    style={{ width: `${Math.min((dados.comissoesLiberadas / (dados.totalVendas || 1)) * 100, 100)}%` }}
+                    style={{ width: `${percentualPago}%` }}
                   />
                 </div>
 
 
-                {/* Parcelas liberadas do período (vêm do back, independem da página) */}
+                {/* Parcelas do período em todos os status (vêm do back, independem da página) */}
                 <div
                   className="flex flex-col gap-1.5 overflow-y-auto max-h-48 lg:max-h-none lg:flex-1 lg:min-h-0 pr-1"
                   style={scrollFino}
                 >
-                  {dados.parcelasLiberadas.length === 0 && (
-                    <p className={`text-xs text-center py-2 ${textoS}`}>Sem parcelas liberadas.</p>
+                  {dados.parcelasDoPeriodo.length === 0 && (
+                    <p className={`text-xs text-center py-2 ${textoS}`}>Sem parcelas no período.</p>
                   )}
-                  {dados.parcelasLiberadas.map((p, i) => (
-                    <div
-                      key={p.idParcela ?? i}
-                      className={`flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg
-                      ${modoEscuro ? "bg-gray-700/50" : "bg-gray-50"}`}
-                    >
-                      {/* Pedido ID + label da parcela */}
-                      <div className="flex flex-col gap-0.5 min-w-0">
-                        <span className={`text-[10px] font-bold whitespace-nowrap ${textoM}`}>
-                          Pedido: {p.pedidoId}
-                        </span>
-                        <span className={`text-[10px] ${textoS}`}>{p.label}</span>
-                      </div>
+                  {dados.parcelasDoPeriodo.map((p, i) => {
+                    const venda = p.cliente ? `Venda ${p.pedidoId} - ${p.cliente}` : `Venda ${p.pedidoId}`;
+                    return (
+                      <div
+                        key={p.idParcela ?? i}
+                        title={`${venda} • ${textoStatusParcela(p.status)}`}
+                        className={`flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg border ${corCardParcela(p.status, modoEscuro)}`}
+                      >
+                        {/* Venda + cliente (cortado com reticências) e label da parcela */}
+                        <div className="flex flex-col gap-0.5 min-w-0">
+                          <span className={`text-[10px] font-bold truncate ${textoM}`}>{venda}</span>
+                          <span className={`text-[10px] ${textoS}`}>{p.label}</span>
+                        </div>
  
-                      {/* Valor */}
-                      <span className={`text-xs font-bold whitespace-nowrap ${textoM}`}>
-                        {p.valor}
-                      </span>
-                    </div>
-                  ))}
+                        {/* Valor */}
+                        <span className={`text-xs font-bold whitespace-nowrap ${textoM}`}>
+                          {p.valor}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
  
@@ -960,7 +871,7 @@ const periodo = useMemo(() => {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[9px] font-bold tracking-widest text-blue-200 uppercase">Projeção Bruta</p>
+                    <p className="text-[9px] font-bold tracking-widest text-blue-200 uppercase">Comissão Bruta</p>
                     <p className="text-[9px] font-bold tracking-widest text-blue-200 uppercase">à Receber</p>
                     <p className="text-[9px] text-blue-300 uppercase mt-0.5">{periodoSelecionado}</p>
                   </div>
@@ -978,7 +889,7 @@ const periodo = useMemo(() => {
               </div>
  
               {/* Emitir PDF */}
-              <button
+              <button data-ui-action
                 onClick={emitirPDF}
                 disabled={gerandoPdf}
                 className="w-full py-2.5 rounded-xl text-sm font-bold text-white tracking-wide transition-all duration-200 hover:opacity-90 active:scale-[0.98] shadow-md disabled:opacity-60 disabled:cursor-wait"

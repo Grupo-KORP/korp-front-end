@@ -1,3 +1,7 @@
+import { maskCNPJ, maskCEP, maskPhone } from "../../utils/inputMasks";
+import { confirmDelete } from "./DeleteConfirmation";
+import ActionIcon from "../ui/ActionIcon";
+import RequiredMark from "../ui/RequiredMark";
 import { formatarStatusPagamento } from "../../services/statusPagamento.js";
 // Importa os hooks do React usados para guardar estado e executar efeitos.
 import { useState, useEffect } from "react";
@@ -6,29 +10,10 @@ import { toast } from "sonner";
 import { atualizarPedido } from "../../services/api";
 
 // Cria um componente pequeno para mostrar o icone de lapis.
-const IconeLapis = () => (
-    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5
-         m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-    </svg>
-);
+const IconeLapis = () => <ActionIcon name="edit" />;
+const IconeCheck = () => <ActionIcon name="check" />;
+const IconeX = () => <ActionIcon name="close" />;
 
-// Cria um componente pequeno para mostrar o icone de confirmado.
-const IconeCheck = () => (
-    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-    </svg>
-);
-
-// Cria um componente pequeno para mostrar o icone de cancelar.
-const IconeX = () => (
-    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-    </svg>
-);
-
-/* ── Campo somente leitura ── */
 function CampoLeitura({ rotulo, valor, escuro, colSpan = 1 }) {
     const classeLabel = escuro ? "text-gray-500" : "text-gray-400";
     const classeInput = escuro
@@ -36,7 +21,7 @@ function CampoLeitura({ rotulo, valor, escuro, colSpan = 1 }) {
         : "bg-white border-gray-200 text-gray-700";
 
     return (
-        <div className={colSpan === 2 ? "col-span-2" : colSpan === 3 ? "col-span-3" : colSpan === 4 ? "col-span-4" : ""}>
+        <div className={`details-field ${colSpan === 2 ? "col-span-2" : colSpan === 3 ? "col-span-3" : colSpan === 4 ? "col-span-4" : ""}`}>
             <label className={`block text-[9px] font-bold tracking-widest uppercase mb-1 ${classeLabel}`}>
                 {rotulo}
             </label>
@@ -65,7 +50,7 @@ function CampoQuantidade({ valor, modoEdicao, aoAlterar, escuro, rotulo = "Quant
         : "bg-blue-50 border-blue-400 text-blue-900 ring-1 ring-blue-300/50";
 
     return (
-        <div>
+        <div className="details-field">
             <label className={`block text-[9px] font-bold tracking-widest uppercase mb-1 ${classeLabel}`}>
                 {rotulo}
                 {/* Mostra a etiqueta apenas quando o campo esta editavel. */}
@@ -89,7 +74,7 @@ function CampoQuantidade({ valor, modoEdicao, aoAlterar, escuro, rotulo = "Quant
 }
 
 /* Campo de texto editavel */
-function CampoTextoEditavel({ rotulo, valor, modoEdicao, aoAlterar, escuro, colSpan = 1, placeholder = "" }) {
+function CampoTextoEditavel({ rotulo, valor, modoEdicao, aoAlterar, escuro, colSpan = 1, placeholder = "", obrigatorio = false }) {
     const classeLabel = escuro ? "text-gray-500" : "text-gray-400";
     const classeBase = "w-full px-3 py-1.5 rounded-lg border text-xs font-semibold focus:outline-none transition-all duration-200";
     const classeLeitura = escuro
@@ -100,9 +85,9 @@ function CampoTextoEditavel({ rotulo, valor, modoEdicao, aoAlterar, escuro, colS
         : "bg-blue-50 border-blue-400 text-blue-900 ring-1 ring-blue-300/50";
 
     return (
-        <div className={colSpan === 2 ? "col-span-2" : colSpan === 3 ? "col-span-3" : colSpan === 4 ? "col-span-4" : ""}>
+        <div className={`details-field ${colSpan === 2 ? "col-span-2" : colSpan === 3 ? "col-span-3" : colSpan === 4 ? "col-span-4" : ""}`}>
             <label className={`block text-[9px] font-bold tracking-widest uppercase mb-1 ${classeLabel}`}>
-                {rotulo}
+                {rotulo}{modoEdicao && obrigatorio && <RequiredMark />}
                 {modoEdicao && (
                     <span className={`ml-1.5 text-[8px] font-bold tracking-wider normal-case px-1.5 py-0.5 rounded-full
             ${escuro ? "bg-blue-900/60 text-blue-300" : "bg-blue-100 text-blue-600"}`}>
@@ -112,6 +97,7 @@ function CampoTextoEditavel({ rotulo, valor, modoEdicao, aoAlterar, escuro, colS
             </label>
             <input
                 type="text"
+                aria-required={modoEdicao && obrigatorio || undefined}
                 value={valor}
                 readOnly={!modoEdicao}
                 onChange={(e) => aoAlterar(e.target.value)}
@@ -141,6 +127,21 @@ function carregarDatasPagamento(pedido) {
     return Array.isArray(pedido?.datasPagamento) && pedido.datasPagamento.length > 0 ? pedido.datasPagamento.map(String) : [""];
 }
 
+const MAX_PARCELAS_BOLETO = 10;
+const METODOS_PAGAMENTO = { AVISTA: "À vista", BOLETO: "Boleto" };
+
+function carregarMetodoPagamento(pedido) {
+    return pedido?.metodoPagamento ?? pedido?.formaPagamento ?? "";
+}
+
+// Vencimento previsto: data de hoje (finalização) + prazo em dias.
+function vencimentoPrevisto(prazo) {
+    if (prazo === "") return "";
+    const data = new Date();
+    data.setDate(data.getDate() + Number(prazo));
+    return new Intl.DateTimeFormat("pt-BR").format(data);
+}
+
 export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto, detalhesVenda, aoFechar, aoAtualizar, escuro, somenteLeitura = false, parcelasConteudo }) {
     // Financeiro (ComissoesPage) informa mes/detalhesVenda; vendedor informa detalhes diretamente.
     const modoFinanceiro = mes !== undefined;
@@ -159,10 +160,17 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
     const [nomeFantasiaDistribuidor, setNomeFantasiaDistribuidor] = useState(detalhes?.distribuidor?.nomeFantasia ?? "");
     const [numeroNotaDistribuidor, setNumeroNotaDistribuidor] = useState(detalhes?.pedido?.numeroNotaDistribuidor ?? "");
     const [observacoes, setObservacoes] = useState(detalhes?.pedido?.observacoes ?? "");
-    const metodoPagamento = detalhes?.pedido?.metodoPagamento ?? detalhes?.pedido?.formaPagamento ?? "";
+    const [metodoPagamento, setMetodoPagamento] = useState(() => carregarMetodoPagamento(detalhes?.pedido));
+    const [metodoPagamentoAntes, setMetodoPagamentoAntes] = useState(metodoPagamento);
     const boleto = metodoPagamento === "BOLETO";
     const [datasPagamento, setDatasPagamento] = useState(() => carregarDatasPagamento(detalhes?.pedido));
-    const datasPagamentoValidas = datasPagamento.length >= 1 && datasPagamento.length <= 7 && datasPagamento.every(data => /^\d{1,3}$/.test(data));
+    const prazosNumericos = datasPagamento.map(Number);
+    // À vista tem 1 prazo; boleto de 1 a 10, em ordem crescente e sem repetição.
+    const datasPagamentoValidas = Boolean(metodoPagamento)
+        && datasPagamento.length >= 1
+        && datasPagamento.length <= (boleto ? MAX_PARCELAS_BOLETO : 1)
+        && datasPagamento.every(data => /^\d{1,3}$/.test(data))
+        && prazosNumericos.every((prazo, i) => i === 0 || prazo > prazosNumericos[i - 1]);
     const [salvando, setSalvando] = useState(false);
     // Guarda se cliente e distribuidor estao em modo de edicao.
     // Guarda os valores antigos para cancelar alteracoes.
@@ -204,6 +212,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
         const nota = detalhes?.pedido?.numeroNotaDistribuidor ?? "";
         const obs = detalhes?.pedido?.observacoes ?? "";
         const datas = carregarDatasPagamento(detalhes?.pedido);
+        const metodo = carregarMetodoPagamento(detalhes?.pedido);
         setNomeFantasiaCliente(clienteFantasia);
         setNomeFantasiaDistribuidor(distribuidorFantasia);
         setNomeFantasiaClienteAntes(clienteFantasia);
@@ -211,6 +220,8 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
         setNumeroNotaDistribuidor(nota);
         setObservacoes(obs);
         setDatasPagamento(datas);
+        setMetodoPagamento(metodo);
+        setMetodoPagamentoAntes(metodo);
         setNumeroNotaDistribuidorAntes(nota);
         setObservacoesAntes(obs);
         setDatasPagamentoAntes(datas);
@@ -239,6 +250,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
         setNumeroNotaDistribuidorAntes(numeroNotaDistribuidor);
         setObservacoesAntes(observacoes);
         setDatasPagamentoAntes([...datasPagamento]);
+        setMetodoPagamentoAntes(metodoPagamento);
         setEntregaAntes(entrega);
         setModoEdicao(true);
     }
@@ -251,8 +263,8 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
             return;
         }
 
-        if (finalizarPedido && boleto && !datasPagamentoValidas) {
-            toast.error("Preencha todas as datas de pagamento com até 3 dígitos.");
+        if (finalizarPedido && !datasPagamentoValidas) {
+            toast.error("Informe o método de pagamento e os prazos (0 a 999 dias, em ordem crescente e sem repetição).");
             return;
         }
 
@@ -278,6 +290,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
         setNumeroNotaDistribuidor(numeroNotaDistribuidorAntes);
         setObservacoes(observacoesAntes);
         setDatasPagamento([...datasPagamentoAntes]);
+        setMetodoPagamento(metodoPagamentoAntes);
         setEntrega(entregaAntes);
         setModoEdicao(false);
     }
@@ -292,10 +305,8 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
             quantidade,
             numeroNotaDistribuidor,
             observacoes,
-            metodoPagamento,
-            datasPagamento: boleto ? datasPagamento.filter(data => data !== "").map(Number) : [],
-            parcelado: boleto && datasPagamento.filter(data => data !== "").length > 1,
-            quantidadeParcelas: boleto ? Math.max(1, datasPagamento.filter(data => data !== "").length) : 1,
+            metodoPagamento: metodoPagamento || null,
+            datasPagamento: datasPagamento.filter(data => data !== "").map(Number),
             entrega,
             finalizarPedido,
         };
@@ -346,20 +357,20 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
             onClick={(e) => { if (e.target === e.currentTarget) tentarFechar(); }}
         >
             <div
-                className={`w-full max-w-[96vw] max-h-[92vh] overflow-hidden rounded-2xl shadow-2xl border flex flex-col ${classeCard}`}
+                className={`details-panel max-h-[92vh] overflow-hidden rounded-2xl shadow-2xl border flex flex-col ${classeCard}`}
                 style={{ animation: "modalEntrar 0.2s ease-out" }}
             >
                 {/* ── Cabeçalho ── */}
                 <div
-                    className="flex items-center justify-between px-8 py-4 rounded-t-2xl flex-shrink-0"
+                    className="details-header flex justify-between rounded-t-2xl flex-shrink-0"
                     style={{ background: "linear-gradient(135deg, #0f2557 0%, #1a3a7a 60%, #1e4d9b 100%)" }}
                 >
-                    <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center">
+                    <div className="details-identity">
+                        <div className="details-code rounded-xl bg-white/15 flex items-center justify-center">
                             <span className="text-xs font-extrabold text-white">{venda.id}</span>
                         </div>
-                        <div>
-                            <p className="text-[9px] font-bold tracking-widest text-blue-200 uppercase">Detalhes da Venda</p>
+                        <div className="details-heading">
+                            <p className="text-[9px] font-bold tracking-widest text-blue-200 uppercase">Detalhes do pedido de venda</p>
                             <p className="text-sm font-extrabold text-white">{venda.nome} – {venda.cliente}</p>
                         </div>
                     </div>
@@ -376,16 +387,16 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                 </div>
 
                 {/* ── Corpo ── */}
-                <div className="modal-detalhe-scroll flex flex-col gap-4 p-8 overflow-y-auto flex-1 min-h-0">
+                <div className="details-body modal-detalhe-scroll flex flex-col gap-4 overflow-y-auto flex-1 min-h-0">
                     {detalhes ? (
                         <>
                             {/* Cliente e Distribuidor */}
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="details-section-grid grid grid-cols-2 gap-4">
 
                                 {/* Dados do Cliente */}
                                 <div className={`rounded-xl border p-5 ${classeSecao}`}>
                                     <CabecalhoSecao titulo="Dados do Cliente" cor="bg-blue-600" escuro={escuro} />
-                                    <div className="grid grid-cols-2 gap-x-5 gap-y-3">
+                                    <div className="details-field-grid grid grid-cols-2 gap-x-5 gap-y-3">
                                         <CampoLeitura rotulo="Razão Social" valor={detalhes.cliente.razaoSocial} escuro={escuro} colSpan={2} />
                                         <CampoTextoEditavel
                                             rotulo="Nome Fantasia"
@@ -396,10 +407,10 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                                             colSpan={2}
                                             placeholder="Nome fantasia do cliente"
                                         />
-                                        <CampoLeitura rotulo="CNPJ" valor={detalhes.cliente.cnpj} escuro={escuro} />
+                                        <CampoLeitura rotulo="CNPJ" valor={maskCNPJ(detalhes.cliente.cnpj)} escuro={escuro} />
                                         <CampoLeitura rotulo="Inscrição Estadual" valor={detalhes.cliente.inscricaoEstadual} escuro={escuro} />
-                                        <CampoLeitura rotulo="Telefone" valor={detalhes.cliente.telefone} escuro={escuro} />
-                                        <CampoLeitura rotulo="CEP" valor={detalhes.cliente.cep} escuro={escuro} />
+                                        <CampoLeitura rotulo="Telefone" valor={maskPhone(detalhes.cliente.telefone)} escuro={escuro} />
+                                        <CampoLeitura rotulo="CEP" valor={maskCEP(detalhes.cliente.cep)} escuro={escuro} />
                                         <CampoLeitura rotulo="Endereço" valor={detalhes.cliente.endereco} escuro={escuro} colSpan={2} />
                                         <CampoLeitura rotulo="Cidade" valor={detalhes.cliente.cidade} escuro={escuro} />
                                         <CampoLeitura rotulo="UF" valor={detalhes.cliente.uf} escuro={escuro} />
@@ -411,7 +422,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                                 {/* Dados do Distribuidor */}
                                 <div className={`rounded-xl border p-5 ${classeSecao}`}>
                                     <CabecalhoSecao titulo="Dados do Distribuidor" cor="bg-indigo-500" escuro={escuro} />
-                                    <div className="grid grid-cols-2 gap-x-5 gap-y-3">
+                                    <div className="details-field-grid grid grid-cols-2 gap-x-5 gap-y-3">
                                         <CampoLeitura rotulo="Razão Social" valor={detalhes.distribuidor.razaoSocial} escuro={escuro} colSpan={2} />
                                         <CampoTextoEditavel
                                             rotulo="Nome Fantasia"
@@ -422,10 +433,10 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                                             colSpan={2}
                                             placeholder="Nome fantasia do distribuidor"
                                         />
-                                        <CampoLeitura rotulo="CNPJ" valor={detalhes.distribuidor.cnpj} escuro={escuro} />
+                                        <CampoLeitura rotulo="CNPJ" valor={maskCNPJ(detalhes.distribuidor.cnpj)} escuro={escuro} />
                                         <CampoLeitura rotulo="Inscrição Estadual" valor={detalhes.distribuidor.inscricaoEstadual} escuro={escuro} />
-                                        <CampoLeitura rotulo="Telefone" valor={detalhes.distribuidor.telefone} escuro={escuro} />
-                                        <CampoLeitura rotulo="CEP" valor={detalhes.distribuidor.cep} escuro={escuro} />
+                                        <CampoLeitura rotulo="Telefone" valor={maskPhone(detalhes.distribuidor.telefone)} escuro={escuro} />
+                                        <CampoLeitura rotulo="CEP" valor={maskCEP(detalhes.distribuidor.cep)} escuro={escuro} />
                                         <CampoLeitura rotulo="Endereço" valor={detalhes.distribuidor.endereco} escuro={escuro} colSpan={2} />
                                         <CampoLeitura rotulo="Cidade" valor={detalhes.distribuidor.cidade} escuro={escuro} />
                                         <CampoLeitura rotulo="UF" valor={detalhes.distribuidor.uf} escuro={escuro} />
@@ -438,7 +449,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                             {/* Dados do Pedido */}
                             <div className={`rounded-xl border p-5 ${classeSecao}`}>
                                 <CabecalhoSecao titulo="Dados do Pedido" cor="bg-sky-500" escuro={escuro} />
-                                <div className="grid grid-cols-4 gap-x-5 gap-y-3">
+                                <div className="details-field-grid grid grid-cols-4 gap-x-5 gap-y-3">
                                     <CampoTextoEditavel
                                         rotulo="Número da Nota"
                                         valor={numeroNotaDistribuidor}
@@ -467,36 +478,67 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                                         </>
                                     ) : (
                                         <>
-                                            <CampoLeitura rotulo="Forma de pagamento" valor={metodoPagamento === "AVISTA" ? "À vista" : boleto ? "Boleto" : metodoPagamento} escuro={escuro} />
-                                            {boleto && (
+                                            {modoEdicao ? (
+                                                <div className="details-field">
+                                                    <label className="block text-[9px] font-bold tracking-widest uppercase mb-1 text-gray-400">
+                                                        Forma de pagamento<RequiredMark />
+                                                    </label>
+                                                    <select
+                                                        aria-label="Forma de pagamento"
+                                                        value={metodoPagamento}
+                                                        disabled={salvando}
+                                                        onChange={(event) => {
+                                                            const novoMetodo = event.target.value;
+                                                            setMetodoPagamento(novoMetodo);
+                                                            if (novoMetodo !== "BOLETO") setDatasPagamento(datas => datas.slice(0, 1));
+                                                        }}
+                                                        className={`w-full px-3 py-1.5 rounded-lg border text-xs font-semibold focus:outline-none ${escuro ? "bg-blue-950/60 border-blue-500 text-white" : "bg-blue-50 border-blue-400 text-blue-900"}`}
+                                                    >
+                                                        <option value="">Selecione</option>
+                                                        {Object.entries(METODOS_PAGAMENTO).map(([valor, rotulo]) => (
+                                                            <option key={valor} value={valor}>{rotulo}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            ) : (
+                                                <CampoLeitura rotulo="Forma de pagamento" valor={METODOS_PAGAMENTO[metodoPagamento] || metodoPagamento} escuro={escuro} />
+                                            )}
+                                            {metodoPagamento && (
                                                 <div className="col-span-3">
-                                                    <span className="block text-[9px] font-bold uppercase mb-1 text-gray-400">Datas de pagamento *</span>
-                                                    <div className="flex flex-wrap items-center gap-2">
+                                                    <span className="block text-[9px] font-bold uppercase mb-1 text-gray-400">Prazo de pagamento (dias após a finalização) *</span>
+                                                    <div className="flex flex-wrap items-start gap-2">
                                                         {datasPagamento.map((data, indice) => (
-                                                            <div key={indice} className="flex items-center gap-1">
-                                                                <input type="text" inputMode="numeric" pattern="[0-9]{1,3}" maxLength={3} required
-                                                                    aria-label={`Data de pagamento ${indice + 1}`}
-                                                                    value={data} readOnly={!modoEdicao || salvando}
-                                                                    onChange={(event) => {
-                                                                        const valor = event.target.value.replace(/\D/g, "").slice(0, 3);
-                                                                        setDatasPagamento(datas => datas.map((atual, i) => i === indice ? valor : atual));
-                                                                    }}
-                                                                    className={`w-12 h-12 text-center rounded-lg border text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 ${escuro ? "bg-gray-800 border-gray-700 text-gray-200" : "bg-white border-gray-200 text-gray-700"}`}
-                                                                />
-                                                                {modoEdicao && datasPagamento.length > 1 && (
-                                                                    <button type="button" disabled={salvando} aria-label={`Remover data de pagamento ${indice + 1}`}
-                                                                        onClick={() => setDatasPagamento(datas => datas.filter((_, i) => i !== indice))}
-                                                                        className="text-gray-400 hover:text-red-500">×</button>
+                                                            <div key={indice} className="flex flex-col items-start gap-1">
+                                                                <div className="flex items-center gap-1">
+                                                                    <input type="text" inputMode="numeric" pattern="[0-9]{1,3}" maxLength={3} required
+                                                                        aria-label={`Prazo de pagamento ${indice + 1}`}
+                                                                        value={data} readOnly={!modoEdicao || salvando}
+                                                                        onChange={(event) => {
+                                                                            const valor = event.target.value.replace(/\D/g, "").slice(0, 3);
+                                                                            setDatasPagamento(datas => datas.map((atual, i) => i === indice ? valor : atual));
+                                                                        }}
+                                                                        className={`w-14 px-2 py-1.5 text-center rounded-lg border text-xs font-semibold focus:outline-none transition-all duration-200 ${modoEdicao
+                                                                            ? (escuro ? "bg-blue-950/60 border-blue-500 text-white ring-1 ring-blue-500/40" : "bg-blue-50 border-blue-400 text-blue-900 ring-1 ring-blue-300/50")
+                                                                            : (escuro ? "bg-gray-800/80 border-gray-700 text-gray-200 cursor-default" : "bg-white border-gray-200 text-gray-700 cursor-default")}`}
+                                                                    />
+                                                                    {modoEdicao && boleto && datasPagamento.length > 1 && (
+                                                                        <button type="button" disabled={salvando} aria-label={`Remover prazo de pagamento ${indice + 1}`}
+                                                                            onClick={async () => { if (await confirmDelete({ entityLabel: "prazo de pagamento", name: `Prazo ${indice + 1}: ${data || "sem valor"}` })) setDatasPagamento(datas => datas.filter((_, i) => i !== indice)); }}
+                                                                            className="text-gray-400 hover:text-red-500"><ActionIcon name="delete" /></button>
+                                                                    )}
+                                                                </div>
+                                                                {pedidoEmAndamento && data !== "" && (
+                                                                    <span className="w-14 text-center text-[10px] text-gray-400">{vencimentoPrevisto(data)}</span>
                                                                 )}
                                                             </div>
                                                         ))}
-                                                        {modoEdicao && (
-                                                            <button type="button" aria-label="Adicionar data de pagamento" disabled={salvando || datasPagamento.length >= 7}
-                                                                onClick={() => setDatasPagamento(datas => datas.length < 7 ? [...datas, ""] : datas)}
-                                                                className="w-12 h-12 rounded-lg border border-blue-400 text-blue-500 text-xl disabled:opacity-40 disabled:cursor-not-allowed">+</button>
+                                                        {modoEdicao && boleto && (
+                                                            <button type="button" aria-label="Adicionar prazo de pagamento" disabled={salvando || datasPagamento.length >= MAX_PARCELAS_BOLETO}
+                                                                onClick={() => setDatasPagamento(datas => datas.length < MAX_PARCELAS_BOLETO ? [...datas, ""] : datas)}
+                                                                className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-blue-400 text-blue-500 disabled:opacity-40 disabled:cursor-not-allowed"><ActionIcon name="add" /></button>
                                                         )}
                                                     </div>
-                                                    {modoEdicao && <p className="mt-1 text-xs text-gray-400">Preencha todos os campos para finalizar. Máximo de 7 datas, com até 3 dígitos cada.</p>}
+                                                    {modoEdicao && <p className="mt-1 text-xs text-gray-400">{boleto ? `Informe o prazo em dias de cada parcela, de 0 a 999, em ordem crescente (máximo de ${MAX_PARCELAS_BOLETO} parcelas).` : "Informe o prazo em dias para o pagamento (0 = no dia da finalização)."} A data prevista aparece abaixo de cada prazo.</p>}
                                                 </div>
                                             )}
                                         </>
@@ -566,7 +608,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                             {/* ── Parcelas */}
                             {parcelasConteudo ?? (venda.parcelas?.length > 0 && (
                                 <div className={`rounded-xl border p-5 ${classeSecao}`}>
-                                    <CabecalhoSecao titulo="Parcelas desta Venda" cor="bg-emerald-500" escuro={escuro} />
+                                    <CabecalhoSecao titulo="Parcelas deste pedido de venda" cor="bg-emerald-500" escuro={escuro} />
                                     <div className="grid grid-cols-3 gap-3">
                                         {venda.parcelas.map((parcela, indice) => (
                                             <div
@@ -586,7 +628,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                         </>
                     ) : (
                         <div className={`rounded-xl border p-8 text-center ${classeSecao}`}>
-                            <p className="text-sm text-gray-400">Detalhes não disponíveis para esta venda.</p>
+                            <p className="text-sm text-gray-400">Detalhes não disponíveis para este pedido de venda.</p>
                         </div>
                     )}
                 </div>
@@ -602,19 +644,19 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                     )}
                     {modoEdicao ? (
                         <>
-                            <button
+                            <button data-ui-action
                                 onClick={() => confirmarEdicao(true)}
-                                disabled={salvando || !numeroNotaDistribuidor.trim() || !observacoes.trim() || (boleto && !datasPagamentoValidas)}
+                                disabled={salvando || !numeroNotaDistribuidor.trim() || !observacoes.trim() || !datasPagamentoValidas}
                                 className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all
               bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <IconeCheck />
                                 Finalizar Pedido
                             </button>
-                            <button
+                            <button data-ui-action
                                 onClick={() => confirmarEdicao(false)}
                                 disabled={salvando}
-                                className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all
+                                className="modal-save-button flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all
               bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <IconeCheck />
@@ -622,7 +664,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                             </button>
                         </>
                     ) : !somenteLeitura && (
-                        <button
+                        <button data-ui-action
                             onClick={iniciarEdicao}
                             disabled={!pedidoEmAndamento}
                             className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all border
@@ -632,9 +674,9 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                             Editar Informações
                         </button>
                     )}
-                    <button
+                    <button data-ui-action
                         onClick={tentarFechar}
-                        className="px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all
+                        className="modal-close-button px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all
               bg-blue-600 text-white hover:bg-blue-700"
                     >
                         Fechar

@@ -41,6 +41,16 @@
   color: var(--app-input-placeholder);
 }
 
+.input-field-password {
+  padding-right: 36px;
+}
+
+/* Edge supplies its own reveal button; this field already has one. */
+.input-field-password::-ms-reveal,
+.input-field-password::-ms-clear {
+  display: none;
+}
+
 .input-error {
   font-size: 11px;
   color: #ef4444;

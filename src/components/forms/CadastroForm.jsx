@@ -1,3 +1,5 @@
+import FormValidationNotice from "../ui/FormValidationNotice";
+import { maskPhone } from "../../utils/inputMasks";
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import InputField from '../ui/InputField'
@@ -41,11 +43,7 @@ function CadastroForm() {
 
   // Máscara simples de telefone
   function handleTelefoneChange(e) {
-    let raw = e.target.value.replace(/\D/g, '').slice(0, 11)
-    let masked = raw
-    if (raw.length > 2)  masked = `(${raw.slice(0,2)}) ${raw.slice(2)}`
-    if (raw.length > 7)  masked = `(${raw.slice(0,2)}) ${raw.slice(2,7)}-${raw.slice(7)}`
-    handleChange({ target: { name: 'telefone', value: masked } })
+    handleChange({ target: { name: 'telefone', value: maskPhone(e.target.value) } })
   }
 
   async function handleSubmit(e) {
@@ -68,12 +66,14 @@ function CadastroForm() {
 }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4 w-full">
+    <form onSubmit={handleSubmit} noValidate className="registration-form flex flex-col gap-4 w-full">
       {/* Feedback global */}
       {apiError && <Alert type="error"   message={apiError} />}
       {success  && <Alert type="success" message="Colaborador cadastrado com sucesso! Redirecionando..." />}
 
       <InputField
+        showError={false}
+          required
         name="nome"
         type="text"
         placeholder="Nome completo"
@@ -85,6 +85,8 @@ function CadastroForm() {
       />
 
       <InputField
+        showError={false}
+          required
         name="email"
         type="email"
         placeholder="E-mail TND"
@@ -95,6 +97,8 @@ function CadastroForm() {
       />
 
       <InputField
+        showError={false}
+          required
         name="telefone"
         type="tel"
         placeholder="Telefone"
@@ -105,6 +109,7 @@ function CadastroForm() {
       />
 
 
+      <FormValidationNotice visible={Object.values(errors).some(Boolean)} />
       <div className="flex justify-end mt-2">
         <Button type="submit" loading={loading} variant="primary">
           Cadastrar

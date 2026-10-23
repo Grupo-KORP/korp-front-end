@@ -46,6 +46,7 @@ api.interceptors.response.use(
 
     const err = new Error(message);
     err.status = status;
+    err.codigo = error.response?.data?.codigo;
     throw err;
   },
 );
@@ -159,9 +160,34 @@ export async function cadastrarProduto(produto) {
 // ─── Pedidos ─────────────────────────────────────────────────────────
 
 export async function cadastrarPedido(pedidoRequest) {
-  console.log("API: cadastrarPedido", pedidoRequest);
   const { data } = await api.post("/pedidos/cadastrar", pedidoRequest);
   return data;
+}
+
+// ─── Rascunhos de pedido ─────────────────────────────────────────────
+
+export async function listarRascunhos() {
+  const { data } = await api.get("/pedidos/rascunhos");
+  return data;
+}
+
+export async function buscarRascunho(id) {
+  const { data } = await api.get(`/pedidos/rascunhos/${id}`);
+  return data;
+}
+
+export async function criarRascunho(dados) {
+  const { data } = await api.post("/pedidos/rascunhos", { dados });
+  return data;
+}
+
+export async function atualizarRascunho(id, dados, versao) {
+  const { data } = await api.put(`/pedidos/rascunhos/${id}`, { dados, versao });
+  return data;
+}
+
+export async function excluirRascunho(id) {
+  await api.delete(`/pedidos/rascunhos/${id}`);
 }
 
 export async function criarComissao(idPedido, pagamentoDTO) {
@@ -209,11 +235,11 @@ export async function buscarDetalheVenda(idPedido) {
   } catch (err) {
     const httpStatus = err?.status ?? err?.response?.status;
 
-    if (httpStatus === 404) throw new Error("Venda não encontrada.");
-    if (httpStatus === 403) throw new Error("Sem permissão para ver esta venda.");
+    if (httpStatus === 404) throw new Error("Pedido de venda não encontrado.");
+    if (httpStatus === 403) throw new Error("Sem permissão para ver este pedido de venda.");
     if (httpStatus === 401) throw new Error("Sessão expirada. Faça login novamente.");
 
-    throw new Error("Erro ao carregar os detalhes da venda. Tente novamente.");
+    throw new Error("Erro ao carregar os detalhes do pedido de venda. Tente novamente.");
   }
 }
 

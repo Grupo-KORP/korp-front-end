@@ -59,7 +59,7 @@ const vendasMockadas = [
     detalhesPedido: {
       numeroPedido: "PED-1001",
       vendedor: "Marina Lopes",
-      metodoPagamento: "Cartão de Crédito",
+      metodoPagamento: "À vista",
       notaFiscal: "NF-7741",
       observacoes: "Cliente com implantação prioritária",
       statusPedido: "Em andamento",
@@ -194,7 +194,7 @@ const vendasMockadas = [
     detalhesPedido: {
       numeroPedido: "PED-1003",
       vendedor: "Camila Andrade",
-      metodoPagamento: "PIX",
+      metodoPagamento: "À vista",
       notaFiscal: "NF-7730",
       observacoes: "Pedido concluído com faturamento fechado",
       statusPedido: "Finalizado",
@@ -260,7 +260,7 @@ const vendasMockadas = [
     detalhesPedido: {
       numeroPedido: "PED-1004",
       vendedor: "Marina Lopes",
-      metodoPagamento: "Cartão de Débito",
+      metodoPagamento: "À vista",
       notaFiscal: "NF-7718",
       observacoes: "Contrato anual com renovação automática",
       statusPedido: "Em andamento",
@@ -413,7 +413,7 @@ function VendaModal({ venda, onClose, onStatusChange, onNotaChange, escuro }) {
   };
   const produto = pedido.produto || {};
   const status = statusVenda(venda);
-  const metodos = { "cartao de credito": "CARTAO_CREDITO", "cartao de debito": "CARTAO_DEBITO", boleto: "BOLETO", pix: "PIX", transferencia: "TRANSFERENCIA", dinheiro: "DINHEIRO" };
+  const metodos = { "a vista": "AVISTA", boleto: "BOLETO" };
   const pessoa = (dados = {}) => ({ ...dados, telefone: dados.telefone ?? dados.fone });
   const detalhes = {
     cliente: pessoa(pedido.cliente),
@@ -452,17 +452,17 @@ function VendaModal({ venda, onClose, onStatusChange, onNotaChange, escuro }) {
             <div className="flex flex-wrap gap-2">
               {editando ? (
                 <>
-                  <button type="button" onClick={() => setRascunho(null)}
+                  <button data-ui-action type="button" onClick={() => setRascunho(null)}
                     className={`px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all border ${escuro ? "bg-gray-800 border-gray-600 text-gray-200 hover:bg-gray-700" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-100"}`}>
                     Cancelar
                   </button>
-                  <button type="button" onClick={salvarPagamentos}
-                    className="px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all bg-blue-600 text-white hover:bg-blue-700">
+                  <button data-ui-action type="button" onClick={salvarPagamentos}
+                    className="modal-save-button px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all bg-blue-600 text-white hover:bg-blue-700">
                     Salvar
                   </button>
                 </>
               ) : (
-                <button type="button" onClick={() => setRascunho(pagamentos.map((pagamento) => ({ ...pagamento })))}
+                <button data-ui-action type="button" onClick={() => setRascunho(pagamentos.map((pagamento) => ({ ...pagamento })))}
                   className={`px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all border ${escuro ? "bg-blue-500/10 border-blue-400 text-blue-400 hover:bg-blue-500/20" : "bg-blue-50 border-blue-500 text-blue-600 hover:bg-blue-100"}`}>
                   Editar
                 </button>
@@ -590,7 +590,8 @@ export default function ComissoesPage() {
       const data = new Date(filtro.y, filtro.m, filtro.type === "day" ? filtro.d : 1);
       const periodo = data.toLocaleDateString("pt-BR", { ...(filtro.type === "day" ? { day: "2-digit" } : {}), month: "long", year: "numeric" });
       const { criarRelatorioComissoes } = await import("../services/relatorioComissoes.js");
-      const doc = await criarRelatorioComissoes({ parcelas: parcelasFiltradas, proximasLiberacoes, periodo, status: filtroAtivo, busca });
+      const indicadores = filtrosKpi.map(({ chave, rotulo }) => ({ rotulo, valor: contadores[chave] || 0 }));
+      const doc = await criarRelatorioComissoes({ parcelas: parcelasFiltradas, proximasLiberacoes, periodo, status: filtroAtivo, busca, indicadores });
       const sufixo = `${filtro.y}-${String(filtro.m + 1).padStart(2, "0")}${filtro.type === "day" ? `-${String(filtro.d).padStart(2, "0")}` : ""}`;
       await doc.save(`relatorio-comissoes-${sufixo}.pdf`, { returnPromise: true });
       toast.success("Relatório PDF gerado com sucesso!");
@@ -612,7 +613,7 @@ export default function ComissoesPage() {
         </div>
         <header className="comissoes-header">
           <div>
-            <p>Operações Financeiras</p>
+            <p data-page-eyebrow>Operações Financeiras</p>
             <h1>Gestão de Comissões</h1>
           </div>
 
@@ -657,7 +658,7 @@ export default function ComissoesPage() {
                 <table className="comissoes-table">
                   <thead>
                     <tr>
-                      <th>Venda</th>
+                      <th>Pedido de venda</th>
                       <th>Cliente</th>
                       <th>Vendedor</th>
                       <th>Comissão</th>
@@ -726,7 +727,7 @@ export default function ComissoesPage() {
               </div>
             </section>
 
-            <button className="comissoes-report-button" type="button" onClick={emitirRelatorio} disabled={emitindoRelatorio} aria-busy={emitindoRelatorio}>
+            <button data-ui-action className="comissoes-report-button" type="button" onClick={emitirRelatorio} disabled={emitindoRelatorio} aria-busy={emitindoRelatorio}>
               {emitindoRelatorio ? "Gerando PDF..." : "Emitir relatório"}
             </button>
           </aside>

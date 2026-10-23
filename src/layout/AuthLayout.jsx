@@ -1,5 +1,6 @@
-import React from 'react'
+import React, { useLayoutEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useDarkMode } from '../hooks/useDarkMode'
 import logoTnd from '../assets/logo-tnd.webp'
 import bgDireito from '../assets/bg-direito.png'
 
@@ -28,6 +29,11 @@ function AuthLayout({
   onClose,
 }) {
   const navigate = useNavigate()
+  const { resetDarkMode } = useDarkMode()
+
+  useLayoutEffect(() => {
+    resetDarkMode()
+  }, [resetDarkMode])
 
   function handleClose() {
     if (onClose) return onClose()

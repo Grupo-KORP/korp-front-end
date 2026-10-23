@@ -1,10 +1,11 @@
+import ActionIcon from "../ui/ActionIcon";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { api } from "../../services/api.js";
 import "./ModalVendasVendedor.css";
 
 const moeda = (valor) => valor == null ? "Não informada" : Number(valor).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const pagamentos = { PIX: "Pix", BOLETO: "Boleto", CARTAO_CREDITO: "Cartão de crédito", CARTAO_DEBITO: "Cartão de débito", TRANSFERENCIA: "Transferência", DINHEIRO: "Dinheiro" };
+const pagamentos = { AVISTA: "À vista", BOLETO: "Boleto" };
 const statusVenda = { EM_ANDAMENTO: "Em andamento", APROVADO: "Aprovada", CANCELADO: "Cancelada", REPROVADO: "Reprovada", FINALIZADO: "Finalizada", PENDENTE: "Pendente" };
 
 export default function ModalVendasVendedor({ vendedor, dark, onClose }) {
@@ -29,7 +30,7 @@ export default function ModalVendasVendedor({ vendedor, dark, onClose }) {
         if (!Array.isArray(data)) throw new Error("Resposta inválida");
         if (!controller.signal.aborted) setVendas(data);
       })
-      .catch(() => { if (!controller.signal.aborted) setErro("Não foi possível carregar as vendas deste vendedor."); })
+      .catch(() => { if (!controller.signal.aborted) setErro("Não foi possível carregar os pedidos de venda deste vendedor."); })
       .finally(() => { if (!controller.signal.aborted) setCarregando(false); });
     return () => controller.abort();
   }, [vendedor.idVendedor, tentativa]);
@@ -38,17 +39,22 @@ export default function ModalVendasVendedor({ vendedor, dark, onClose }) {
       onCancel={(event) => { event.preventDefault(); onClose(); }} onClick={(event) => { if (event.target === dialog.current) onClose(); }}>
       <div className="vendedor-vendas-conteudo">
         <header className="vendedor-vendas-cabecalho">
-          <div><p className="vendedor-vendas-rotulo">Histórico de vendas</p><h2 id="vendedor-vendas-titulo">{vendedor.nome}</h2><p>{vendedor.email}</p></div>
-          <button type="button" className="vendedor-vendas-fechar" aria-label="Fechar histórico de vendas" onClick={onClose} autoFocus>×</button>
+          <div><p className="vendedor-vendas-rotulo">Histórico de pedidos de venda</p><h2 id="vendedor-vendas-titulo">{vendedor.nome}</h2><p>{vendedor.email}</p></div>
+          <button type="button" className="vendedor-vendas-fechar" aria-label="Fechar histórico de pedidos de venda" onClick={onClose} autoFocus><ActionIcon name="close" /></button>
         </header>
         <div className="vendedor-vendas-corpo" aria-busy={carregando}>
-          {carregando ? <p className="vendedor-vendas-mensagem" role="status">Carregando vendas...</p>
+          {carregando ? <p className="vendedor-vendas-mensagem" role="status">Carregando pedidos de venda...</p>
             : erro ? <div className="vendedor-vendas-mensagem" role="alert"><p>{erro}</p><button type="button" onClick={() => setTentativa((valor) => valor + 1)}>Tentar novamente</button></div>
-            : vendas.length === 0 ? <p className="vendedor-vendas-mensagem">Este vendedor ainda não possui vendas cadastradas.</p>
+            : vendas.length === 0 ? <p className="vendedor-vendas-mensagem">Este vendedor ainda não possui pedidos de venda cadastrados.</p>
             : <>
-              <p className="vendedor-vendas-total">{vendas.length} {vendas.length === 1 ? "venda cadastrada" : "vendas cadastradas"} · Todo o período</p>
-              <div className="vendedor-vendas-tabela" tabIndex={0} role="region" aria-label="Lista de vendas do vendedor">
-                <table><thead><tr>{["Nome da venda", "Código", "Cliente", "Faturamento", "Comissão", "Pagamento", "Status da venda"].map((titulo) => <th key={titulo} scope="col">{titulo}</th>)}</tr></thead>
+              <p className="vendedor-vendas-total">{vendas.length} {vendas.length === 1 ? "pedido de venda cadastrado" : "pedidos de venda cadastrados"} · Todo o período</p>
+              <div className="vendedor-vendas-tabela" tabIndex={0} role="region" aria-label="Lista de pedidos de venda do vendedor">
+                <table>
+                  <colgroup>
+                    <col style={{ width: "24%" }} /><col style={{ width: "14%" }} /><col style={{ width: "20%" }} />
+                    <col style={{ width: "12%" }} /><col style={{ width: "10%" }} /><col style={{ width: "10%" }} /><col style={{ width: "10%" }} />
+                  </colgroup>
+                  <thead><tr>{["Nome do pedido de venda", "Código do pedido de venda", "Cliente", "Faturamento", "Comissão", "Pagamento", "Status do pedido de venda"].map((titulo) => <th key={titulo} scope="col">{titulo}</th>)}</tr></thead>
                   <tbody>{vendas.map((venda) => <tr key={venda.idPedido}>
                     <td>{venda.nome}</td><td>{venda.codigo}</td><td>{venda.cliente || "Não informado"}</td>
                     <td className="vendedor-vendas-moeda">{moeda(venda.valorFaturamento)}</td><td className="vendedor-vendas-moeda">{moeda(venda.valorComissao)}</td>
@@ -59,7 +65,7 @@ export default function ModalVendasVendedor({ vendedor, dark, onClose }) {
               </div>
             </>}
         </div>
-        <footer className="vendedor-vendas-rodape"><button type="button" onClick={onClose}>Fechar</button></footer>
+        <footer className="vendedor-vendas-rodape"><button type="button" className="modal-close-button" onClick={onClose}>Fechar</button></footer>
       </div>
     </dialog>, document.body,
   );

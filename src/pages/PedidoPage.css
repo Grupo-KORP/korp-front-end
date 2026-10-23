@@ -324,8 +324,17 @@
   }
   .pedido-page .pedido-required { color: var(--pedido-blue); margin-left: 3px; }
   .pedido-page .pedido-form-hint { margin: 0; font-size: 11px; color: var(--pedido-text-muted); }
+  .pedido-page-dark .section-icon,
+  .pedido-page-dark .resumo-title-icon {
+    background: var(--pedido-blue-soft);
+    border-radius: 8px;
+    overflow: hidden;
+  }
   .pedido-page-dark .section-icon img,
-  .pedido-page-dark .resumo-title-icon img { filter: invert(1) hue-rotate(180deg) brightness(.8); }
+  .pedido-page-dark .resumo-title-icon img {
+    filter: invert(1) sepia(1) saturate(3) hue-rotate(175deg) brightness(1.1);
+    mix-blend-mode: screen;
+  }
 
   .pedido-page .pedido-wrapper {
     margin: 0 20px;

@@ -1,3 +1,4 @@
+import RequiredMark from "../components/ui/RequiredMark";
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { redefinirSenha } from '../services/api'
@@ -68,7 +69,7 @@ function CampoSenha({ id, label, valor, onChange, onBlur, erro, visivel, onToggl
       <label htmlFor={id}
         className="text-[11px] font-bold tracking-[0.1em] uppercase select-none"
         style={{ color: '#0a3490' }}>
-        {label}
+        {label}<RequiredMark />
       </label>
       <div className={[
         'flex items-center gap-3 px-3 h-10 rounded-xl border bg-white transition-all duration-200',
@@ -82,6 +83,7 @@ function CampoSenha({ id, label, valor, onChange, onBlur, erro, visivel, onToggl
         </span>
         <input
           id={id}
+          aria-required="true"
           type={visivel ? 'text' : 'password'}
           value={valor}
           onChange={(e) => onChange(e.target.value)}
