@@ -154,7 +154,7 @@ function textoStatusParcela(status) {
 function corCardParcela(status, dark) {
   if (status === "PAGA") return dark ? "bg-green-900/25 border-green-700/50" : "bg-green-50 border-green-200";
   if (status === "LIBERADA") return dark ? "bg-blue-900/25 border-blue-700/50" : "bg-blue-50 border-blue-200";
-  return dark ? "bg-yellow-900/20 border-yellow-700/50" : "bg-yellow-50 border-yellow-200"; // PENDENTE
+  return dark ? "bg-orange-900/25 border-orange-700/50" : "bg-orange-50 border-orange-200"; // PENDENTE
 }
 
 /* Tendência vem do back como "+25%", "-10%", "0%" ou "Novo" (sem base no mês anterior). */
