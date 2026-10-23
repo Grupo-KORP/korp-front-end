@@ -1,5 +1,7 @@
 import { carregarLogoPdf, adicionarLogoPdf, COR_FUNDO_LOGO_PDF } from "./pdfBranding.js";
 
+const STATUS_PARCELA = { PENDENTE: "Pendente", LIBERADA: "Liberado", PAGA: "Pagamento realizado" };
+
 export async function criarRelatorioVendedor({ dados, linhas, periodo, filtro, geradoEm = new Date() }) {
   const { jsPDF } = await import("jspdf");
   const logo = await carregarLogoPdf();
@@ -66,16 +68,22 @@ export async function criarRelatorioVendedor({ dados, linhas, periodo, filtro, g
     ["Total de vendas", dados.totalVendas],
     ["Comissões liberadas", dados.comissoesLiberadas],
     ["Pagamentos pendentes", dados.pagamentosPendentes],
-    ["Projeção bruta a receber", dados.projecao],
+    ["Comissão bruta à receber", dados.projecao],
     ["Tendência vs mês anterior", dados.tendencia],
-    ["Parcelas em aberto", dados.parcelas],
+    ["Parcelas pagas", `${dados.parcelasPagas}/${dados.totalParcelas}`],
   ]);
-  secao("Parcelas liberadas do período");
+  secao("Parcelas do período");
   tabela([
-    { titulo: "Pedido", largura: 40 },
-    { titulo: "Parcela", largura: 82 },
-    { titulo: "Valor", largura: 60 },
-  ], dados.parcelasLiberadas.map((parcela) => [parcela.pedidoId, parcela.label, parcela.valor]));
+    { titulo: "Venda", largura: 70 },
+    { titulo: "Parcela", largura: 36 },
+    { titulo: "Status", largura: 42 },
+    { titulo: "Valor", largura: 34 },
+  ], dados.parcelasDoPeriodo.map((parcela) => [
+    parcela.cliente ? `Venda ${parcela.pedidoId} - ${parcela.cliente}` : `Venda ${parcela.pedidoId}`,
+    parcela.label,
+    STATUS_PARCELA[parcela.status] || "Pendente",
+    parcela.valor,
+  ]));
   secao("Transações do período");
   tabela([
     { titulo: "Tipo", largura: 34 },

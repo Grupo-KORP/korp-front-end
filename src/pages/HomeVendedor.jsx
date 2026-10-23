@@ -113,9 +113,12 @@ const normalizarPainelVendedor = (painel) => {
     comissoesLiberadas: resumo.comissoesLiberadas || 0,
     pagamentosPendentes: resumo.pagamentosPendentes || 0,
     projecao: formatarValorMoeda(resumo.projecao),
-    parcelas: resumo.parcelas || 0,
+    parcelasPagas: resumo.parcelasPagas || 0,
+    totalParcelas: resumo.totalParcelas || 0,
     tendencia: resumo.tendencia || "0%",
-    parcelasLiberadas: (painel?.parcelasLiberadas || []).map(normalizarParcela),
+    tendenciaVendas: resumo.tendenciaVendas || "0%",
+    tendenciaLiberadas: resumo.tendenciaLiberadas || "0%",
+    parcelasDoPeriodo: (painel?.parcelasDoPeriodo || []).map(normalizarParcela),
     vendas,
     totalPages: pagina.totalPages ?? 1,
     totalElements: pagina.totalElements ?? 0,
@@ -145,6 +148,24 @@ function textoStatusParcela(status) {
   if (status === "PAGA") return "Pagamento realizado";
   if (status === "LIBERADA") return "Liberado";
   return "Pendente";
+}
+
+/* Fundo/borda de cada parcela do Resumo de Comissões, nos mesmos tons dos status. */
+function corCardParcela(status, dark) {
+  if (status === "PAGA") return dark ? "bg-green-900/25 border-green-700/50" : "bg-green-50 border-green-200";
+  if (status === "LIBERADA") return dark ? "bg-blue-900/25 border-blue-700/50" : "bg-blue-50 border-blue-200";
+  return dark ? "bg-yellow-900/20 border-yellow-700/50" : "bg-yellow-50 border-yellow-200"; // PENDENTE
+}
+
+/* Tendência vem do back como "+25%", "-10%", "0%" ou "Novo" (sem base no mês anterior). */
+function sentidoTendencia(tendencia) {
+  if (tendencia === "Novo" || tendencia.startsWith("+")) return "alta";
+  if (tendencia.startsWith("-")) return "baixa";
+  return "estavel";
+}
+
+function textoBadgeTendencia(tendencia) {
+  return tendencia === "Novo" ? "Sem base no mês ant." : `${tendencia} vs mês ant.`;
 }
  
 /* Achata cada venda + as parcelas dela (já filtradas por período/status) em uma lista só,
@@ -453,7 +474,11 @@ const periodo = useMemo(() => {
       : cardAtivo === "pendentes" ? "Pagamentos Pendentes"
         : "Todos os pedidos de venda";
  
-  const tendenciaPositiva = dados.tendencia.startsWith("+");
+  const sentido = sentidoTendencia(dados.tendencia);
+  const corTendencia = sentido === "alta" ? "text-green-500" : sentido === "baixa" ? "text-red-400" : "text-gray-400";
+  const percentualPago = dados.totalParcelas > 0
+    ? Math.min((dados.parcelasPagas / dados.totalParcelas) * 100, 100)
+    : 0;
   const periodoSelecionado = periodo.dia
     ? `${periodo.dia} de ${mesSelecionado} de ${periodo.ano}`
     : `${mesSelecionado} de ${periodo.ano}`;
@@ -627,7 +652,7 @@ const periodo = useMemo(() => {
                   icone={<IconCarrinho />}
                   rotulo="Total de Vendas"
                   valor={dados.totalVendas}
-                  badge={`${dados.tendencia} vs mês ant.`}
+                  badge={textoBadgeTendencia(dados.tendenciaVendas)}
                   ativo={cardAtivo === "vendas"}
                   aoClicar={() => alternarCard("vendas")}
                   dark={modoEscuro}
@@ -636,7 +661,7 @@ const periodo = useMemo(() => {
                   icone={<IconConfirmado />}
                   rotulo="Comissões Liberadas"
                   valor={dados.comissoesLiberadas}
-                  badge={`${dados.tendencia} vs mês ant.`}
+                  badge={textoBadgeTendencia(dados.tendenciaLiberadas)}
                   ativo={cardAtivo === "liberadas"}
                   aoClicar={() => alternarCard("liberadas")}
                   dark={modoEscuro}
@@ -796,10 +821,10 @@ const periodo = useMemo(() => {
                 {/* Tendência */}
                 <div className="flex flex-col gap-0.5">
                   <div className="flex items-center gap-1.5">
-                    <span className={tendenciaPositiva ? "text-green-500" : "text-red-400"}>
-                      {tendenciaPositiva ? <IconTendenciaAlta /> : <IconTendenciaBaixa />}
+                    <span className={corTendencia}>
+                      {sentido === "baixa" ? <IconTendenciaBaixa /> : <IconTendenciaAlta />}
                     </span>
-                    <span className={`text-[9px] font-bold tracking-wider ${tendenciaPositiva ? "text-green-500" : "text-red-400"}`}>
+                    <span className={`text-[9px] font-bold tracking-wider ${corTendencia}`}>
                       {dados.tendencia}
                     </span>
                     <span className={`text-[9px] uppercase tracking-wider ml-auto ${textoS}`}>Previsão</span>
@@ -810,51 +835,52 @@ const periodo = useMemo(() => {
                 {/* Divisor */}
                 <div className={`border-t ${borda}`} />
  
-                {/* Parcelas em aberto */}
+                {/* Parcelas pagas / total de parcelas do período */}
                 <div className="flex items-center justify-between">
-                  <span className={`text-xs ${textoS}`}>Parcelas em aberto</span>
+                  <span className={`text-xs ${textoS}`}>Parcelas pagas</span>
                   <span className={`text-sm font-bold ${textoM}`}>
-                    {String(dados.parcelas).padStart(2, "0")}
+                    {dados.parcelasPagas}/{dados.totalParcelas}
                   </span>
                 </div>
  
-                {/* Barra de progresso */}
+                {/* Barra de progresso: parcelas pagas sobre o total do período */}
                 <div className={`w-full h-1 rounded-full ${modoEscuro ? "bg-gray-700" : "bg-gray-100"}`}>
                   <div
                     className="h-1 rounded-full bg-blue-600 transition-all duration-500"
-                    style={{ width: `${Math.min((dados.comissoesLiberadas / (dados.totalVendas || 1)) * 100, 100)}%` }}
+                    style={{ width: `${percentualPago}%` }}
                   />
                 </div>
 
 
-                {/* Parcelas liberadas do período (vêm do back, independem da página) */}
+                {/* Parcelas do período em todos os status (vêm do back, independem da página) */}
                 <div
                   className="flex flex-col gap-1.5 overflow-y-auto max-h-48 lg:max-h-none lg:flex-1 lg:min-h-0 pr-1"
                   style={scrollFino}
                 >
-                  {dados.parcelasLiberadas.length === 0 && (
-                    <p className={`text-xs text-center py-2 ${textoS}`}>Sem parcelas liberadas.</p>
+                  {dados.parcelasDoPeriodo.length === 0 && (
+                    <p className={`text-xs text-center py-2 ${textoS}`}>Sem parcelas no período.</p>
                   )}
-                  {dados.parcelasLiberadas.map((p, i) => (
-                    <div
-                      key={p.idParcela ?? i}
-                      className={`flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg
-                      ${modoEscuro ? "bg-gray-700/50" : "bg-gray-50"}`}
-                    >
-                      {/* Pedido ID + label da parcela */}
-                      <div className="flex flex-col gap-0.5 min-w-0">
-                        <span className={`text-[10px] font-bold whitespace-nowrap ${textoM}`}>
-                          Pedido: {p.pedidoId}
-                        </span>
-                        <span className={`text-[10px] ${textoS}`}>{p.label}</span>
-                      </div>
+                  {dados.parcelasDoPeriodo.map((p, i) => {
+                    const venda = p.cliente ? `Venda ${p.pedidoId} - ${p.cliente}` : `Venda ${p.pedidoId}`;
+                    return (
+                      <div
+                        key={p.idParcela ?? i}
+                        title={`${venda} • ${textoStatusParcela(p.status)}`}
+                        className={`flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg border ${corCardParcela(p.status, modoEscuro)}`}
+                      >
+                        {/* Venda + cliente (cortado com reticências) e label da parcela */}
+                        <div className="flex flex-col gap-0.5 min-w-0">
+                          <span className={`text-[10px] font-bold truncate ${textoM}`}>{venda}</span>
+                          <span className={`text-[10px] ${textoS}`}>{p.label}</span>
+                        </div>
  
-                      {/* Valor */}
-                      <span className={`text-xs font-bold whitespace-nowrap ${textoM}`}>
-                        {p.valor}
-                      </span>
-                    </div>
-                  ))}
+                        {/* Valor */}
+                        <span className={`text-xs font-bold whitespace-nowrap ${textoM}`}>
+                          {p.valor}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
  
@@ -865,7 +891,7 @@ const periodo = useMemo(() => {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[9px] font-bold tracking-widest text-blue-200 uppercase">Projeção Bruta</p>
+                    <p className="text-[9px] font-bold tracking-widest text-blue-200 uppercase">Comissão Bruta</p>
                     <p className="text-[9px] font-bold tracking-widest text-blue-200 uppercase">à Receber</p>
                     <p className="text-[9px] text-blue-300 uppercase mt-0.5">{periodoSelecionado}</p>
                   </div>
