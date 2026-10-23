@@ -1,4 +1,4 @@
-﻿import { formatarStatusPagamento } from "../services/statusPagamento.js";
+import { formatarStatusPagamento } from "../services/statusPagamento.js";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import "../styles/base-reset.css";
 import "./HomeVendedor.css";
@@ -33,12 +33,14 @@ const DIA_ATUAL = HOJE.getDate();
 const TAMANHO_PAGINA = 5;
 const TAMANHO_PAGINA_PDF = 100;
  
-/* Valor do card na URL (?status=liberadas) -> valor esperado pela API */
+/* Valor do card na URL (?status=liberadas) -> valor esperado pela API.
+   Sem card selecionado a tabela mistura vendas e parcelas (TODAS). */
 const STATUS_API = {
-  vendas: "TODAS",
+  vendas: "VENDAS",
   liberadas: "LIBERADAS",
   pendentes: "PENDENTES",
 };
+const STATUS_API_PADRAO = "TODAS";
  
 const inteiroOuNulo = (valor) => {
   const n = parseInt(valor, 10);
@@ -95,18 +97,35 @@ const normalizarProduto = (produto = {}) => ({
   totalFaturado: formatarValorMoeda(produto.totalFaturado),
 });
  
+const normalizarVenda = (venda = {}) => ({
+  ...venda,
+  comissao: formatarValorMoeda(
+    calcularComissaoTotal(venda.parcelasDaVenda || venda.parcelas || [])
+  ),
+  parcelas: (venda.parcelas || []).map(normalizarParcela),
+  parcelasDaVenda: (venda.parcelasDaVenda || []).map(normalizarParcela),
+});
+
+/* Linha da tabela já paginada pelo back: VENDA ou PAGAMENTO (parcela de comissão). */
+const normalizarLinha = (linha = {}) => {
+  const venda = normalizarVenda(linha.venda);
+  if (linha.tipo !== "PAGAMENTO") {
+    return { tipoLinha: "venda", chave: venda.id, venda };
+  }
+  const parcela = normalizarParcela(linha.parcela);
+  return {
+    tipoLinha: "pagamento",
+    chave: `${venda.id}-${parcela.idParcela ?? parcela.label}`,
+    venda,
+    parcela,
+  };
+};
+ 
 const normalizarPainelVendedor = (painel) => {
   const resumo = painel?.resumo || {};
-  const pagina = painel?.vendas || {};
+  const pagina = painel?.linhas || {};
  
-  const vendas = (pagina.content || []).map((venda) => ({
-    ...venda,
-    comissao: formatarValorMoeda(
-  calcularComissaoTotal(venda.parcelasDaVenda || venda.parcelas || [])
-    ),
-    parcelas: (venda.parcelas || []).map(normalizarParcela),
-    parcelasDaVenda: (venda.parcelasDaVenda || []).map(normalizarParcela),
-  }));
+  const linhas = (pagina.content || []).map(normalizarLinha);
  
   return {
     totalVendas: resumo.totalVendas || 0,
@@ -119,7 +138,7 @@ const normalizarPainelVendedor = (painel) => {
     tendenciaVendas: resumo.tendenciaVendas || "0%",
     tendenciaLiberadas: resumo.tendenciaLiberadas || "0%",
     parcelasDoPeriodo: (painel?.parcelasDoPeriodo || []).map(normalizarParcela),
-    vendas,
+    linhas,
     totalPages: pagina.totalPages ?? 1,
     totalElements: pagina.totalElements ?? 0,
   };
@@ -166,43 +185,6 @@ function sentidoTendencia(tendencia) {
 
 function textoBadgeTendencia(tendencia) {
   return tendencia === "Novo" ? "Sem base no mês ant." : `${tendencia} vs mês ant.`;
-}
- 
-/* Achata cada venda + as parcelas dela (já filtradas por período/status) em uma lista só,
-   na ordem em que devem aparecer: a venda, seguida de cada pagamento dela. */
-function montarLinhasTabela(vendas, periodo) {
-  return vendas.flatMap((venda) => {
-    const dataVenda = venda.dataVenda;
-
-    // Verifica se a venda pertence ao período selecionado
-    let vendaDoPeriodo = false;
-
-    if (dataVenda) {
-      const [anoVenda, mesVenda, diaVenda] = dataVenda
-        .split("-")
-        .map(Number);
-
-      vendaDoPeriodo =
-        anoVenda === periodo.ano &&
-        mesVenda === periodo.mes &&
-        (periodo.dia === null || diaVenda === periodo.dia);
-    }
-
-    // A venda só aparece no mês/dia em que foi realizada
-    const linhaVenda = vendaDoPeriodo
-      ? [{ tipoLinha: "venda", chave: venda.id, venda }]
-      : [];
-
-    // As parcelas continuam aparecendo normalmente no período
-    const linhasParcelas = (venda.parcelas || []).map((parcela) => ({
-      tipoLinha: "pagamento",
-      chave: `${venda.id}-${parcela.idParcela ?? parcela.label}`,
-      venda,
-      parcela,
-    }));
-
-    return [...linhaVenda, ...linhasParcelas];
-  });
 }
  
 /* ══════════════════════════════════════════
@@ -430,7 +412,7 @@ const periodo = useMemo(() => {
       ano: periodo.ano,
       mes: periodo.mes,
       dia: periodo.dia,
-      status: STATUS_API[cardAtivo ?? "vendas"],
+      status: STATUS_API[cardAtivo] ?? STATUS_API_PADRAO,
       pagina: paginaAtual,
       tamanho: TAMANHO_PAGINA,
     })
@@ -464,15 +446,13 @@ const periodo = useMemo(() => {
   }, [initialized, isAuthenticated, hasRole, periodo.ano, periodo.mes, periodo.dia, cardAtivo, paginaAtual, atualizacaoPainel]);
  
   const dados = painelVendedor || normalizarPainelVendedor(null);
-  const linhas = useMemo(
-  () => montarLinhasTabela(dados.vendas, periodo),
-  [dados.vendas, periodo]
-);
+  const linhas = dados.linhas;
  
   const tituloTabela =
-    cardAtivo === "liberadas" ? "Comissões Liberadas"
-      : cardAtivo === "pendentes" ? "Pagamentos Pendentes"
-        : "Todos os pedidos de venda";
+    cardAtivo === "vendas" ? "Pedidos de venda"
+      : cardAtivo === "liberadas" ? "Comissões Liberadas"
+        : cardAtivo === "pendentes" ? "Pagamentos Pendentes"
+          : "Todos os pedidos de venda";
  
   const sentido = sentidoTendencia(dados.tendencia);
   const corTendencia = sentido === "alta" ? "text-green-500" : sentido === "baixa" ? "text-red-400" : "text-gray-400";
@@ -528,9 +508,9 @@ const periodo = useMemo(() => {
     }
   }
  
-  /* ── PDF: precisa de TODAS as vendas do período, não só da página atual ── */
-  async function buscarTodasVendasDoPeriodo() {
-    const vendas = [];
+  /* ── PDF: precisa de TODAS as linhas do período, não só da página atual ── */
+  async function buscarTodasLinhasDoPeriodo() {
+    const linhasPeriodo = [];
     let pagina = 1;
     let totalPages = 1;
  
@@ -539,25 +519,25 @@ const periodo = useMemo(() => {
         ano: periodo.ano,
         mes: periodo.mes,
         dia: periodo.dia,
-        status: STATUS_API[cardAtivo ?? "vendas"],
+        status: STATUS_API[cardAtivo] ?? STATUS_API_PADRAO,
         pagina,
         tamanho: TAMANHO_PAGINA_PDF,
       });
       const painel = normalizarPainelVendedor(response);
-      vendas.push(...painel.vendas);
+      linhasPeriodo.push(...painel.linhas);
       totalPages = painel.totalPages;
       pagina += 1;
     } while (pagina <= totalPages);
  
-    return vendas;
+    return linhasPeriodo;
   }
  
   async function emitirPDF() {
     if (gerandoPdf) return;
     setGerandoPdf(true);
     try {
-      const vendasPdf = await buscarTodasVendasDoPeriodo();
-      await gerarPDFRelatorio(vendasPdf);
+      const linhasPeriodo = await buscarTodasLinhasDoPeriodo();
+      await gerarPDFRelatorio(linhasPeriodo);
     } catch (error) {
       toast.error(error.message || "Não foi possível gerar o PDF.");
     } finally {
@@ -565,9 +545,9 @@ const periodo = useMemo(() => {
     }
   }
  
-  async function gerarPDFRelatorio(vendasPdf) {
+  async function gerarPDFRelatorio(linhasPeriodo) {
     const { criarRelatorioVendedor } = await import("../services/relatorioVendedor.js");
-    const linhasPdf = montarLinhasTabela(vendasPdf, periodo).map((linha) => {
+    const linhasPdf = linhasPeriodo.map((linha) => {
       const pagamento = linha.tipoLinha === "pagamento";
       return [
         pagamento ? "Pagamento" : "Pedido de venda",
@@ -579,7 +559,7 @@ const periodo = useMemo(() => {
         pagamento ? textoStatusParcela(linha.parcela.status) : formatarStatusPagamento(linha.venda.status),
       ];
     });
-    const filtro = ({ liberadas: "Comiss?es liberadas", pendentes: "Pagamentos pendentes" })[cardAtivo] || "Todos os pedidos de venda";
+    const filtro = ({ vendas: "Pedidos de venda", liberadas: "Comissões liberadas", pendentes: "Pagamentos pendentes" })[cardAtivo] || "Todos os pedidos de venda";
     const doc = await criarRelatorioVendedor({ dados, linhas: linhasPdf, periodo: periodoSelecionado, filtro });
     await doc.save(`relatorio-comissoes-${periodoArquivo}.pdf`, { returnPromise: true });
   }
