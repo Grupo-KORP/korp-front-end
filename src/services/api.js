@@ -138,10 +138,25 @@ export async function fetchClientesPedido() {
   return data;
 }
 
+export async function cadastrarCliente(payload) {
+  const { data } = await api.post("/cliente", payload);
+  return data;
+}
+
+export async function cadastrarContato(payload) {
+  const { data } = await api.post("/contatos", payload);
+  return data;
+}
+
 // ─── Distribuidores ──────────────────────────────────────────────────
 
 export async function fetchDistribuidoresPedido() {
   const { data } = await api.get("/distribuidor/pedido-dto");
+  return data;
+}
+
+export async function cadastrarDistribuidor(payload) {
+  const { data } = await api.post("/distribuidor", payload);
   return data;
 }
 
