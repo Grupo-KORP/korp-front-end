@@ -8,6 +8,7 @@ import { api } from "../services/api.js";
 import { toast } from "sonner";
 import CatalogPage from "../components/catalog/CatalogPage";
 import EntityDetailsModal from "../components/modal/EntityDetailsModal";
+import { useEntityDetailsHandlers } from "../hooks/useEntityDetailsHandlers";
 
 const PAGE_SIZE = 8;
 
@@ -248,8 +249,8 @@ export default function ClientePage() {
         // contato criado no frontend mas ainda não salvo
         removeContact(contactToDelete.index);
       }
-    } catch {
-      toast.error("Erro ao remover contato.");
+    } catch (err) {
+      toast.error(err?.status === 409 ? err.message : "Erro ao remover contato.");
     } finally {
       setDeletingContact(false);
       setContactToDelete(null);
@@ -262,50 +263,12 @@ export default function ClientePage() {
     setShowDetailsModal(true);
   }
 
-  async function handleSaveDetailsContact(contact) {
-    const payload = {
-      nome: contact.nome.trim(),
-      email: contact.email.trim(),
-      telefone: contact.telefone.replace(/\D/g, ""),
-      idCliente: selectedClient.idCliente ?? selectedClient.id,
-    };
-    const { data } = contact.idContato != null
-      ? await api.put(`/contatos/${contact.idContato}`, payload)
-      : await api.post("/contatos", payload);
-    setSelectedClient((previous) => ({
-      ...previous,
-      contatos: contact.idContato != null
-        ? previous.contatos.map((item) => item.idContato === contact.idContato ? data : item)
-        : [...(previous.contatos ?? []), data],
-    }));
-  }
-
-  async function handleDeleteDetailsContact(contact) {
-    await api.delete(`/contatos/${contact.idContato}`);
-    setSelectedClient((previous) => ({
-      ...previous,
-      contatos: previous.contatos.filter((item) => item.idContato !== contact.idContato),
-    }));
-    await fetchClientes(currentPage, search);
-  }
-
-  async function handleSaveDetailsCompany(company) {
-    const payload = {
-      razaoSocial: selectedClient.razaoSocial,
-      cnpj: String(selectedClient.cnpj ?? "").replace(/\D/g, ""),
-      inscricaoEstadual: selectedClient.inscricaoEstadual,
-      nomeFantasia: company.nomeFantasia.trim(),
-      telefone: company.telefone.replace(/\D/g, ""),
-      cep: selectedClient.cep.replace(/\D/g, ""),
-      endereco: selectedClient.logradouro,
-      numero: String(selectedClient.numero).trim(),
-      complemento: selectedClient.complemento,
-      cidade: selectedClient.cidade,
-      uf: selectedClient.uf,
-    };
-    await api.put(`/cliente/${selectedClient.idCliente ?? selectedClient.id}`, payload);
-    setSelectedClient((previous) => ({ ...previous, ...payload, logradouro: payload.endereco }));
-  }
+  const detailsHandlers = useEntityDetailsHandlers(
+    "cliente",
+    selectedClient,
+    setSelectedClient,
+    () => fetchClientes(currentPage, search)
+  );
 
   // ── Editar ──
   function handleEdit(c) {
@@ -573,9 +536,9 @@ export default function ClientePage() {
         open={showDetailsModal}
         entity={selectedClient}
         onClose={() => setShowDetailsModal(false)}
-        onSaveContact={handleSaveDetailsContact}
-        onDeleteContact={handleDeleteDetailsContact}
-        onSaveCompany={handleSaveDetailsCompany}
+        onSaveContact={detailsHandlers.onSaveContact}
+        onDeleteContact={detailsHandlers.onDeleteContact}
+        onSaveCompany={detailsHandlers.onSaveCompany}
         onSaved={() => fetchClientes(currentPage, search)}
       />
 

@@ -13,6 +13,7 @@ import "../components/catalog/CatalogPage.css";
 const PAGE_SIZE = 5;
 
 const emptyForm = { nome: "", pn: "" };
+const PART_NUMBER_REGEX = /^[A-Za-z0-9./-]{1,50}$/;
 
 // ─── Paginação ─────────────────────────────────────────────────────────────────
 function Pagination({ currentPage, totalPages, onPageChange }) {
@@ -164,6 +165,9 @@ export default function ProdutoPage() {
   function validate() {
     const errs = {};
     if (!form.nome.trim()) errs.nome = "Nome obrigatório.";
+    if (form.pn.trim() && !PART_NUMBER_REGEX.test(form.pn.trim())) {
+      errs.pn = "P/N inválido. Use letras, números, hífen, ponto e barra (máx. 50).";
+    }
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -239,7 +243,7 @@ export default function ProdutoPage() {
 
   const fields = [
     { name: "nome", required: true, label: "Nome do Produto", placeholder: "Ex: Pacote Office 365", value: form.nome, error: errors.nome },
-    { name: "pn", label: "P/N (Part Number)", placeholder: "Ex: ABC-001", value: form.pn, error: errors.pn },
+    { name: "pn", label: "P/N (Part Number)", placeholder: "Ex: ABC-001", value: form.pn, error: errors.pn, maxLength: 50 },
   ];
 
   return (
@@ -305,7 +309,6 @@ export default function ProdutoPage() {
                     </span>
                     <div>
                       <strong>{produto.nome}</strong>
-                      {produto.codigoProduto && <small>{produto.codigoProduto}</small>}
                       <small>P/N: {produto.pn || "—"}</small>
                     </div>
                   </div>
@@ -350,6 +353,7 @@ export default function ProdutoPage() {
                       aria-invalid={Boolean(field.error)}
                       title={field.error || undefined}
                       type={field.type || "text"}
+                      maxLength={field.maxLength}
                       placeholder={field.placeholder}
                       value={field.value}
                       onChange={handleChange}

@@ -8,6 +8,7 @@ import { api } from "../services/api.js";
 import { toast } from "sonner";
 import CatalogPage from "../components/catalog/CatalogPage";
 import EntityDetailsModal from "../components/modal/EntityDetailsModal";
+import { useEntityDetailsHandlers } from "../hooks/useEntityDetailsHandlers";
 
 const PAGE_SIZE = 8;
 
@@ -250,8 +251,8 @@ export default function DistribuidorPage() {
       } else {
         removeContact(contactToDelete.index);
       }
-    } catch {
-      toast.error("Erro ao remover contato.");
+    } catch (err) {
+      toast.error(err?.status === 409 ? err.message : "Erro ao remover contato.");
     } finally {
       setDeletingContact(false);
       setContactToDelete(null);
@@ -263,6 +264,13 @@ export default function DistribuidorPage() {
     setSelectedDistribuidor(d);
     setShowDetailsModal(true);
   }
+
+  const detailsHandlers = useEntityDetailsHandlers(
+    "distribuidor",
+    selectedDistribuidor,
+    setSelectedDistribuidor,
+    () => fetchDistribuidores(currentPage, search)
+  );
 
   // ── Editar ──
   function handleEdit(d) {
@@ -577,6 +585,10 @@ export default function DistribuidorPage() {
       open={showDetailsModal}
       entity={selectedDistribuidor}
       onClose={() => setShowDetailsModal(false)}
+      onSaveContact={detailsHandlers.onSaveContact}
+      onDeleteContact={detailsHandlers.onDeleteContact}
+      onSaveCompany={detailsHandlers.onSaveCompany}
+      onSaved={() => fetchDistribuidores(currentPage, search)}
     />
 
     {contactToDelete && <DeleteConfirmation name={contactToDelete.nome || ('Contato ' + (contactToDelete.index + 1))} entityLabel="contato" busy={deletingContact} onCancel={() => setContactToDelete(null)} onConfirm={handleDeleteContact} />}

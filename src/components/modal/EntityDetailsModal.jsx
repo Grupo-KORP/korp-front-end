@@ -188,7 +188,11 @@ export default function EntityDetailsModal({ entity, onClose, title, open = true
                       {onSaveContact && <div className="flex gap-1 shrink-0">
                         <IconButton icon="edit" title="Editar contato" disabled={busy || !!draft}
                           onClick={() => setDrafts((previous) => ({ ...previous, [key]: { ...contact, telefone: maskPhone(contact.telefone) } }))} />
-                        <IconButton icon="delete" title="Excluir contato" disabled={busy}
+                        <IconButton icon="delete"
+                          title={contact.idContato != null && contacts.length <= 1
+                            ? "A empresa precisa ter pelo menos um contato. Edite este contato ou salve um novo antes de excluí-lo."
+                            : "Excluir contato"}
+                          disabled={busy || (contact.idContato != null && contacts.length <= 1)}
                           onClick={() => setContactToDelete({ key, contact: displayed })} />
                       </div>}
                     </div>
