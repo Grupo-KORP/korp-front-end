@@ -1,6 +1,8 @@
 export function validarCamposPedido(data) {
   if (!String(data.cliente?.nomeFantasia || "").trim()) return "Informe o nome fantasia do cliente.";
   if (!String(data.distribuidor?.nomeFantasia || "").trim()) return "Informe o nome fantasia do distribuidor.";
+  if (!data.cliente?.id) return "Salve o cadastro do cliente antes de finalizar o pedido.";
+  if (!data.distribuidor?.id) return "Salve o cadastro do distribuidor antes de finalizar o pedido.";
   if (!data.produtos?.length) return "Selecione pelo menos um produto.";
 
   for (const [index, produto] of data.produtos.entries()) {

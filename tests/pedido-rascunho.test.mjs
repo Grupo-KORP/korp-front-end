@@ -4,8 +4,8 @@ import { validarCamposPedido } from "../src/services/pedidoValidation.js";
 import { dadosParaFormData, diasParaExpirar, montarDadosRascunho } from "../src/services/pedidoDrafts.js";
 
 const pedidoValido = () => ({
-  cliente: { nomeFantasia: "Acme" },
-  distribuidor: { nomeFantasia: "Dist" },
+  cliente: { id: 1, nomeFantasia: "Acme" },
+  distribuidor: { id: 2, nomeFantasia: "Dist" },
   produtos: [{ fkProduto: 1, descricao: "Item", quantidade: "2", valorUnitario: "10.00", unitFaturado: "15.00" }],
 });
 
