@@ -269,7 +269,8 @@ export default function VendedoresPage() {
           email: form.email,
           telefone: form.fone,
           role: 3,
-          percentualComissao: parseFloat(form.comissao)
+          percentualComissao: parseFloat(form.comissao),
+          status: form.status === "Ativo",
         };
         await api.put(`/usuario/${editingId}`, payload);
         if (statusOriginal === "Ativo" && form.status === "Inativo") {
@@ -459,7 +460,7 @@ export default function VendedoresPage() {
                       </div>
 
                       {/* Vendas */}
-                      <span className="catalog-centered">{v.vendasEfetivadas ?? 0}</span>
+                      <span className="catalog-centered">{v.numeroDePedidos ?? 0}</span>
 
                       {/* Status do Colaborador */}
                       <span className={`inline-flex items-center justify-center justify-self-center w-fit text-[10px] font-extrabold tracking-wider uppercase px-2.5 py-1 rounded-full border whitespace-nowrap ${v.status === true || v.status === "true"
@@ -566,7 +567,7 @@ export default function VendedoresPage() {
                       disabled={loading}
                       className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition ${inputBg}`}
                     >
-                      <option value="Ativo" disabled={statusOriginal === "Inativo"}>Ativo</option>
+                      <option value="Ativo">Ativo</option>
                       <option value="Inativo">Inativo</option>
                     </select>
                   ) : (
