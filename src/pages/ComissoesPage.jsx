@@ -1,21 +1,30 @@
 import { formatarStatusPagamento } from "../services/statusPagamento.js";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import StatusComissaoCell from "../components/ui/StatusComissaoCell.jsx";
 import ModalDetalheVenda from "../components/modal/Modaldetalhevenda.jsx";
 import NavbarFinanceiro from "../layout/NavbarFinanceiro.jsx";
 import logoTnd from "../assets/logo-tnd.webp";
 import DatePickerCalendar from "../components/ui/DatePickerCalendar.jsx";
 import { useDarkMode } from "../hooks/useDarkMode.jsx";
 import "./ComissoesPage.css";
-import { parcelasDoPeriodo, filtrarStatusParcelas } from "../services/filtrosComissoes.js";
+import { atualizarStatusComissao, buscarComissoesFinanceiro } from "../services/api.js";
+import Pagination from "../components/pagination/pagination.jsx";
 
 const STATUS = {
   pendente: "Pendente",
   liberada: "Liberada",
   paga: "Paga",
+  cancelada: "Cancelada",
 };
 
 const STATUS_OPTIONS = Object.values(STATUS);
+const STATUS_COMISSAO_OPTIONS = [
+  { value: "PENDENTE", label: STATUS.pendente },
+  { value: "LIBERADA", label: STATUS.liberada },
+  { value: "PAGA", label: STATUS.paga },
+  { value: "CANCELADA", label: STATUS.cancelada },
+];
 
 const hoje = new Date();
 const amanha = new Date(hoje);
@@ -371,6 +380,68 @@ function StatusBadge({ status, children }) {
   return <span className={`comissoes-status status-${normalizar(status)}`}>{children || formatarStatusPagamento(status)}</span>;
 }
 
+function ModalStatusComissao({ comissao, dark, salvando, onClose, onSave }) {
+  const dialog = useRef(null);
+  const [status, setStatus] = useState(comissao.statusCodigo);
+
+  useEffect(() => {
+    const modal = dialog.current;
+    modal.showModal();
+    return () => modal.close();
+  }, []);
+
+  const confirmar = async () => {
+    if (await onSave(comissao.idComissao, status)) onClose();
+  };
+
+  return (
+    <dialog
+      ref={dialog}
+      className={`comissoes-status-modal${dark ? " comissoes-status-modal-dark" : ""}`}
+      aria-labelledby="comissoes-status-modal-title"
+      onCancel={(event) => { event.preventDefault(); if (!salvando) onClose(); }}
+      onClick={(event) => { if (event.target === dialog.current && !salvando) onClose(); }}
+    >
+      <div className="comissoes-status-modal-content">
+        <header className="comissoes-status-modal-header">
+          <div>
+            <p>Gestão de comissões</p>
+            <h2 id="comissoes-status-modal-title">Alterar status</h2>
+          </div>
+          <button type="button" className="comissoes-modal-close" aria-label="Fechar" disabled={salvando} onClick={onClose}>
+            <Icone tipo="fechar" />
+          </button>
+        </header>
+        <div className="comissoes-status-modal-body">
+          <p><strong>Pedido:</strong> {comissao.pedido}</p>
+          <p><strong>Parcela:</strong> {comissao.numero}</p>
+          <fieldset className="comissoes-status-options">
+            <legend>Novo status</legend>
+            {STATUS_COMISSAO_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={`comissoes-status-choice comissoes-status status-${normalizar(option.label)}${status === option.value ? " is-selected" : ""}`}
+                aria-pressed={status === option.value}
+                disabled={salvando}
+                onClick={() => setStatus(option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </fieldset>
+        </div>
+        <footer className="comissoes-status-modal-actions">
+          <button type="button" className="comissoes-status-cancel" disabled={salvando} onClick={onClose}>Cancelar</button>
+          <button type="button" className="comissoes-status-confirm" disabled={salvando || status === comissao.statusCodigo} onClick={confirmar}>
+            {salvando ? "Salvando..." : "Salvar status"}
+          </button>
+        </footer>
+      </div>
+    </dialog>
+  );
+}
+
 function VendaModal({ venda, onClose, onStatusChange, onNotaChange, escuro }) {
   const [rascunho, setRascunho] = useState(null);
   const editando = rascunho !== null;
@@ -514,71 +585,101 @@ function VendaModal({ venda, onClose, onStatusChange, onNotaChange, escuro }) {
 
 export default function ComissoesPage() {
   const { darkMode: modoEscuro } = useDarkMode();
-  const [vendas, setVendas] = useState(vendasMockadas);
+  const [dadosComissoes, setDadosComissoes] = useState(null);
+  const [carregando, setCarregando] = useState(true);
+  const [erroCarregamento, setErroCarregamento] = useState("");
+  const [pagina, setPagina] = useState(0);
   const [filtroAtivo, setFiltroAtivo] = useState(null);
   const [busca, setBusca] = useState("");
   const [selecao, setSelecao] = useState(() => ({ type: "month", y: hoje.getFullYear(), m: hoje.getMonth() }));
-  const [vendaSelecionadaId, setVendaSelecionadaId] = useState(null);
   const [emitindoRelatorio, setEmitindoRelatorio] = useState(false);
+  const [atualizacaoComissoes, setAtualizacaoComissoes] = useState(0);
+  const [comissoesSalvando, setComissoesSalvando] = useState({});
+  const [comissaoSelecionada, setComissaoSelecionada] = useState(null);
   const relatorioEmAndamento = useRef(false);
 
-  const vendasBuscadas = useMemo(() => {
-    const termo = normalizar(busca.trim());
-    return vendas.filter((venda) => !termo || [
-      venda.vendedor,
-      venda.detalhesPedido?.numeroPedido,
-      venda.id,
-    ].some((valor) => normalizar(String(valor ?? "")).includes(termo)));
-  }, [busca, vendas]);
+  useEffect(() => {
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setCarregando(true);
+      setErroCarregamento("");
+      try {
+        const resposta = await buscarComissoesFinanceiro({
+          ano: selecao?.y ?? hoje.getFullYear(),
+          mes: (selecao?.m ?? hoje.getMonth()) + 1,
+          busca: busca.trim() || undefined,
+          status: filtroAtivo ? filtroAtivo.toUpperCase() : undefined,
+          pagina,
+          tamanho: 10,
+          signal: controller.signal,
+        });
+        setDadosComissoes(resposta);
+      } catch (erro) {
+        if (!controller.signal.aborted) {
+          setErroCarregamento(erro.message || "Não foi possível carregar as comissões.");
+        }
+      } finally {
+        if (!controller.signal.aborted) setCarregando(false);
+      }
+    }, busca.trim() ? 250 : 0);
 
-  const parcelasPeriodo = useMemo(() => parcelasDoPeriodo(vendasBuscadas, selecao), [vendasBuscadas, selecao]);
-  const contadores = useMemo(() => filtrosKpi.reduce((acc, filtro) => {
-    acc[filtro.chave] = filtrarStatusParcelas(parcelasPeriodo, filtro.chave).length;
-    return acc;
-  }, {}), [parcelasPeriodo]);
-  const parcelasFiltradas = useMemo(() => filtrarStatusParcelas(parcelasPeriodo, filtroAtivo), [parcelasPeriodo, filtroAtivo]);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [atualizacaoComissoes, busca, filtroAtivo, pagina, selecao]);
 
-  const proximasLiberacoes = useMemo(() => {
-    const datasPermitidas = new Set([toISODate(hoje), toISODate(amanha)]);
-
-    return parcelasFiltradas
-      .filter((parcela) => datasPermitidas.has(parcela.previsao))
-      .sort((a, b) => a.previsao.localeCompare(b.previsao));
-  }, [parcelasFiltradas]);
-
-  const vendaSelecionada = vendas.find((venda) => venda.id === vendaSelecionadaId);
+  const statusParaTela = (status) => ({
+    PAGA: STATUS.paga,
+    LIBERADA: STATUS.liberada,
+    PENDENTE: STATUS.pendente,
+    CANCELADA: STATUS.cancelada,
+  }[String(status || "").toUpperCase()] || status);
+  const converterParcela = (parcela) => ({
+    id: `${parcela.idPedido}-${parcela.numeroParcela}`,
+    idComissao: parcela.idComissao,
+    numero: `${parcela.numeroParcela}/${parcela.totalParcelas}`,
+    valor: parcela.valorComissao,
+    previsao: parcela.dataVencimento,
+    statusCodigo: String(parcela.status || "").toUpperCase(),
+    status: statusParaTela(parcela.status),
+    venda: {
+      id: parcela.codigoPedido || parcela.idPedido,
+      venda: parcela.produto,
+      cliente: parcela.cliente,
+      vendedor: parcela.vendedor,
+      detalhesPedido: { numeroPedido: parcela.codigoPedido || parcela.idPedido },
+    },
+  });
+  const parcelasFiltradas = (dadosComissoes?.pagamentosPeriodo || []).map(converterParcela);
+  const proximasLiberacoes = (dadosComissoes?.proximasLiberacoes || []).map(converterParcela);
+  const contadores = {
+    [STATUS.paga]: dadosComissoes?.parcelasPagas ?? 0,
+    [STATUS.liberada]: dadosComissoes?.parcelasLiberadas ?? 0,
+    [STATUS.pendente]: dadosComissoes?.parcelasPendentes ?? 0,
+  };
+  const totalPaginas = dadosComissoes?.totalPaginas ?? 0;
   const tituloTabela = filtrosKpi.find((filtro) => filtro.chave === filtroAtivo)?.rotulo || "Pagamentos do período";
 
-  function alterarStatus(vendaId, parcelaId, status) {
-    setVendas((atuais) =>
-      atuais.map((venda) =>
-        venda.id !== vendaId
-          ? venda
-          : {
-            ...venda,
-            parcelas: venda.parcelas.map((parcela) =>
-              parcela.id !== parcelaId
-                ? parcela
-                : { ...parcela, status, notaFiscal: status === STATUS.paga ? parcela.notaFiscal : "" }
-            ),
-          }
-      )
-    );
-  }
+  async function salvarStatusComissao(idComissao, status) {
+    if (idComissao == null) {
+      toast.error("A API não retornou o identificador da comissão.");
+      return;
+    }
 
-  function alterarNotaFiscal(vendaId, parcelaId, notaFiscal) {
-    setVendas((atuais) =>
-      atuais.map((venda) =>
-        venda.id !== vendaId
-          ? venda
-          : {
-            ...venda,
-            parcelas: venda.parcelas.map((parcela) =>
-              parcela.id === parcelaId ? { ...parcela, notaFiscal } : parcela
-            ),
-          }
-      )
-    );
+    const chave = String(idComissao);
+    setComissoesSalvando((atuais) => ({ ...atuais, [chave]: true }));
+    try {
+      await atualizarStatusComissao(idComissao, status);
+      toast.success("Status da comissão atualizado.");
+      setAtualizacaoComissoes((atual) => atual + 1);
+      return true;
+    } catch (erro) {
+      toast.error(erro.message || "Não foi possível atualizar o status da comissão.");
+      return false;
+    } finally {
+      setComissoesSalvando((atuais) => ({ ...atuais, [chave]: false }));
+    }
   }
 
   async function emitirRelatorio() {
@@ -606,6 +707,15 @@ export default function ComissoesPage() {
   return (
     <div className={`comissoes-page ${modoEscuro ? "comissoes-page-dark" : ""}`}>
       <NavbarFinanceiro />
+      {comissaoSelecionada && (
+        <ModalStatusComissao
+          comissao={comissaoSelecionada}
+          dark={modoEscuro}
+          salvando={Boolean(comissoesSalvando[String(comissaoSelecionada.idComissao)])}
+          onClose={() => setComissaoSelecionada(null)}
+          onSave={salvarStatusComissao}
+        />
+      )}
 
       <main className="comissoes-content">
         <div className="comissoes-print-brand">
@@ -623,12 +733,12 @@ export default function ComissoesPage() {
               <input
                 type="text"
                 value={busca}
-                onChange={(event) => setBusca(event.target.value)}
-                placeholder="Vendedor ou código do pedido"
-                aria-label="Pesquisar vendedor ou código do pedido"
+                onChange={(event) => { setBusca(event.target.value); setPagina(0); }}
+                placeholder="Vendedor, cliente, produto ou pedido"
+                aria-label="Pesquisar vendedor, cliente, produto ou pedido"
               />
             </label>
-            <DatePickerCalendar selecao={selecao} aoSelecionar={setSelecao} dark={modoEscuro} />
+            <DatePickerCalendar selecao={selecao} aoSelecionar={(valor) => { setSelecao(valor); setPagina(0); }} dark={modoEscuro} />
           </div>
         </header>
 
@@ -641,7 +751,10 @@ export default function ComissoesPage() {
                   filtro={filtro}
                   valor={contadores[filtro.chave] || 0}
                   ativo={filtroAtivo === filtro.chave}
-                  onClick={() => setFiltroAtivo((atual) => (atual === filtro.chave ? null : filtro.chave))}
+                  onClick={() => {
+                    setFiltroAtivo((atual) => (atual === filtro.chave ? null : filtro.chave));
+                    setPagina(0);
+                  }}
                 />
               ))}
             </section>
@@ -668,7 +781,7 @@ export default function ComissoesPage() {
                   </thead>
                   <tbody>
                     {parcelasFiltradas.map(({ venda, ...parcela }) => (
-                      <tr key={`${venda.id}-${parcela.id}`} onClick={() => setVendaSelecionadaId(venda.id)}>
+                      <tr key={`${venda.id}-${parcela.id}`}>
                         <td>
                           <strong>{venda.id}</strong>
                           <span>{venda.venda}</span>
@@ -683,17 +796,31 @@ export default function ComissoesPage() {
                           </div>
                         </td>
                         <td>
-                          <StatusBadge status={parcela.status} />
+                          <StatusComissaoCell
+                            status={parcela.status}
+                            identificador={parcela.idComissao ?? parcela.id}
+                            disabled={parcela.idComissao == null || Boolean(comissoesSalvando[String(parcela.idComissao)])}
+                            onEdit={() => setComissaoSelecionada({
+                              idComissao: parcela.idComissao,
+                              statusCodigo: parcela.statusCodigo,
+                              status: parcela.status,
+                              pedido: venda.id,
+                              numero: parcela.numero,
+                            })}
+                          />
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
 
-                {parcelasFiltradas.length === 0 && (
-                  <p className="comissoes-empty">Nenhuma parcela encontrada para os filtros selecionados.</p>
-                )}
+                    {parcelasFiltradas.length === 0 && !carregando && !erroCarregamento && (
+                      <p className="comissoes-empty">Nenhuma parcela encontrada para os filtros selecionados.</p>
+                    )}
+                    {carregando && <p className="comissoes-empty">Carregando comissões...</p>}
+                    {erroCarregamento && <p className="comissoes-empty" role="alert">{erroCarregamento}</p>}
               </div>
+              <Pagination currentPage={pagina + 1} totalPages={totalPaginas} onPageChange={(paginaVisual) => setPagina(paginaVisual - 1)} />
             </section>
           </div>
 
@@ -734,14 +861,6 @@ export default function ComissoesPage() {
         </div>
       </main>
 
-      <VendaModal
-        key={vendaSelecionadaId || "fechado"}
-        escuro={modoEscuro}
-        venda={vendaSelecionada}
-        onClose={() => setVendaSelecionadaId(null)}
-        onStatusChange={alterarStatus}
-        onNotaChange={alterarNotaFiscal}
-      />
     </div>
   );
 }
