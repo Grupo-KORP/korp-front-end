@@ -261,15 +261,16 @@ export async function buscarDetalheVenda(idPedido) {
 // ─── Painel financeiro ──────────────────────────────────────────────────────
 // Um endpoint por bloco da tela; todos aceitam o mesmo filtro { ano, mes }.
 
-async function buscarBlocoFinanceiro(caminho, params) {
+async function buscarBlocoFinanceiro(caminho, params, options = {}) {
   const filtrados = Object.fromEntries(
     Object.entries(params).filter(([, valor]) => valor !== null && valor !== undefined),
   );
 
   try {
-    const { data } = await api.get(`/financeiro/home/${caminho}`, { params: filtrados });
+    const { data } = await api.get(`/financeiro/home/${caminho}`, { params: filtrados, ...options });
     return data;
   } catch (err) {
+    if (options.signal?.aborted) throw err;
     const httpStatus = err?.status ?? err?.response?.status;
 
     if (httpStatus === 403) throw new Error("Sem permissão para acessar o painel financeiro.");
@@ -289,6 +290,15 @@ export function buscarEvolucaoVendasFinanceiro({ ano, mes } = {}) {
 
 export function buscarRankingVendedoresFinanceiro({ ano, mes, limite } = {}) {
   return buscarBlocoFinanceiro("ranking-vendedores", { ano, mes, limite });
+}
+
+export function buscarComissoesFinanceiro({ ano, mes, busca, status, pagina = 0, tamanho = 10, signal } = {}) {
+  return buscarBlocoFinanceiro("comissoes", { ano, mes, busca, status, pagina, tamanho }, { signal });
+}
+
+export async function atualizarStatusComissao(idComissao, status) {
+  const { data } = await api.patch(`/financeiro/home/comissoes/${idComissao}/status`, { status });
+  return data;
 }
 
 /** @param pagina 1-based (o Spring é 0-based, a conversão fica aqui) */
