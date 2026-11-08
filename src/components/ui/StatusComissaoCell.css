@@ -1,0 +1,64 @@
+.comissoes-status-cell {
+  display: grid;
+  width: 236px;
+  grid-template-columns: 196px 32px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-inline: auto;
+}
+
+.comissoes-status-cell .comissoes-status {
+  box-sizing: border-box;
+  width: 196px;
+  min-height: 30px;
+  padding: 5px 8px;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+  white-space: normal;
+}
+
+.comissoes-status-edit-button {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 6px;
+  background: #eff6ff;
+  color: #2563eb;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.comissoes-status-edit-button:hover:not(:disabled) {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.comissoes-status-edit-button .app-action-icon {
+  width: 15px;
+  height: 15px;
+}
+
+.comissoes-page-dark .comissoes-status-edit-button {
+  background: rgba(59, 130, 246, 0.16);
+  color: #93c5fd;
+}
+
+.comissoes-page-dark .comissoes-status-edit-button:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.28);
+  color: #bfdbfe;
+}
+
+.comissoes-status-edit-button:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+}
+
+.comissoes-status-edit-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}

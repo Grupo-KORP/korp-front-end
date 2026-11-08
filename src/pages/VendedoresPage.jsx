@@ -145,7 +145,6 @@ export default function VendedoresPage() {
   const [errors, setErrors] = useState({});
   const [editingId, setEditingId] = useState(null);
   const [vendedorSelecionado, setVendedorSelecionado] = useState(null);
-  const [statusOriginal, setStatusOriginal] = useState("Ativo");
   const [success, setSuccess] = useState(null);
   const [search, setSearch] = useState(searchParams.get("busca") || "");
 
@@ -269,19 +268,10 @@ export default function VendedoresPage() {
           email: form.email,
           telefone: form.fone,
           role: 3,
-          percentualComissao: parseFloat(form.comissao)
+          percentualComissao: parseFloat(form.comissao),
+          status: form.status === "Ativo",
         };
         await api.put(`/usuario/${editingId}`, payload);
-        if (statusOriginal === "Ativo" && form.status === "Inativo") {
-          try {
-            // Este endpoint faz a inativação lógica e preserva o cadastro.
-            await api.delete(`/usuario/${editingId}`);
-          } catch {
-            await fetchVendedores(currentPage, search);
-            toast.error("Os dados foram salvos, mas não foi possível inativar o vendedor. Tente salvar novamente.");
-            return;
-          }
-        }
         toast.success("Vendedor atualizado com sucesso!", { duration: 5000 });
         setEditingId(null);
       } else {
@@ -330,7 +320,6 @@ export default function VendedoresPage() {
   function handleEdit(v) {
     const status = v.status === true || v.status === "true" ? "Ativo" : "Inativo";
     setEditingId(v.idVendedor);
-    setStatusOriginal(status);
     setForm({
       nome: v.nome,
       email: v.email,
@@ -459,7 +448,7 @@ export default function VendedoresPage() {
                       </div>
 
                       {/* Vendas */}
-                      <span className="catalog-centered">{v.vendasEfetivadas ?? 0}</span>
+                      <span className="catalog-centered">{v.numeroDePedidos ?? 0}</span>
 
                       {/* Status do Colaborador */}
                       <span className={`inline-flex items-center justify-center justify-self-center w-fit text-[10px] font-extrabold tracking-wider uppercase px-2.5 py-1 rounded-full border whitespace-nowrap ${v.status === true || v.status === "true"
@@ -566,7 +555,7 @@ export default function VendedoresPage() {
                       disabled={loading}
                       className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition ${inputBg}`}
                     >
-                      <option value="Ativo" disabled={statusOriginal === "Inativo"}>Ativo</option>
+                      <option value="Ativo">Ativo</option>
                       <option value="Inativo">Inativo</option>
                     </select>
                   ) : (
