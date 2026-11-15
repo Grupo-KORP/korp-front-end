@@ -1,3 +1,5 @@
+import CadastroFinanceiroPage from "./CadastroFinanceiroPage";
+import "./ColaboradoresPage.css";
 import { maskPhone } from "../utils/inputMasks";
 import { confirmDelete } from "../components/modal/DeleteConfirmation";
 import FormValidationNotice from "../components/ui/FormValidationNotice";
@@ -134,6 +136,37 @@ function Pagination({ currentPage, totalPages, onPageChange, darkMode }) {
 
 // ─── Página Principal ─────────────────────────────────────────────────────────
 export default function VendedoresPage() {
+  const [financeiro, setFinanceiro] = useState(false);
+  const modeChanged = useRef(false);
+  const [, setSearchParams] = useSearchParams();
+
+  function changeMode() {
+    modeChanged.current = true;
+    setSearchParams({}, { replace: true });
+    setFinanceiro((current) => !current);
+  }
+
+  const modeSelector = (
+      <button
+        type="button"
+        role="switch"
+        aria-label="Exibir colaboradores do financeiro"
+        aria-checked={financeiro}
+        className={`collaborator-mode-switch ${modeChanged.current ? "collaborator-mode-animated" : ""}`}
+        onClick={changeMode}
+      >
+        <span className="collaborator-switch-thumb" aria-hidden="true" />
+        <span className={`collaborator-mode-option ${!financeiro ? "selected" : ""}`}>Vendedores</span>
+        <span className={`collaborator-mode-option ${financeiro ? "selected" : ""}`}>Financeiro</span>
+      </button>
+  );
+
+  return financeiro
+    ? <CadastroFinanceiroPage modeSelector={modeSelector} />
+    : <VendedoresPanel modeSelector={modeSelector} />;
+}
+
+function VendedoresPanel({ modeSelector }) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const toastShown = useRef(false);
@@ -478,7 +511,9 @@ export default function VendedoresPage() {
             </div>
 
             {/* ── Painel de Cadastro ── */}
-            <div className={`registration-panel w-full lg:w-72 xl:w-80 2xl:w-96 flex-shrink-0 ${cardBg} flex flex-col transition-colors duration-300`}>
+            <aside className="collaborator-registration-column">
+              {modeSelector}
+              <div className={`registration-panel collaborator-registration-panel w-full ${cardBg} flex flex-col transition-colors duration-300`}>
               <div className="registration-heading">
                 <div className="flex items-center gap-2 mb-1">
                   <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -587,6 +622,7 @@ export default function VendedoresPage() {
                 </div>
               </form>
             </div>
+            </aside>
 
           </div>
         </div>
