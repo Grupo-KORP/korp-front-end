@@ -75,7 +75,6 @@ const buildDoc = async () => {
   const usableWidth = pageWidth - margin * 2;
   const contentTop = 30;
   let y = contentTop;
-  const pedidoId = formData?.pedidoId || "{{pedidoId}}";
 
   const drawPageHeader = () => {
     doc.setFillColor(COR_FUNDO_LOGO_PDF);
@@ -389,7 +388,7 @@ const buildDoc = async () => {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(6.4);
     doc.setTextColor(100, 116, 139);
-    doc.text(`Código do Pedido: ${pedidoId}`, margin, pageHeight - 7);
+    doc.text(``, margin, pageHeight - 7);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(6);
     doc.setTextColor(148, 163, 184);

@@ -2,17 +2,21 @@ import { maskCNPJ as formatCnpj, maskCEP, maskPhone, formatMoneyInput, parseMone
 import { confirmDelete } from "../modal/DeleteConfirmation";
 import ActionIcon from "../ui/ActionIcon";
 import RequiredMark from "../ui/RequiredMark";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import "./PedidoForm.css";
 import distribuidorIcon from "../../assets/distribuidor.png";
 import perfilCliente from "../../assets/perfil_cliente.png";
 import carrinho from "../../assets/produto_carrinho.png";
+import { fetchEmpresa, fetchCEP } from "../../utils/consultaExterna";
 import {
   fetchClientesPedido,
   fetchDistribuidoresPedido,
   fetchProdutos,
   cadastrarProduto,
+  cadastrarCliente,
+  cadastrarDistribuidor,
+  cadastrarContato,
 } from "../../services/api";
 
 const UF_LIST = [
@@ -181,6 +185,62 @@ const readonlyInputProps = {
   className: "readonly",
 };
 
+const emptyCadastro = {
+  nomeFantasia: "",
+  razaoSocial: "",
+  cnpj: "",
+  fone: "",
+  cep: "",
+  endereco: "",
+  numero: "",
+  complemento: "",
+  cidade: "",
+  uf: "",
+  contato: "",
+  email: "",
+  contatoTelefone: "",
+};
+
+const isValidPhone = (value) => {
+  const length = onlyDigits(String(value || "")).length;
+  return length >= 10 && length <= 11;
+};
+
+const isCadastroCompleto = (d) =>
+  Boolean(String(d.razaoSocial || "").trim()) &&
+  Boolean(String(d.nomeFantasia || "").trim()) &&
+  removeFormatting(d.cnpj).length === 14 &&
+  isValidPhone(d.fone) &&
+  onlyDigits(String(d.cep || "")).length === 8 &&
+  Boolean(String(d.endereco || "").trim()) &&
+  Boolean(String(d.numero || "").trim()) &&
+  Boolean(String(d.cidade || "").trim()) &&
+  Boolean(String(d.uf || "").trim()) &&
+  Boolean(String(d.contato || "").trim()) &&
+  isValidEmail(d.email) &&
+  isValidPhone(d.contatoTelefone);
+
+const buildCadastroPayload = (d) => ({
+  razaoSocial: d.razaoSocial.trim(),
+  nomeFantasia: d.nomeFantasia.trim(),
+  cnpj: removeFormatting(d.cnpj),
+  inscricaoEstadual: d.inscricaoEstadual ?? d.inscEst ?? "",
+  telefone: onlyDigits(d.fone),
+  cep: onlyDigits(d.cep),
+  endereco: d.endereco,
+  numero: d.numero.trim(),
+  complemento: d.complemento || "",
+  cidade: d.cidade,
+  uf: d.uf,
+  contatos: [
+    {
+      nome: d.contato.trim(),
+      email: d.email.trim(),
+      telefone: onlyDigits(d.contatoTelefone),
+    },
+  ],
+});
+
 function ClienteSection({ onChange, initialData }) {
   const [open, setOpen] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -207,6 +267,13 @@ function ClienteSection({ onChange, initialData }) {
   const [selectedCliente, setSelectedCliente] = useState(null);
   const [contactSearch, setContactSearch] = useState("");
   const [newContact, setNewContact] = useState({ nome: "", email: "" });
+  const [cadastroError, setCadastroError] = useState("");
+  const [loadingCnpj, setLoadingCnpj] = useState(false);
+  const [loadingCep, setLoadingCep] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [savingContact, setSavingContact] = useState(false);
+  const dataRef = useRef(data);
+  dataRef.current = data;
 
   const [clientes, setClientes] = useState([]);
 
@@ -231,10 +298,7 @@ function ClienteSection({ onChange, initialData }) {
       newCadastroCnpjCleaned.length === 14) &&
     isValidCnpj(newCadastroCnpj) &&
     !cnpjExists(newCadastroCnpj, clientes);
-  const canSaveClienteCadastro =
-    Boolean(data.nomeFantasia.trim()) &&
-    Boolean(data.contato.trim()) &&
-    isValidEmail(data.email);
+  const canSaveClienteCadastro = isCadastroCompleto(data);
   const clienteContacts = getEntityContacts(selectedCliente);
   const filteredClienteContacts = clienteContacts.filter((contact) => {
     const normalizedSearch = contactSearch.trim().toLowerCase();
@@ -254,7 +318,9 @@ function ClienteSection({ onChange, initialData }) {
     contactSearch.trim() &&
     filteredClienteContacts.length === 0;
   const canRegisterClienteContact =
-    Boolean(newContact.nome.trim()) && isValidEmail(newContact.email);
+    Boolean(newContact.nome.trim()) &&
+    isValidEmail(newContact.email) &&
+    isValidPhone(newContact.telefone);
 
   const clientesEncontrados =
     searched && !searchError
@@ -283,17 +349,43 @@ function ClienteSection({ onChange, initialData }) {
       : [];
 
   const handle = (e) => {
+    const { name } = e.target;
     const value =
-      e.target.name === "cnpj" ? formatCnpj(e.target.value) : e.target.name === "fone" ? maskPhone(e.target.value) : e.target.name === "cep" ? maskCEP(e.target.value) : e.target.value;
-    const updated = { ...data, [e.target.name]: value };
+      name === "cnpj" ? formatCnpj(e.target.value) : name === "fone" || name === "contatoTelefone" ? maskPhone(e.target.value) : name === "cep" ? maskCEP(e.target.value) : e.target.value;
+    const updated = { ...data, [name]: value };
     setData(updated);
     onChange?.(updated);
+    if (name === "cep" && showSaveButton) buscarCep(value, updated);
+  };
+
+  const buscarCep = async (cepMasked, current) => {
+    const digits = onlyDigits(cepMasked);
+    if (digits.length !== 8) {
+      const cleared = { ...current, endereco: "", cidade: "", uf: "" };
+      setData(cleared);
+      onChange?.(cleared);
+      return;
+    }
+
+    setLoadingCep(true);
+    try {
+      const end = await fetchCEP(digits);
+      if (onlyDigits(dataRef.current.cep) !== digits) return;
+      const merged = { ...dataRef.current, ...end };
+      setData(merged);
+      onChange?.(merged);
+    } catch {
+      toast.error("CEP não encontrado.");
+    } finally {
+      setLoadingCep(false);
+    }
   };
 
   const closeModal = () => {
     setShowModal(false);
     setSearch("");
     setSearchError("");
+    setCadastroError("");
     setSearched(false);
     setModalStep(1);
     setSelectedCliente(null);
@@ -334,19 +426,36 @@ function ClienteSection({ onChange, initialData }) {
     setSearchError("");
   };
 
-  const startNewCliente = () => {
+  const startNewCliente = async () => {
+    if (loadingCnpj) return;
     const chosenCnpj =
       newCadastroCnpj && isValidCnpj(newCadastroCnpj)
         ? sanitizeCnpj(newCadastroCnpj)
         : sanitizeCnpj(search);
 
-    const updated = { ...data, cnpj: formatCnpj(chosenCnpj) };
-    setData(updated);
-    onChange?.(updated);
-    setOpen(true);
-    setShowSaveButton(true);
-    setNewCadastroCnpj("");
-    closeModal();
+    setCadastroError("");
+    setLoadingCnpj(true);
+    try {
+      const empresa = await fetchEmpresa(chosenCnpj);
+      // Estado limpo: não herda o id/dados de um cliente selecionado antes.
+      const updated = {
+        ...emptyCadastro,
+        inscricaoEstadual: empresa.inscEst,
+        cnpj: formatCnpj(chosenCnpj),
+        razaoSocial: empresa.razaoSocial,
+        nomeFantasia: empresa.nomeFantasia,
+      };
+      setData(updated);
+      onChange?.(updated);
+      setOpen(true);
+      setShowSaveButton(true);
+      setNewCadastroCnpj("");
+      closeModal();
+    } catch (err) {
+      setCadastroError(err?.message || "Não foi possível consultar o CNPJ.");
+    } finally {
+      setLoadingCnpj(false);
+    }
   };
 
   const selectClienteForContact = (cliente) => {
@@ -370,19 +479,59 @@ function ClienteSection({ onChange, initialData }) {
     closeModal();
   };
 
-  const registerClienteContact = () => {
-    if (!canRegisterClienteContact) return;
+  const registerClienteContact = async () => {
+    if (!canRegisterClienteContact || savingContact) return;
 
-    selectClienteContact({
-      id: `novo-${Date.now()}`,
-      nome: newContact.nome.trim(),
-      email: newContact.email.trim(),
-    });
+    setSavingContact(true);
+    try {
+      const salvo = await cadastrarContato({
+        nome: newContact.nome.trim(),
+        email: newContact.email.trim(),
+        telefone: onlyDigits(newContact.telefone),
+        idCliente: selectedCliente.id,
+      });
+      const contato = {
+        idContato: salvo.idContato,
+        nome: salvo.nome,
+        email: salvo.email,
+        telefone: salvo.telefone,
+      };
+      setClientes((prev) =>
+        prev.map((c) =>
+          c.id === selectedCliente.id
+            ? { ...c, contatos: [...(c.contatos || []), contato] }
+            : c,
+        ),
+      );
+      selectClienteContact(contato);
+    } catch (err) {
+      toast.error(err.message || "Erro ao cadastrar contato.");
+    } finally {
+      setSavingContact(false);
+    }
   };
 
-  const saveCliente = () => {
-    if (!canSaveClienteCadastro) return;
-    setShowSaveButton(false);
+  const saveCliente = async () => {
+    if (!canSaveClienteCadastro || saving) return;
+
+    setSaving(true);
+    try {
+      const salvo = await cadastrarCliente(buildCadastroPayload(data));
+      const updated = { ...data, id: salvo.idCliente };
+      setData(updated);
+      onChange?.(updated);
+      setShowSaveButton(false);
+      toast.success("Cliente cadastrado com sucesso!");
+      try {
+        setClientes(await fetchClientesPedido());
+      } catch {
+        setClientes((prev) => [...prev, { ...updated, contatos: [] }]);
+      }
+    } catch (err) {
+      toast.error(err.message || "Erro ao cadastrar cliente.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -443,29 +592,29 @@ function ClienteSection({ onChange, initialData }) {
                 value={data.inscricaoEstadual}
                 onChange={handle}
                 placeholder="Isento"
-                {...readonlyInputProps}
+                {...(!showSaveButton ? readonlyInputProps : {})}
               />
             </div>
             <div className="form-group w-120">
-              <label>FONE</label>
+              <label>FONE{showSaveButton && <RequiredMark />}</label>
               <input
                 name="fone"
                 inputMode="tel"
                 value={data.fone}
                 onChange={handle}
                 placeholder="(00) 00000-0000"
-                {...readonlyInputProps}
+                {...(!showSaveButton ? readonlyInputProps : {})}
               />
             </div>
             <div className="form-group w-140">
-              <label>CEP</label>
+              <label>CEP{showSaveButton && <RequiredMark />}</label>
               <input
                 name="cep"
                 inputMode="numeric"
                 value={data.cep}
                 onChange={handle}
                 placeholder="00000-000"
-                {...readonlyInputProps}
+                {...(!showSaveButton ? readonlyInputProps : {})}
               />
             </div>
             <div className="form-group w-180">
@@ -519,6 +668,30 @@ function ClienteSection({ onChange, initialData }) {
             </div>
           </div>
 
+          {showSaveButton && (
+            <div className="form-row">
+              <div className="form-group w-120">
+                <label>NÚMERO<RequiredMark /></label>
+                <input
+                  name="numero"
+                  aria-required="true"
+                  value={data.numero || ""}
+                  onChange={handle}
+                  placeholder="104"
+                />
+              </div>
+              <div className="form-group grow-1">
+                <label>COMPLEMENTO</label>
+                <input
+                  name="complemento"
+                  value={data.complemento || ""}
+                  onChange={handle}
+                  placeholder="Sala 104"
+                />
+              </div>
+            </div>
+          )}
+
           <div className="form-row">
             <div className="form-group grow-1">
               <label>CONTATO{showSaveButton && <RequiredMark />}</label>
@@ -543,13 +716,26 @@ function ClienteSection({ onChange, initialData }) {
                 {...(!showSaveButton ? readonlyInputProps : {})}
               />
             </div>
+            {showSaveButton && (
+              <div className="form-group w-180">
+                <label>TELEFONE DO CONTATO<RequiredMark /></label>
+                <input
+                  name="contatoTelefone"
+                  inputMode="tel"
+                  aria-required="true"
+                  value={data.contatoTelefone || ""}
+                  onChange={handle}
+                  placeholder="(00) 00000-0000"
+                />
+              </div>
+            )}
           </div>
 
           {showSaveButton && (
             <div className="cadastro-actions">
               {!canSaveClienteCadastro && (
                 <p className="cadastro-required-message">
-                  Preencha nome fantasia, contato e e-mail valido para salvar o
+                  Preencha todos os campos obrigatórios (*) para salvar o
                   cadastro.
                 </p>
               )}
@@ -557,9 +743,9 @@ function ClienteSection({ onChange, initialData }) {
                 type="button"
                 className="btn-salvar-cadastro modal-save-button"
                 onClick={saveCliente}
-                disabled={!canSaveClienteCadastro}
+                disabled={!canSaveClienteCadastro || saving}
               >
-                Salvar cadastro do cliente
+                {saving ? "Salvando..." : "Salvar cadastro do cliente"}
               </button>
             </div>
           )}
@@ -666,7 +852,10 @@ function ClienteSection({ onChange, initialData }) {
                           inputMode="numeric"
                         aria-required="true"
                           value={newCadastroCnpj}
-                          onChange={(e) => setNewCadastroCnpj(formatCnpj(e.target.value))}
+                          onChange={(e) => {
+                            setNewCadastroCnpj(formatCnpj(e.target.value));
+                            setCadastroError("");
+                          }}
                           className="input-cnpj-cadastro"
                         />
                         {cnpjExists(newCadastroCnpj, clientes) && (
@@ -674,13 +863,16 @@ function ClienteSection({ onChange, initialData }) {
                             Este CNPJ já existe como cliente.
                           </p>
                         )}
+                        {cadastroError && (
+                          <p className="modal-message is-error">{cadastroError}</p>
+                        )}
                         <button data-ui-action
                           type="button"
                           className="btn-cadastrar-novo modal-save-button"
                           onClick={startNewCliente}
-                          disabled={!canRegisterNewCliente}
+                          disabled={!canRegisterNewCliente || loadingCnpj}
                         >
-                          Cadastrar novo cliente
+                          {loadingCnpj ? "Consultando CNPJ..." : "Cadastrar novo cliente"}
                         </button>
                       </div>
                     )}
@@ -760,13 +952,28 @@ function ClienteSection({ onChange, initialData }) {
                         }
                         className="input-cnpj-cadastro"
                       />
+                      <span className="block text-xs font-semibold text-gray-500">Telefone<RequiredMark /></span>
+                      <input
+                        type="text"
+                        inputMode="tel"
+                        placeholder="(00) 00000-0000"
+                        aria-required="true"
+                        value={newContact.telefone || ""}
+                        onChange={(e) =>
+                          setNewContact((prev) => ({
+                            ...prev,
+                            telefone: maskPhone(e.target.value),
+                          }))
+                        }
+                        className="input-cnpj-cadastro"
+                      />
                       <button data-ui-action
                         type="button"
                         className="btn-cadastrar-novo modal-save-button"
                         onClick={registerClienteContact}
-                        disabled={!canRegisterClienteContact}
+                        disabled={!canRegisterClienteContact || savingContact}
                       >
-                        Cadastrar contato
+                        {savingContact ? "Salvando..." : "Cadastrar contato"}
                       </button>
                     </div>
                   )}
@@ -822,6 +1029,13 @@ function DistribuidorSection({ onChange, initialData }) {
   const [selectedDistribuidor, setSelectedDistribuidor] = useState(null);
   const [contactSearch, setContactSearch] = useState("");
   const [newContact, setNewContact] = useState({ nome: "", email: "" });
+  const [cadastroError, setCadastroError] = useState("");
+  const [loadingCnpj, setLoadingCnpj] = useState(false);
+  const [loadingCep, setLoadingCep] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [savingContact, setSavingContact] = useState(false);
+  const dataRef = useRef(data);
+  dataRef.current = data;
 
   const [distribuidores, setDistribuidores] = useState([]);
 
@@ -846,10 +1060,7 @@ function DistribuidorSection({ onChange, initialData }) {
       newCadastroCnpjCleaned.length === 14) &&
     isValidCnpj(newCadastroCnpj) &&
     !cnpjExists(newCadastroCnpj, distribuidores);
-  const canSaveDistribuidorCadastro =
-    Boolean(data.nomeFantasia.trim()) &&
-    Boolean(data.contato.trim()) &&
-    isValidEmail(data.email);
+  const canSaveDistribuidorCadastro = isCadastroCompleto(data);
   const distribuidorContacts = getEntityContacts(selectedDistribuidor);
   const filteredDistribuidorContacts = distribuidorContacts.filter(
     (contact) => {
@@ -871,7 +1082,9 @@ function DistribuidorSection({ onChange, initialData }) {
     contactSearch.trim() &&
     filteredDistribuidorContacts.length === 0;
   const canRegisterDistribuidorContact =
-    Boolean(newContact.nome.trim()) && isValidEmail(newContact.email);
+    Boolean(newContact.nome.trim()) &&
+    isValidEmail(newContact.email) &&
+    isValidPhone(newContact.telefone);
 
   const distribuidoresEncontrados =
     searched && !searchError
@@ -900,17 +1113,43 @@ function DistribuidorSection({ onChange, initialData }) {
       : [];
 
   const handle = (e) => {
+    const { name } = e.target;
     const value =
-      e.target.name === "cnpj" ? formatCnpj(e.target.value) : e.target.name === "fone" ? maskPhone(e.target.value) : e.target.name === "cep" ? maskCEP(e.target.value) : e.target.value;
-    const updated = { ...data, [e.target.name]: value };
+      name === "cnpj" ? formatCnpj(e.target.value) : name === "fone" || name === "contatoTelefone" ? maskPhone(e.target.value) : name === "cep" ? maskCEP(e.target.value) : e.target.value;
+    const updated = { ...data, [name]: value };
     setData(updated);
     onChange?.(updated);
+    if (name === "cep" && showSaveButton) buscarCep(value, updated);
+  };
+
+  const buscarCep = async (cepMasked, current) => {
+    const digits = onlyDigits(cepMasked);
+    if (digits.length !== 8) {
+      const cleared = { ...current, endereco: "", cidade: "", uf: "" };
+      setData(cleared);
+      onChange?.(cleared);
+      return;
+    }
+
+    setLoadingCep(true);
+    try {
+      const end = await fetchCEP(digits);
+      if (onlyDigits(dataRef.current.cep) !== digits) return;
+      const merged = { ...dataRef.current, ...end };
+      setData(merged);
+      onChange?.(merged);
+    } catch {
+      toast.error("CEP não encontrado.");
+    } finally {
+      setLoadingCep(false);
+    }
   };
 
   const closeModal = () => {
     setShowModal(false);
     setSearch("");
     setSearchError("");
+    setCadastroError("");
     setSearched(false);
     setModalStep(1);
     setSelectedDistribuidor(null);
@@ -951,19 +1190,36 @@ function DistribuidorSection({ onChange, initialData }) {
     setSearchError("");
   };
 
-  const startNewDistribuidor = () => {
+  const startNewDistribuidor = async () => {
+    if (loadingCnpj) return;
     const chosenCnpj =
       newCadastroCnpj && isValidCnpj(newCadastroCnpj)
         ? sanitizeCnpj(newCadastroCnpj)
         : sanitizeCnpj(search);
 
-    const updated = { ...data, cnpj: formatCnpj(chosenCnpj) };
-    setData(updated);
-    onChange?.(updated);
-    setOpen(true);
-    setShowSaveButton(true);
-    setNewCadastroCnpj("");
-    closeModal();
+    setCadastroError("");
+    setLoadingCnpj(true);
+    try {
+      const empresa = await fetchEmpresa(chosenCnpj);
+      // Estado limpo: não herda o id/dados de um distribuidor selecionado antes.
+      const updated = {
+        ...emptyCadastro,
+        inscEst: empresa.inscEst,
+        cnpj: formatCnpj(chosenCnpj),
+        razaoSocial: empresa.razaoSocial,
+        nomeFantasia: empresa.nomeFantasia,
+      };
+      setData(updated);
+      onChange?.(updated);
+      setOpen(true);
+      setShowSaveButton(true);
+      setNewCadastroCnpj("");
+      closeModal();
+    } catch (err) {
+      setCadastroError(err?.message || "Não foi possível consultar o CNPJ.");
+    } finally {
+      setLoadingCnpj(false);
+    }
   };
 
   const selectDistribuidorForContact = (distribuidor) => {
@@ -987,19 +1243,59 @@ function DistribuidorSection({ onChange, initialData }) {
     closeModal();
   };
 
-  const registerDistribuidorContact = () => {
-    if (!canRegisterDistribuidorContact) return;
+  const registerDistribuidorContact = async () => {
+    if (!canRegisterDistribuidorContact || savingContact) return;
 
-    selectDistribuidorContact({
-      id: `novo-${Date.now()}`,
-      nome: newContact.nome.trim(),
-      email: newContact.email.trim(),
-    });
+    setSavingContact(true);
+    try {
+      const salvo = await cadastrarContato({
+        nome: newContact.nome.trim(),
+        email: newContact.email.trim(),
+        telefone: onlyDigits(newContact.telefone),
+        idDistribuidor: selectedDistribuidor.id,
+      });
+      const contato = {
+        idContato: salvo.idContato,
+        nome: salvo.nome,
+        email: salvo.email,
+        telefone: salvo.telefone,
+      };
+      setDistribuidores((prev) =>
+        prev.map((d) =>
+          d.id === selectedDistribuidor.id
+            ? { ...d, contatos: [...(d.contatos || []), contato] }
+            : d,
+        ),
+      );
+      selectDistribuidorContact(contato);
+    } catch (err) {
+      toast.error(err.message || "Erro ao cadastrar contato.");
+    } finally {
+      setSavingContact(false);
+    }
   };
 
-  const saveDistribuidor = () => {
-    if (!canSaveDistribuidorCadastro) return;
-    setShowSaveButton(false);
+  const saveDistribuidor = async () => {
+    if (!canSaveDistribuidorCadastro || saving) return;
+
+    setSaving(true);
+    try {
+      const salvo = await cadastrarDistribuidor(buildCadastroPayload(data));
+      const updated = { ...data, id: salvo.idDistribuidor };
+      setData(updated);
+      onChange?.(updated);
+      setShowSaveButton(false);
+      toast.success("Distribuidor cadastrado com sucesso!");
+      try {
+        setDistribuidores(await fetchDistribuidoresPedido());
+      } catch {
+        setDistribuidores((prev) => [...prev, { ...updated, contatos: [] }]);
+      }
+    } catch (err) {
+      toast.error(err.message || "Erro ao cadastrar distribuidor.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -1060,29 +1356,29 @@ function DistribuidorSection({ onChange, initialData }) {
                 value={data.inscEst}
                 onChange={handle}
                 placeholder="Isento"
-                {...readonlyInputProps}
+                {...(!showSaveButton ? readonlyInputProps : {})}
               />
             </div>
             <div className="form-group w-120">
-              <label>FONE</label>
+              <label>FONE{showSaveButton && <RequiredMark />}</label>
               <input
                 name="fone"
                 inputMode="tel"
                 value={data.fone}
                 onChange={handle}
                 placeholder="(00) 00000-0000"
-                {...readonlyInputProps}
+                {...(!showSaveButton ? readonlyInputProps : {})}
               />
             </div>
             <div className="form-group w-140">
-              <label>CEP</label>
+              <label>CEP{showSaveButton && <RequiredMark />}</label>
               <input
                 name="cep"
                 inputMode="numeric"
                 value={data.cep}
                 onChange={handle}
                 placeholder="00000-000"
-                {...readonlyInputProps}
+                {...(!showSaveButton ? readonlyInputProps : {})}
               />
             </div>
             <div className="form-group w-180">
@@ -1136,6 +1432,30 @@ function DistribuidorSection({ onChange, initialData }) {
             </div>
           </div>
 
+          {showSaveButton && (
+            <div className="form-row">
+              <div className="form-group w-120">
+                <label>NÚMERO<RequiredMark /></label>
+                <input
+                  name="numero"
+                  aria-required="true"
+                  value={data.numero || ""}
+                  onChange={handle}
+                  placeholder="104"
+                />
+              </div>
+              <div className="form-group grow-1">
+                <label>COMPLEMENTO</label>
+                <input
+                  name="complemento"
+                  value={data.complemento || ""}
+                  onChange={handle}
+                  placeholder="Sala 104"
+                />
+              </div>
+            </div>
+          )}
+
           <div className="form-row">
             <div className="form-group grow-1">
               <label>CONTATO{showSaveButton && <RequiredMark />}</label>
@@ -1160,13 +1480,26 @@ function DistribuidorSection({ onChange, initialData }) {
                 {...(!showSaveButton ? readonlyInputProps : {})}
               />
             </div>
+            {showSaveButton && (
+              <div className="form-group w-180">
+                <label>TELEFONE DO CONTATO<RequiredMark /></label>
+                <input
+                  name="contatoTelefone"
+                  inputMode="tel"
+                  aria-required="true"
+                  value={data.contatoTelefone || ""}
+                  onChange={handle}
+                  placeholder="(00) 00000-0000"
+                />
+              </div>
+            )}
           </div>
 
           {showSaveButton && (
             <div className="cadastro-actions">
               {!canSaveDistribuidorCadastro && (
                 <p className="cadastro-required-message">
-                  Preencha nome fantasia, contato e e-mail valido para salvar o
+                  Preencha todos os campos obrigatórios (*) para salvar o
                   cadastro.
                 </p>
               )}
@@ -1174,9 +1507,9 @@ function DistribuidorSection({ onChange, initialData }) {
                 type="button"
                 className="btn-salvar-cadastro modal-save-button"
                 onClick={saveDistribuidor}
-                disabled={!canSaveDistribuidorCadastro}
+                disabled={!canSaveDistribuidorCadastro || saving}
               >
-                Salvar cadastro do distribuidor
+                {saving ? "Salvando..." : "Salvar cadastro do distribuidor"}
               </button>
             </div>
           )}
@@ -1284,7 +1617,10 @@ function DistribuidorSection({ onChange, initialData }) {
                           inputMode="numeric"
                         aria-required="true"
                           value={newCadastroCnpj}
-                          onChange={(e) => setNewCadastroCnpj(formatCnpj(e.target.value))}
+                          onChange={(e) => {
+                            setNewCadastroCnpj(formatCnpj(e.target.value));
+                            setCadastroError("");
+                          }}
                           className="input-cnpj-cadastro"
                         />
                         {cnpjExists(newCadastroCnpj, distribuidores) && (
@@ -1292,13 +1628,16 @@ function DistribuidorSection({ onChange, initialData }) {
                             Este CNPJ já existe como distribuidor.
                           </p>
                         )}
+                        {cadastroError && (
+                          <p className="modal-message is-error">{cadastroError}</p>
+                        )}
                         <button data-ui-action
                           type="button"
                           className="btn-cadastrar-novo modal-save-button"
                           onClick={startNewDistribuidor}
-                          disabled={!canRegisterNewDistribuidor}
+                          disabled={!canRegisterNewDistribuidor || loadingCnpj}
                         >
-                          Cadastrar novo distribuidor
+                          {loadingCnpj ? "Consultando CNPJ..." : "Cadastrar novo distribuidor"}
                         </button>
                       </div>
                     )}
@@ -1380,13 +1719,28 @@ function DistribuidorSection({ onChange, initialData }) {
                         }
                         className="input-cnpj-cadastro"
                       />
+                      <span className="block text-xs font-semibold text-gray-500">Telefone<RequiredMark /></span>
+                      <input
+                        type="text"
+                        inputMode="tel"
+                        placeholder="(00) 00000-0000"
+                        aria-required="true"
+                        value={newContact.telefone || ""}
+                        onChange={(e) =>
+                          setNewContact((prev) => ({
+                            ...prev,
+                            telefone: maskPhone(e.target.value),
+                          }))
+                        }
+                        className="input-cnpj-cadastro"
+                      />
                       <button data-ui-action
                         type="button"
                         className="btn-cadastrar-novo modal-save-button"
                         onClick={registerDistribuidorContact}
-                        disabled={!canRegisterDistribuidorContact}
+                        disabled={!canRegisterDistribuidorContact || savingContact}
                       >
-                        Cadastrar contato
+                        {savingContact ? "Salvando..." : "Cadastrar contato"}
                       </button>
                     </div>
                   )}
