@@ -473,7 +473,7 @@ export default function HomeFinanceiro() {
             <CardMetrica
               icone={<IconRelogio />}
               tint="purple"
-              rotulo="Pagamentos pendentes do distribuidor"
+              rotulo="Pagamentos a receber do distribuidor"
               valor={formatarMoedaBR(dados.pagamentosPendentes)}
               sub={`${dados.qtdPagamentosPendentes} pagamentos aguardando`}
               dark={modoEscuro}

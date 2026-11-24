@@ -17,7 +17,7 @@ export default function NavbarFinanceiro() {
 
   const menu = [
     { name: "HOME", path: "/financeiro/home" },
-    { name: "VENDEDORES", path: "/financeiro/vendedores" },
+    { name: "COLABORADORES", path: "/financeiro/colaboradores" },
     { name: "COMISSÕES", path: "/comissoes" },
   ];
 

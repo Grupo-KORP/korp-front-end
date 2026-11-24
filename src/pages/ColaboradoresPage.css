@@ -1,0 +1,111 @@
+.collaborator-registration-column {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 16px;
+  width: 100%;
+  min-height: 0;
+}
+
+.collaborator-mode-switch {
+  position: relative;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 100%;
+  height: var(--app-button-height);
+  min-height: var(--app-button-height);
+  padding: 4px;
+  border: 0;
+  border-radius: var(--app-button-radius);
+  background: var(--app-search-bg);
+  color: var(--app-search-text);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+  font: inherit;
+  font-size: .875rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.collaborator-mode-switch:focus-visible {
+  outline: 2px solid var(--app-search-focus);
+  outline-offset: 2px;
+}
+
+.collaborator-mode-option {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  text-align: center;
+  opacity: 1;
+  transition: color .42s ease, opacity .42s ease;
+}
+
+.collaborator-switch-thumb {
+  position: absolute;
+  inset: 4px auto 4px 4px;
+  width: calc(50% - 4px);
+  border-radius: max(0px, calc(var(--app-button-radius) - 4px));
+  background: linear-gradient(90deg, #426bb3 0%, #598dab 100%);
+  box-shadow: 0 2px 6px rgb(22 55 99 / .22);
+  transition: transform .42s cubic-bezier(.22, 1, .36, 1);
+}
+
+.collaborator-mode-switch .selected {
+  color: #fff;
+  font-weight: 800;
+  opacity: 1;
+}
+
+.collaborator-mode-switch[aria-checked="true"] .collaborator-switch-thumb {
+  transform: translateX(100%);
+}
+
+/* Both page panels mount their own switch, so animate the incoming indicator. */
+.collaborator-mode-animated[aria-checked="true"] .collaborator-switch-thumb {
+  animation: collaborator-switch-on .42s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.collaborator-mode-animated[aria-checked="false"] .collaborator-switch-thumb {
+  animation: collaborator-switch-off .42s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+@keyframes collaborator-switch-on {
+  from { transform: translateX(0); }
+  to { transform: translateX(100%); }
+}
+
+@keyframes collaborator-switch-off {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+#root .collaborator-registration-panel {
+  flex: 1;
+  width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .collaborator-switch-thumb,
+  .collaborator-mode-option { transition: none; }
+
+  .collaborator-mode-animated .collaborator-switch-thumb { animation: none; }
+}
+
+@media (min-width: 1024px) {
+  .collaborator-registration-column {
+    width: 18rem;
+    /* Match the search field below the two-line page heading. */
+    margin-top: max(0px, calc(3.125rem - var(--app-button-height)));
+  }
+}
+
+@media (min-width: 1280px) {
+  .collaborator-registration-column { width: 20rem; }
+}
+
+@media (min-width: 1536px) {
+  .collaborator-registration-column { width: 24rem; }
+}
