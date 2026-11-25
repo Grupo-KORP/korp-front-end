@@ -23,7 +23,7 @@ const PAGE_SIZE = 8;
 // ─── Estado inicial ───────────────────────────────────────────────────────────
 const emptyForm = {
   razaoSocial: "", nomeFantasia: "", cnpj: "", inscEst: "",
-  fone: "", cep: "", endereco: "", numero: "", complemento: "",
+  fone: "", cep: "", endereco: "", numero: "", complemento: "", bairro: "",
   cidade: "", uf: "SP",
 };
 
@@ -172,7 +172,7 @@ export default function ClientePage() {
         } catch { toast.error("CEP não encontrado."); }
         finally { setLoadingCEP(false); }
       } else {
-        setForm((prev) => ({ ...prev, endereco: "", cidade: "", uf: "SP" }));
+        setForm((prev) => ({ ...prev, endereco: "", bairro: "", cidade: "", uf: "SP" }));
       }
       return;
     }
@@ -262,6 +262,7 @@ export default function ClientePage() {
       endereco: c.logradouro ?? "",
       numero: c.numero ?? "",
       complemento: c.complemento ?? "",
+      bairro: c.bairro ?? "",
       cidade: c.cidade ?? "",
       uf: c.uf ?? "SP",
     });
@@ -353,6 +354,7 @@ export default function ClientePage() {
       endereco: form.endereco,
       numero: form.numero,
       complemento: form.complemento,
+      bairro: form.bairro,
       cidade: form.cidade,
       uf: form.uf,
     };
@@ -410,6 +412,7 @@ export default function ClientePage() {
     { name: "endereco", label: "Endereço", placeholder: "Rua das Inovações", value: form.endereco, readOnly: true, loading: loadingCEP },
     { name: "numero", required: true, label: "Número", pair: "start", placeholder: "104", value: form.numero, error: errors.numero },
     { name: "complemento", label: "Complemento", pair: "end", placeholder: "Sala 104", value: form.complemento },
+    { name: "bairro", label: "Bairro", placeholder: "Centro", value: form.bairro, loading: loadingCEP },
     { name: "cidade", label: "Cidade", pair: "start", placeholder: "São Paulo", value: form.cidade, readOnly: true, loading: loadingCEP },
     { name: "uf", label: "UF", pair: "end", type: "select", value: form.uf, readOnly: true, options: UF_OPTIONS },
   ];

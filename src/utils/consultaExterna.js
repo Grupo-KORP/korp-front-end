@@ -16,5 +16,5 @@ export async function fetchCEP(cepRaw) {
   const res = await fetch(`https://viacep.com.br/ws/${cepRaw}/json/`);
   const data = await res.json();
   if (data.erro) throw new Error("CEP não encontrado.");
-  return { endereco: data.logradouro, cidade: data.localidade, uf: data.uf };
+  return { endereco: data.logradouro, bairro: data.bairro ?? "", cidade: data.localidade, uf: data.uf };
 }
