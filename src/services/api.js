@@ -109,28 +109,6 @@ export async function redefinirSenha({ token, novaSenha, confirmaSenha }) {
   );
   return data;
 }
-// ─── Colaboradores ───────────────────────────────────────────────────────────
-
-export async function cadastrarColaborador(dados) {
-  const payload = {
-    idUsuario: "",
-    nome: dados.nome,
-    email: dados.email,
-    telefone: dados.telefone.replace(/\D/g, ""), // envia só números
-    senha: "12345678", // mockado
-    role: 1, // mockado
-    percentualComissao: 6.0,
-  };
-
-  const { data } = await api.post("/usuario", payload);
-  return data;
-}
-
-// export async function listarColaboradores() {
-//   await new Promise(r => setTimeout(r, 500))
-//   return []
-// }
-
 // ─── Clientes ────────────────────────────────────────────────────────
 
 export async function fetchClientesPedido() {
