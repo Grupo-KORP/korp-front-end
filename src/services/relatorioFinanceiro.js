@@ -115,8 +115,8 @@ export async function criarRelatorioFinanceiro({ dados, periodo, geradoEm = new 
   ], dados.rankingVendedores.map((item, i) => [String(i + 1), item.nome, moeda(item.valor), quantidade(item.quantidadeVendas)]));
   secao("Últimos pedidos processados");
   tabela([
-    { titulo: "Pedido", largura: 19 },
-    { titulo: "Vendedor / Cliente", largura: 55 },
+    { titulo: "Pedido", largura: 24 },
+    { titulo: "Vendedor / Cliente", largura: 50 },
     { titulo: "Faturado", largura: 29 },
     { titulo: "Comissão", largura: 27 },
     { titulo: "Pagamento", largura: 28 },

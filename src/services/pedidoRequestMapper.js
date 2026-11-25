@@ -42,6 +42,8 @@ export function mapperFormDataToPedidoRequest(formData) {
       contatos: distribuidor.contatos || [],
     },
     metodoPagamento: formData.formaPagamento,
+    // Prazo de entrega do pedido inteiro (ex.: "Imediata"); vazio vai como null
+    entrega: String(formData.prazoEntrega ?? "").trim() || null,
     itens,
   };
 }

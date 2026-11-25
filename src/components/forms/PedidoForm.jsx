@@ -194,6 +194,7 @@ const emptyCadastro = {
   endereco: "",
   numero: "",
   complemento: "",
+  bairro: "",
   cidade: "",
   uf: "",
   contato: "",
@@ -230,6 +231,7 @@ const buildCadastroPayload = (d) => ({
   endereco: d.endereco,
   numero: d.numero.trim(),
   complemento: d.complemento || "",
+  bairro: d.bairro || "",
   cidade: d.cidade,
   uf: d.uf,
   contatos: [
@@ -361,7 +363,7 @@ function ClienteSection({ onChange, initialData }) {
   const buscarCep = async (cepMasked, current) => {
     const digits = onlyDigits(cepMasked);
     if (digits.length !== 8) {
-      const cleared = { ...current, endereco: "", cidade: "", uf: "" };
+      const cleared = { ...current, endereco: "", bairro: "", cidade: "", uf: "" };
       setData(cleared);
       onChange?.(cleared);
       return;
@@ -687,6 +689,15 @@ function ClienteSection({ onChange, initialData }) {
                   value={data.complemento || ""}
                   onChange={handle}
                   placeholder="Sala 104"
+                />
+              </div>
+              <div className="form-group grow-1">
+                <label>BAIRRO</label>
+                <input
+                  name="bairro"
+                  value={data.bairro || ""}
+                  onChange={handle}
+                  placeholder="Centro"
                 />
               </div>
             </div>
@@ -1125,7 +1136,7 @@ function DistribuidorSection({ onChange, initialData }) {
   const buscarCep = async (cepMasked, current) => {
     const digits = onlyDigits(cepMasked);
     if (digits.length !== 8) {
-      const cleared = { ...current, endereco: "", cidade: "", uf: "" };
+      const cleared = { ...current, endereco: "", bairro: "", cidade: "", uf: "" };
       setData(cleared);
       onChange?.(cleared);
       return;
@@ -1453,6 +1464,15 @@ function DistribuidorSection({ onChange, initialData }) {
                   placeholder="Sala 104"
                 />
               </div>
+              <div className="form-group grow-1">
+                <label>BAIRRO</label>
+                <input
+                  name="bairro"
+                  value={data.bairro || ""}
+                  onChange={handle}
+                  placeholder="Centro"
+                />
+              </div>
             </div>
           )}
 
@@ -1776,7 +1796,6 @@ function ProdutoSection({ onChange, initialData, onRemove }) {
   const defaultValues = {
     descricao: "",
     pn: "",
-    entrega: "",
     quantidade: "",
     valorUnitario: "",
     valorTotal: "",
@@ -1985,16 +2004,8 @@ function ProdutoSection({ onChange, initialData, onRemove }) {
             </div>
           </div>
 
+          {/* A entrega é do pedido inteiro: fica no Resumo do Pedido, não em cada produto */}
           <div className="form-row">
-            <div className="form-group grow-1">
-              <label>ENTREGA</label>
-              <input
-                name="entrega"
-                value={data.entrega || ""}
-                onChange={handle}
-                placeholder="Ex: IMEDIATA"
-              />
-            </div>
             <div className="form-group grow-1">
               <label>QUANTIDADE<span className="pedido-required" aria-hidden="true">*</span></label>
               <input
@@ -2187,7 +2198,6 @@ export default function PedidoForm({ onFormChange, initialData }) {
       {
         descricao: "",
         pn: "",
-        entrega: "",
         quantidade: "",
         valorUnitario: "",
         valorTotal: "",

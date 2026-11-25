@@ -3,6 +3,7 @@ import { confirmDelete } from "./DeleteConfirmation";
 import ActionIcon from "../ui/ActionIcon";
 import RequiredMark from "../ui/RequiredMark";
 import { formatarStatusPagamento } from "../../services/statusPagamento.js";
+import { sequenciaDoCodigo } from "../../services/codigoPedido.js";
 // Importa os hooks do React usados para guardar estado e executar efeitos.
 import { useState, useEffect } from "react";
 import "./ModalDetalheVenda.css";
@@ -127,6 +128,19 @@ function carregarDatasPagamento(pedido) {
     return Array.isArray(pedido?.datasPagamento) && pedido.datasPagamento.length > 0 ? pedido.datasPagamento.map(String) : [""];
 }
 
+// Todos os itens do pedido; respostas antigas, só com "produto", viram uma lista de um item.
+function listarProdutos(detalhes) {
+    if (Array.isArray(detalhes?.produtos) && detalhes.produtos.length > 0) return detalhes.produtos;
+    return detalhes?.produto ? [detalhes.produto] : [];
+}
+
+const chaveProduto = (produto, indice) => produto.idItemPedido ?? `item-${indice}`;
+
+// Quantidade de cada item, indexada pela chave do item.
+function quantidadesIniciais(produtos) {
+    return Object.fromEntries(produtos.map((produto, indice) => [chaveProduto(produto, indice), produto.quantidade ?? 0]));
+}
+
 const MAX_PARCELAS_BOLETO = 10;
 const METODOS_PAGAMENTO = { AVISTA: "À vista", BOLETO: "Boleto" };
 
@@ -148,16 +162,17 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
     const chave = modoFinanceiro ? `${mes}-${venda.id}` : venda.id;
     const detalhes = detalhesDireto ?? detalhesVenda?.[chave];
 
-    // Quantidade
-    const [quantidade, setQuantidade] = useState(detalhes?.produto?.quantidade ?? 0);
-    const [quantidadeAntes, setQuantidadeAntes] = useState(quantidade);
+    // Itens do pedido e a quantidade editável de cada um
+    const produtos = listarProdutos(detalhes);
+    const [quantidades, setQuantidades] = useState(() => quantidadesIniciais(produtos));
+    const [quantidadesAntes, setQuantidadesAntes] = useState(quantidades);
+    const alterarQuantidade = (chave, valor) => setQuantidades((atuais) => ({ ...atuais, [chave]: valor }));
 
     // Modo de edição
     const [modoEdicao, setModoEdicao] = useState(false);
 
-    // Nome fantasia do cliente
-    const [nomeFantasiaCliente, setNomeFantasiaCliente] = useState(detalhes?.cliente?.nomeFantasia ?? "");
-    const [nomeFantasiaDistribuidor, setNomeFantasiaDistribuidor] = useState(detalhes?.distribuidor?.nomeFantasia ?? "");
+    // O nome fantasia do cliente e do distribuidor não é editado aqui: vem sempre do cadastro
+    // (telas de Clientes e Distribuidores).
     const [numeroNotaDistribuidor, setNumeroNotaDistribuidor] = useState(detalhes?.pedido?.numeroNotaDistribuidor ?? "");
     const [observacoes, setObservacoes] = useState(detalhes?.pedido?.observacoes ?? "");
     const [metodoPagamento, setMetodoPagamento] = useState(() => carregarMetodoPagamento(detalhes?.pedido));
@@ -172,19 +187,15 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
         && datasPagamento.every(data => /^\d{1,3}$/.test(data))
         && prazosNumericos.every((prazo, i) => i === 0 || prazo > prazosNumericos[i - 1]);
     const [salvando, setSalvando] = useState(false);
-    // Guarda se cliente e distribuidor estao em modo de edicao.
     // Guarda os valores antigos para cancelar alteracoes.
-    const [nomeFantasiaClienteAntes, setNomeFantasiaClienteAntes] = useState(nomeFantasiaCliente);
-
-    // Nome fantasia do distribuidor
-    const [nomeFantasiaDistribuidorAntes, setNomeFantasiaDistribuidorAntes] = useState(nomeFantasiaDistribuidor);
     const [numeroNotaDistribuidorAntes, setNumeroNotaDistribuidorAntes] = useState(numeroNotaDistribuidor);
     const [observacoesAntes, setObservacoesAntes] = useState(observacoes);
     const [datasPagamentoAntes, setDatasPagamentoAntes] = useState(datasPagamento);
     const pedidoEmAndamento = (detalhes?.pedido?.statusPedido ?? "").toUpperCase() === "EM_ANDAMENTO";
 
     // Entrega
-    const [entrega, setEntrega] = useState(detalhes?.produto?.entrega ?? "");
+    // Entrega é do pedido inteiro e agora é gravada no back (vazio = sem entrega informada)
+    const [entrega, setEntrega] = useState(detalhes?.pedido?.entrega ?? "");
     const [entregaAntes, setEntregaAntes] = useState(entrega);
 
     const formatarDataBR = (data) => {
@@ -203,20 +214,14 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
 
     // Atualiza os dados quando troca a venda aberta.
     useEffect(() => {
-        const qtd = detalhes?.produto?.quantidade ?? 0;
-        setQuantidade(qtd);
-        setQuantidadeAntes(qtd);
+        const qtds = quantidadesIniciais(listarProdutos(detalhes));
+        setQuantidades(qtds);
+        setQuantidadesAntes(qtds);
 
-        const clienteFantasia = detalhes?.cliente?.nomeFantasia ?? "";
-        const distribuidorFantasia = detalhes?.distribuidor?.nomeFantasia ?? "";
         const nota = detalhes?.pedido?.numeroNotaDistribuidor ?? "";
         const obs = detalhes?.pedido?.observacoes ?? "";
         const datas = carregarDatasPagamento(detalhes?.pedido);
         const metodo = carregarMetodoPagamento(detalhes?.pedido);
-        setNomeFantasiaCliente(clienteFantasia);
-        setNomeFantasiaDistribuidor(distribuidorFantasia);
-        setNomeFantasiaClienteAntes(clienteFantasia);
-        setNomeFantasiaDistribuidorAntes(distribuidorFantasia);
         setNumeroNotaDistribuidor(nota);
         setObservacoes(obs);
         setDatasPagamento(datas);
@@ -226,7 +231,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
         setObservacoesAntes(obs);
         setDatasPagamentoAntes(datas);
 
-        const entregaVal = detalhes?.produto?.entrega ?? "";
+        const entregaVal = detalhes?.pedido?.entrega ?? "";
         setEntrega(entregaVal);
         setEntregaAntes(entregaVal);
 
@@ -239,14 +244,12 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
         function aoApertarTecla(e) { if (e.key === "Escape") tentarFechar(); }
         document.addEventListener("keydown", aoApertarTecla);
         return () => document.removeEventListener("keydown", aoApertarTecla);
-    }, [modoEdicao, quantidadeAntes, nomeFantasiaClienteAntes, nomeFantasiaDistribuidorAntes, numeroNotaDistribuidorAntes, observacoesAntes, datasPagamentoAntes, entregaAntes]);
+    }, [modoEdicao, quantidadesAntes, numeroNotaDistribuidorAntes, observacoesAntes, datasPagamentoAntes, entregaAntes]);
 
     function iniciarEdicao() {
         if (somenteLeitura) return;
         if (!pedidoEmAndamento) return;
-        setQuantidadeAntes(quantidade);
-        setNomeFantasiaClienteAntes(nomeFantasiaCliente);
-        setNomeFantasiaDistribuidorAntes(nomeFantasiaDistribuidor);
+        setQuantidadesAntes({ ...quantidades });
         setNumeroNotaDistribuidorAntes(numeroNotaDistribuidor);
         setObservacoesAntes(observacoes);
         setDatasPagamentoAntes([...datasPagamento]);
@@ -257,6 +260,15 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
     // Confirma a edicao e fecha o modo editavel.
     async function confirmarEdicao(finalizarPedido = false) {
         if (!pedidoEmAndamento) return;
+
+        const produtoSemQuantidade = produtos.find((produto, indice) => {
+            const qtd = quantidades[chaveProduto(produto, indice)];
+            return !Number.isInteger(qtd) || qtd < 1;
+        });
+        if (produtoSemQuantidade) {
+            toast.error(`${produtoSemQuantidade.descricao || "Produto"}: a quantidade deve ser um número inteiro maior que zero.`);
+            return;
+        }
 
         if (finalizarPedido && (!numeroNotaDistribuidor.trim() || !observacoes.trim())) {
             toast.error("Informe nota e observações para finalizar o pedido.");
@@ -282,11 +294,8 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
         }
     }
     // Cancela a edicao e volta para o valor anterior.
-    /* chamada à API aqui — incluir: quantidade, nomeFantasiaCliente, nomeFantasiaDistribuidor, entrega */
     function cancelarEdicao() {
-        setQuantidade(quantidadeAntes);
-        setNomeFantasiaCliente(nomeFantasiaClienteAntes);
-        setNomeFantasiaDistribuidor(nomeFantasiaDistribuidorAntes);
+        setQuantidades({ ...quantidadesAntes });
         setNumeroNotaDistribuidor(numeroNotaDistribuidorAntes);
         setObservacoes(observacoesAntes);
         setDatasPagamento([...datasPagamentoAntes]);
@@ -297,12 +306,9 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
     function criarPayload(finalizarPedido) {
         return {
             idPedido: detalhes.pedido.idPedido,
-            idCliente: detalhes.cliente.id,
-            nomeFantasiaCliente,
-            idDistribuidor: detalhes.distribuidor.id,
-            nomeFantasiaDistribuidor,
-            idItemPedido: detalhes.produto.idItemPedido,
-            quantidade,
+            itens: produtos
+                .filter((produto) => produto.idItemPedido != null)
+                .map((produto) => ({ idItemPedido: produto.idItemPedido, quantidade: quantidades[produto.idItemPedido] })),
             numeroNotaDistribuidor,
             observacoes,
             metodoPagamento: metodoPagamento || null,
@@ -367,7 +373,8 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                 >
                     <div className="details-identity">
                         <div className="details-code rounded-xl bg-white/15 flex items-center justify-center">
-                            <span className="text-xs font-extrabold text-white">{venda.id}</span>
+                            {/* Caixa pequena: só a sequência (P03); o código completo aparece no título ao lado */}
+                            <span className="text-xs font-extrabold text-white">{sequenciaDoCodigo(venda.id)}</span>
                         </div>
                         <div className="details-heading">
                             <p className="text-[9px] font-bold tracking-widest text-blue-200 uppercase">Detalhes do pedido de venda</p>
@@ -398,15 +405,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                                     <CabecalhoSecao titulo="Dados do Cliente" cor="bg-blue-600" escuro={escuro} />
                                     <div className="details-field-grid grid grid-cols-2 gap-x-5 gap-y-3">
                                         <CampoLeitura rotulo="Razão Social" valor={detalhes.cliente.razaoSocial} escuro={escuro} colSpan={2} />
-                                        <CampoTextoEditavel
-                                            rotulo="Nome Fantasia"
-                                            valor={nomeFantasiaCliente}
-                                            modoEdicao={modoEdicao}
-                                            aoAlterar={setNomeFantasiaCliente}
-                                            escuro={escuro}
-                                            colSpan={2}
-                                            placeholder="Nome fantasia do cliente"
-                                        />
+                                        <CampoLeitura rotulo="Nome Fantasia" valor={detalhes.cliente.nomeFantasia} escuro={escuro} colSpan={2} />
                                         <CampoLeitura rotulo="CNPJ" valor={maskCNPJ(detalhes.cliente.cnpj)} escuro={escuro} />
                                         <CampoLeitura rotulo="Inscrição Estadual" valor={detalhes.cliente.inscricaoEstadual} escuro={escuro} />
                                         <CampoLeitura rotulo="Telefone" valor={maskPhone(detalhes.cliente.telefone)} escuro={escuro} />
@@ -424,15 +423,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                                     <CabecalhoSecao titulo="Dados do Distribuidor" cor="bg-indigo-500" escuro={escuro} />
                                     <div className="details-field-grid grid grid-cols-2 gap-x-5 gap-y-3">
                                         <CampoLeitura rotulo="Razão Social" valor={detalhes.distribuidor.razaoSocial} escuro={escuro} colSpan={2} />
-                                        <CampoTextoEditavel
-                                            rotulo="Nome Fantasia"
-                                            valor={nomeFantasiaDistribuidor}
-                                            modoEdicao={modoEdicao}
-                                            aoAlterar={setNomeFantasiaDistribuidor}
-                                            escuro={escuro}
-                                            colSpan={2}
-                                            placeholder="Nome fantasia do distribuidor"
-                                        />
+                                        <CampoLeitura rotulo="Nome Fantasia" valor={detalhes.distribuidor.nomeFantasia} escuro={escuro} colSpan={2} />
                                         <CampoLeitura rotulo="CNPJ" valor={maskCNPJ(detalhes.distribuidor.cnpj)} escuro={escuro} />
                                         <CampoLeitura rotulo="Inscrição Estadual" valor={detalhes.distribuidor.inscricaoEstadual} escuro={escuro} />
                                         <CampoLeitura rotulo="Telefone" valor={maskPhone(detalhes.distribuidor.telefone)} escuro={escuro} />
@@ -546,20 +537,17 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                                 </div>
                             </div>
 
-                            {/* Dados do Produto */}
+                            {/* Dados dos Produtos: um bloco por item do pedido */}
                             <div className={`rounded-xl border p-5 ${classeSecao}`}>
-                                <CabecalhoSecao titulo="Dados do Produto" cor="bg-cyan-500" escuro={escuro} />
+                                <CabecalhoSecao
+                                    titulo={produtos.length > 1 ? `Dados dos Produtos (${produtos.length})` : "Dados do Produto"}
+                                    cor="bg-cyan-500"
+                                    escuro={escuro}
+                                />
 
                                 <div className="detalhe-produto-campos">
-                                    <CampoLeitura
-                                        rotulo="Descrição do Produto"
-                                        valor={detalhes.produto.descricao}
-                                        escuro={escuro}
-                                        colSpan={4}
-                                    />
-
-                                    <div className="detalhe-produto-grade">
-                                        <CampoLeitura rotulo="P/N" valor={detalhes.produto.pn} escuro={escuro} />
+                                    {/* A entrega vale para o pedido inteiro, então aparece uma vez só */}
+                                    <div className="detalhe-produto-entrega">
                                         <CampoTextoEditavel
                                             rotulo="Entrega"
                                             valor={entrega}
@@ -568,39 +556,57 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                                             escuro={escuro}
                                             placeholder="Ex: Imediata"
                                         />
-                                        <CampoQuantidade
-                                            valor={quantidade}
-                                            modoEdicao={modoEdicao}
-                                            aoAlterar={setQuantidade}
-                                            escuro={escuro}
-                                        />
-                                        <CampoLeitura rotulo="Valor Unitário" valor={detalhes.produto.valorUnitario} escuro={escuro} />
-                                        <CampoLeitura rotulo="Valor Total" valor={detalhes.produto.valorTotal} escuro={escuro} />
                                     </div>
 
-                                    <div
-                                        className="rounded-xl p-4 grid grid-cols-4 gap-x-5 gap-y-3 items-end"
-                                        style={{
-                                            background: escuro
-                                                ? "linear-gradient(135deg, rgba(15,37,87,0.13) 0%, rgba(26,58,122,0.09) 100%)"
-                                                : "linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(248,250,252,0.95) 100%)",
-                                            border: escuro
-                                                ? "1px solid rgba(59,130,246,0.45)"
-                                                : "1px solid rgba(96,165,250,0.85)",
-                                        }}
-                                    >
-                                        <div className="col-span-4 mb-0.5">
-                                            <span className="text-[9px] font-extrabold tracking-widest uppercase text-blue-400">
-                                                Valores Faturados
-                                            </span>
-                                        </div>
-                                        <CampoLeitura rotulo="Valor Unitário Faturado" valor={detalhes.produto.valorUnitarioFaturado} escuro={escuro} />
-                                        <CampoLeitura rotulo="Total Faturado" valor={detalhes.produto.totalFaturado} escuro={escuro} />
-                                        <CampoLeitura
-                                            rotulo="Total de Comissão Bruta"
-                                            valor={venda.comissao}
-                                            escuro={escuro}
-                                        />
+                                    {produtos.map((produto, indice) => {
+                                        const chaveItem = chaveProduto(produto, indice);
+                                        return (
+                                            <div key={chaveItem} className="detalhe-produto-item">
+                                                <CampoLeitura
+                                                    rotulo={produtos.length > 1 ? `Produto ${indice + 1} · Descrição` : "Descrição do Produto"}
+                                                    valor={produto.descricao}
+                                                    escuro={escuro}
+                                                    colSpan={4}
+                                                />
+
+                                                <div className="detalhe-produto-grade detalhe-produto-grade--item">
+                                                    <CampoLeitura rotulo="P/N" valor={produto.pn} escuro={escuro} />
+                                                    <CampoQuantidade
+                                                        valor={quantidades[chaveItem] ?? 0}
+                                                        modoEdicao={modoEdicao}
+                                                        aoAlterar={(valor) => alterarQuantidade(chaveItem, valor)}
+                                                        escuro={escuro}
+                                                    />
+                                                    <CampoLeitura rotulo="Valor Unitário" valor={produto.valorUnitario} escuro={escuro} />
+                                                    <CampoLeitura rotulo="Valor Total" valor={produto.valorTotal} escuro={escuro} />
+                                                </div>
+
+                                                <div
+                                                    className="rounded-xl p-4 grid grid-cols-4 gap-x-5 gap-y-3 items-end"
+                                                    style={{
+                                                        background: escuro
+                                                            ? "linear-gradient(135deg, rgba(15,37,87,0.13) 0%, rgba(26,58,122,0.09) 100%)"
+                                                            : "linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(248,250,252,0.95) 100%)",
+                                                        border: escuro
+                                                            ? "1px solid rgba(59,130,246,0.45)"
+                                                            : "1px solid rgba(96,165,250,0.85)",
+                                                    }}
+                                                >
+                                                    <div className="col-span-4 mb-0.5">
+                                                        <span className="text-[9px] font-extrabold tracking-widest uppercase text-blue-400">
+                                                            Valores Faturados
+                                                        </span>
+                                                    </div>
+                                                    <CampoLeitura rotulo="Valor Unitário Faturado" valor={produto.valorUnitarioFaturado} escuro={escuro} />
+                                                    <CampoLeitura rotulo="Total Faturado" valor={produto.totalFaturado} escuro={escuro} />
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+
+                                    {/* Comissão é do pedido inteiro, não de um item */}
+                                    <div className="detalhe-produto-entrega">
+                                        <CampoLeitura rotulo="Total de Comissão Bruta do Pedido" valor={venda.comissao} escuro={escuro} />
                                     </div>
                                 </div>
                             </div>
@@ -639,7 +645,7 @@ export default function ModalDetalheVenda({ venda, mes, detalhes: detalhesDireto
                         <p className={`text-[10px] mr-auto flex items-center gap-1.5
               ${escuro ? "text-blue-400" : "text-blue-500"}`}>
                             <IconeLapis />
-                            Nome fantasia, quantidade, nota e observações podem ser editados
+                            Quantidade, nota, observações e pagamento podem ser editados
                         </p>
                     )}
                     {modoEdicao ? (

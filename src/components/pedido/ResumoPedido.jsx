@@ -8,7 +8,7 @@ import { mapperFormDataToPedidoRequest } from "../../services/pedidoRequestMappe
 import { validarCamposPedido } from "../../services/pedidoValidation";
 import { carregarLogoPdf, adicionarLogoPdf, COR_FUNDO_LOGO_PDF } from "../../services/pdfBranding.js";
 
-export default function ResumoPedido({ formData, idRascunho, onSaveDraft, onPedidoSaved, onBusyChange, onFormaPagamentoChange }) {
+export default function ResumoPedido({ formData, idRascunho, onSaveDraft, onPedidoSaved, onBusyChange, onFormaPagamentoChange, onPrazoEntregaChange }) {
   const cliente = formData?.cliente || {};
   const distribuidor = formData?.distribuidor || {};
   const produtos = formData?.produtos || [];
@@ -26,6 +26,9 @@ export default function ResumoPedido({ formData, idRascunho, onSaveDraft, onPedi
   // A forma de pagamento vive na página para entrar no controle de alterações e no rascunho.
   const formaPagamento = formData?.formaPagamento || "";
   const setFormaPagamento = (valor) => onFormaPagamentoChange?.(valor);
+  // Prazo de entrega do pedido inteiro (ex.: "Imediata"); também vive na página, como a forma de pagamento.
+  const prazoEntrega = formData?.prazoEntrega || "";
+  const setPrazoEntrega = (valor) => onPrazoEntregaChange?.(valor);
   const [formaPagamentoError, setFormaPagamentoError] = useState("");
   const [showEnviarPdfModal, setShowEnviarPdfModal] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -187,9 +190,8 @@ const buildDoc = async () => {
 
   const productColumns = [
     { label: "#",          width: 7,                    value: (_, i) => String(i + 1), align: "left" },
-    { label: "Descrição",  width: 67,                   value: (p) => pdfText(p.descricao), align: "left" },
+    { label: "Descrição",  width: 93,                   value: (p) => pdfText(p.descricao), align: "left" },
     { label: "P/N",        width: 24,                   value: (p) => pdfText(p.pn), align: "left" },
-    { label: "Entrega",    width: 26,                   value: (p) => pdfText(p.entrega), align: "left" },
     { label: "Qtd.",       width: 14,                   value: (p) => pdfText(p.quantidade), align: "right" },
     { label: "Valor Unit.", width: 29,                  value: (p) => fmt(parseFloat(p.valorUnitario) || 0), align: "right" },
     { label: "Valor Total", width: 31,                  value: (p) => fmt(parseFloat(p.valorTotal) || 0), align: "right" },
@@ -281,7 +283,8 @@ const buildDoc = async () => {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(6.5);
     const productLines = doc.splitTextToSize(pdfText(produtosResumo), halfWidth - 6);
-    return Math.max(49, 12 + 6 * 7 + productLines.length * 3.2 + 5);
+    // 7 linhas fixas no "Resumo do Pedido" (pagamento, entrega, distribuidor, cliente, local, cidade e CEP)
+    return Math.max(56, 12 + 7 * 7 + productLines.length * 3.2 + 5);
   };
 
   const financialPanel = (title, x, topY, width, height) => {
@@ -363,6 +366,7 @@ const buildDoc = async () => {
 
   summaryFieldsPanel("Resumo do Pedido", [
     { label: "Forma de pagamento", value: ({ AVISTA: "À vista", BOLETO: "Boleto" })[formaPagamento] || formaPagamento },
+    { label: "Entrega",                  value: prazoEntrega },
     { label: "Distribuidor Responsavel", value: distribuidorName },
     { label: "Cliente Faturado",         value: clienteFaturado },
     { label: "Local de Entrega",         value: entregaAtual.endereco },
@@ -372,7 +376,7 @@ const buildDoc = async () => {
       label: "Produtos",
       value: produtosResumo,
       maxLines: productSummaryLines.length,
-      height: Math.max(7, summaryHeight - 54),
+      height: Math.max(7, summaryHeight - 61),
     },
   ], margin, y, halfWidth, summaryHeight);
 
@@ -519,6 +523,19 @@ const gerarPDFBase64 = async () => {
             {formaPagamentoError && (
               <span className="resumo-field-error">{formaPagamentoError}</span>
             )}
+          </div>
+
+          <div className="resumo-field">
+            <label className="resumo-label" htmlFor="resumo-prazo-entrega">ENTREGA</label>
+            <input
+              id="resumo-prazo-entrega"
+              type="text"
+              className="resumo-input"
+              value={prazoEntrega}
+              maxLength={100}
+              onChange={(e) => setPrazoEntrega(e.target.value)}
+              placeholder="Ex: Imediata, 15 dias"
+            />
           </div>
 
           <div className="resumo-field">

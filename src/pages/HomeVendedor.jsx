@@ -1,4 +1,5 @@
 import { formatarStatusPagamento } from "../services/statusPagamento.js";
+import { sequenciaDoCodigo } from "../services/codigoPedido.js";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import "../styles/base-reset.css";
 import "./HomeVendedor.css";
@@ -499,7 +500,11 @@ const periodo = useMemo(() => {
       const detalhes = await buscarDetalheVenda(venda.idPedido);
       setVendaNoModal({
         venda: { ...venda, parcelas: venda.parcelasDaVenda || venda.parcelas },
-        detalhes: { ...detalhes, produto: normalizarProduto(detalhes?.produto) },
+        detalhes: {
+          ...detalhes,
+          produto: normalizarProduto(detalhes?.produto),
+          produtos: (detalhes?.produtos || []).map(normalizarProduto),
+        },
       });
     } catch (error) {
       toast.error(error.message || "Não foi possível carregar os detalhes do pedido de venda.");
@@ -553,7 +558,7 @@ const periodo = useMemo(() => {
         pagamento ? "Pagamento" : "Pedido de venda",
         pagamento ? (linha.parcela.numeroParcela ?? "-") : linha.venda.id,
         pagamento
-          ? `${linha.venda.nome} - ${linha.parcela.label}`
+          ? `${linha.venda.nome} · ${linha.parcela.label}`
           : `${linha.venda.nome} - ${linha.venda.cliente}`,
         pagamento ? linha.parcela.valor : linha.venda.comissao,
         pagamento ? textoStatusParcela(linha.parcela.status) : formatarStatusPagamento(linha.venda.status),
@@ -701,14 +706,15 @@ const periodo = useMemo(() => {
                   {linhas.map((linha) => {
                     const ehPagamento = linha.tipoLinha === "pagamento";
                     const identificacao = ehPagamento
-                      ? `${linha.venda.nome} - ${linha.parcela.label}`
+                      ? `${linha.venda.nome} · ${linha.parcela.label}`
                       : `${linha.venda.nome} - ${linha.venda.cliente}`;
                     const valor = ehPagamento ? linha.parcela.valor : linha.venda.comissao;
                     const statusTexto = ehPagamento ? textoStatusParcela(linha.parcela.status) : formatarStatusPagamento(linha.venda.status);
                     const statusCor = ehPagamento
                       ? corBadgeStatusParcela(linha.parcela.status)
                       : corBadgeStatusVenda(linha.venda.tipo);
-                    const idExibido = ehPagamento ? (linha.parcela.numeroParcela ?? "•") : linha.venda.id;
+                    // O quadradinho é pequeno: mostra só a sequência (P03); o código completo vai no título
+                    const idExibido = ehPagamento ? (linha.parcela.numeroParcela ?? "•") : sequenciaDoCodigo(linha.venda.id);
                     const carregandoEssaVenda = abrindoVendaId === linha.venda.id;
  
                     return (
@@ -841,7 +847,8 @@ const periodo = useMemo(() => {
                     <p className={`text-xs text-center py-2 ${textoS}`}>Sem parcelas no período.</p>
                   )}
                   {dados.parcelasDoPeriodo.map((p, i) => {
-                    const venda = p.cliente ? `Venda ${p.pedidoId} - ${p.cliente}` : `Venda ${p.pedidoId}`;
+                    const codigo = p.codigoPedido ?? p.pedidoId;
+                    const venda = p.cliente ? `${codigo} - ${p.cliente}` : `${codigo}`;
                     return (
                       <div
                         key={p.idParcela ?? i}

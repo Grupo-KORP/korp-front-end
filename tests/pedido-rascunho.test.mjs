@@ -36,7 +36,7 @@ test("o rascunho guarda a forma de pagamento e nunca o PDF", () => {
     { cliente: { id: 1 }, produtos: [{}], pdfBase64: "abc", formaPagamento: "" },
     { formaPagamento: "BOLETO" },
   );
-  assert.deepEqual(Object.keys(dados).sort(), ["cliente", "distribuidor", "entrega", "formaPagamento", "produtos"]);
+  assert.deepEqual(Object.keys(dados).sort(), ["cliente", "distribuidor", "entrega", "formaPagamento", "prazoEntrega", "produtos"]);
   assert.equal(dados.formaPagamento, "BOLETO");
   assert.deepEqual(dados.distribuidor, {});
 });
@@ -46,7 +46,15 @@ test("dadosParaFormData completa as chaves ausentes", () => {
   assert.equal(form.cliente.id, 3);
   assert.deepEqual(form.produtos, []);
   assert.equal(form.formaPagamento, "");
-  assert.deepEqual(dadosParaFormData(), { cliente: {}, distribuidor: {}, produtos: [], entrega: {}, formaPagamento: "" });
+  assert.deepEqual(dadosParaFormData(), { cliente: {}, distribuidor: {}, produtos: [], entrega: {}, formaPagamento: "", prazoEntrega: "" });
+});
+
+test("rascunho antigo, com entrega em cada produto, vira a entrega do pedido", () => {
+  const antigo = dadosParaFormData({ produtos: [{ descricao: "A" }, { descricao: "B", entrega: " Imediata " }] });
+  assert.equal(antigo.prazoEntrega, "Imediata");
+
+  const novo = dadosParaFormData({ prazoEntrega: "15 dias", produtos: [{ entrega: "Imediata" }] });
+  assert.equal(novo.prazoEntrega, "15 dias");
 });
 
 test("diasParaExpirar arredonda para cima e nunca é negativo", () => {

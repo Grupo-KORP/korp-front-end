@@ -75,7 +75,7 @@ export async function criarRelatorioComissoes({ parcelas, proximasLiberacoes = [
       const venda = parcela.venda;
       const data = parcela.previsao?.split("-").reverse().join("/") || "-";
       const valores = [
-        `${venda.id}\n${venda.detalhesPedido?.numeroPedido || venda.id}\n${venda.venda || ""}`,
+        `${venda.id}\n${venda.venda || ""}`,
         venda.cliente, venda.vendedor, moeda(parcela.valor), parcela.numero, data, formatarStatusPagamento(parcela.status), parcela.notaFiscal || "-",
       ];
       doc.setFont("helvetica", "normal"); doc.setFontSize(8);

@@ -79,7 +79,9 @@ export async function criarRelatorioVendedor({ dados, linhas, periodo, filtro, g
     { titulo: "Status", largura: 42 },
     { titulo: "Valor", largura: 34 },
   ], dados.parcelasDoPeriodo.map((parcela) => [
-    parcela.cliente ? `Venda ${parcela.pedidoId} - ${parcela.cliente}` : `Venda ${parcela.pedidoId}`,
+    parcela.cliente
+      ? `${parcela.codigoPedido ?? parcela.pedidoId} - ${parcela.cliente}`
+      : `${parcela.codigoPedido ?? parcela.pedidoId}`,
     parcela.label,
     STATUS_PARCELA[parcela.status] || "Pendente",
     parcela.valor,
@@ -87,8 +89,8 @@ export async function criarRelatorioVendedor({ dados, linhas, periodo, filtro, g
   secao("Transações do período");
   tabela([
     { titulo: "Tipo", largura: 34 },
-    { titulo: "ID", largura: 20 },
-    { titulo: "Identificação", largura: 54 },
+    { titulo: "ID", largura: 26 },
+    { titulo: "Identificação", largura: 48 },
     { titulo: "Comissão", largura: 32 },
     { titulo: "Status", largura: 42 },
   ], linhas);

@@ -65,6 +65,7 @@ export default function PedidoPage() {
         distribuidor: {},
         produtos: [],
         formaPagamento: "",
+        prazoEntrega: "",
         entrega: {
             endereco: "",
             cidade: "",
@@ -93,6 +94,11 @@ export default function PedidoPage() {
     const handleFormaPagamentoChange = (valor) => {
         setDirty(true);
         setFormData(prev => ({ ...prev, formaPagamento: valor }));
+    };
+
+    const handlePrazoEntregaChange = (valor) => {
+        setDirty(true);
+        setFormData(prev => ({ ...prev, prazoEntrega: valor }));
     };
 
     const salvarRascunho = async (resumoData = {}) => {
@@ -246,6 +252,7 @@ export default function PedidoPage() {
                             onPedidoSaved={pedidoSalvo}
                             onBusyChange={setBusy}
                             onFormaPagamentoChange={handleFormaPagamentoChange}
+                            onPrazoEntregaChange={handlePrazoEntregaChange}
                         />                    </div>
                 </div>
             </div>

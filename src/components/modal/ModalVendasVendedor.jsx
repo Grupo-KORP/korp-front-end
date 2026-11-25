@@ -88,7 +88,7 @@ export default function ModalVendasVendedor({ vendedor, dark, onClose }) {
                   <tbody>{vendas.map((venda) => {
                     const { faturamento, comissao } = obterValoresPedido(venda);
                     return <tr key={venda.idPedido}>
-                    <td>{venda.nome || `Pedido #${venda.idPedido}`}</td><td>{venda.codigo || venda.idPedido}</td><td>{venda.cliente?.nomeFantasia || venda.cliente?.razaoSocial || venda.cliente || "Não informado"}</td>
+                    <td>{venda.nome || venda.codigo || `Pedido #${venda.idPedido}`}</td><td>{venda.codigo || venda.idPedido}</td><td>{venda.cliente?.nomeFantasia || venda.cliente?.razaoSocial || venda.cliente || "Não informado"}</td>
                     <td className="vendedor-vendas-moeda">{moeda(faturamento)}</td><td className="vendedor-vendas-moeda">{moeda(comissao)}</td>
                     <td>{pagamentos[venda.metodoPagamento] || venda.metodoPagamento || "Não informado"}</td>
                     <td><span className="vendedor-vendas-status" data-status={venda.status}>{statusVenda[venda.status] || venda.status || "Não informado"}</span></td>
